@@ -1013,19 +1013,16 @@ export default function FixedRestorativeForm({
                         setActiveCategory(isActive ? null : rt.label);
                       }
                     }}
-                    className="relative flex items-center justify-center cursor-pointer bg-transparent appearance-none outline-none transition-ui overflow-visible shrink-0"
+                    className="relative flex items-center justify-center cursor-pointer bg-transparent appearance-none outline-none transition-ui overflow-visible shrink-0 focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
                     style={{
                       height: 60,
                       padding: "10px 12px",
                       gap: 6,
-                      border: "2px solid var(--color-border-subtle)",
+                      border: isActive ? "2px solid var(--color-border-focus)" : "2px solid var(--color-border-subtle)",
                       borderRadius: 8,
                       minWidth: 64,
                     }}
                   >
-                    {isActive && (
-                      <div className="absolute" style={{ inset: -6, border: "2px solid #009ace", borderRadius: 12, pointerEvents: "none" }} />
-                    )}
                     {isActive ? (
                       <svg width="20" height="20" viewBox="0 0 17.5 17.5" fill="none" className="shrink-0" aria-hidden>
                         <path d="M8.75 0C4 0 0 4 0 8.75C0 13.5 4 17.5 8.75 17.5C13.5 17.5 17.5 13.5 17.5 8.75C17.5 4 13.5 0 8.75 0ZM13.75 9.375H9.375V13.75H8.125V9.375H3.75V8.125H8.125V3.75H9.375V8.125H13.75V9.375Z" fill={rt.color} />
