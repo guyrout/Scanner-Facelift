@@ -1,5 +1,5 @@
 /**
- * Patient header for scanning flow — Figma 4118:169148.
+ * Patient header for scanning flow — Figma 4115:166709 (UI Refresh 2025).
  * Avatar | Name + ID | DOB | Gender | Last scan | separator | Treated by | Edit button.
  *
  * Typography (all via .scan-flow scope):
@@ -8,7 +8,8 @@
  *   values = tp-body-02 text-primary   (18px/28px, 400)
  *   id     = tp-body-02 text-secondary
  *
- * Layout: px 40px, py 12px, row 140px, 48px column gap, 40px before edit button.
+ * Layout (4px grid): px var(--spacing-10), py var(--spacing-03), row 80px,
+ * gap var(--spacing-12) between items, var(--spacing-10) before edit button.
  */
 
 import Avatar from "./Avatar";
@@ -66,75 +67,75 @@ export default function ScanFlowPatientHeader({
   return (
     <section
       className="flex items-center justify-center w-full bg-surface shrink-0 border-b border-border-subtle overflow-clip"
-      style={{ padding: "12px 40px" }}
+      style={{ padding: "var(--spacing-03) var(--spacing-10)" }}
       aria-label="Patient information"
     >
       <div
-        className="flex items-center w-full"
-        style={{ height: 140, gap: 16 }}
+        className="flex items-center w-full min-w-0"
+        style={{ height: 80, gap: "var(--spacing-10)" }}
       >
-        <div className="flex flex-1 items-center justify-between min-w-0 min-h-px">
-          <div className="flex flex-1 items-center min-w-0 min-h-px" style={{ gap: 40 }}>
-            <div className="flex flex-1 items-center min-w-0 min-h-px" style={{ gap: 48 }}>
-              <Avatar
-                firstName={firstName}
-                lastName={lastName}
-                imageUrl={avatarUrl}
-                size={80}
-                initialsFontSize={28}
-              />
+        <div
+          className="flex flex-1 items-center min-w-0"
+          style={{ gap: "var(--spacing-12)" }}
+        >
+          <Avatar
+            firstName={firstName}
+            lastName={lastName}
+            imageUrl={avatarUrl}
+            size={80}
+            initialsFontSize={28}
+          />
 
-              <div
-                className="flex flex-col items-start shrink-0"
-                style={{ gap: 8, width: 188, height: 76 }}
+          <div
+            className="flex flex-col items-start shrink-0"
+            style={{ gap: "var(--spacing-02)", width: "fit-content", height: 76 }}
+          >
+            <span className="tp-heading-05 text-text-primary" style={{ width: "fit-content" }}>
+              {patientName}
+            </span>
+            <span className="inline-grid shrink-0">
+              <span
+                className="tp-body-02 text-text-secondary whitespace-nowrap"
+                style={{ gridColumn: 1, gridRow: 1, marginLeft: 29 }}
               >
-                <span className="tp-heading-05 text-text-primary" style={{ width: 189 }}>
-                  {patientName}
-                </span>
-                <span className="inline-grid shrink-0">
-                  <span
-                    className="tp-body-02 text-text-secondary whitespace-nowrap"
-                    style={{ gridColumn: 1, gridRow: 1, marginLeft: 29 }}
-                  >
-                    {patientId}
-                  </span>
-                  <span
-                    className="shrink-0 text-[var(--color-icon-primary)] overflow-clip"
-                    style={{ gridColumn: 1, gridRow: 1, marginTop: 2, width: 20, height: 20 }}
-                    aria-hidden
-                  >
-                    <IdCardIcon />
-                  </span>
-                </span>
-              </div>
-
-              <InfoColumn label="Date of birth" value={`${dateOfBirth} (${age} years)`} />
-              <InfoColumn label="Gender" value={gender} />
-              {lastScan && <InfoColumn label="Last scan" value={lastScan} />}
-
-              <div className="flex items-center self-stretch" aria-hidden>
-                <div
-                  className="shrink-0"
-                  style={{
-                    width: 0,
-                    height: 80,
-                    borderLeft: "1px solid var(--color-border-subtle)",
-                  }}
-                />
-              </div>
-
-              <InfoColumn label="Treated by:" value={treatedBy} />
-            </div>
+                {patientId}
+              </span>
+              <span
+                className="shrink-0 text-[var(--color-icon-primary)] overflow-clip"
+                style={{ gridColumn: 1, gridRow: 1, marginTop: 2, width: 20, height: 20 }}
+                aria-hidden
+              >
+                <IdCardIcon />
+              </span>
+            </span>
           </div>
 
-          <button
+          <InfoColumn label="Date of birth" value={`${dateOfBirth} (${age} years)`} />
+          <InfoColumn label="Gender" value={gender} />
+          {lastScan && <InfoColumn label="Last scan" value={lastScan} />}
+
+          <div className="flex items-center self-stretch" aria-hidden>
+            <div
+              className="shrink-0"
+              style={{
+                width: 0,
+                height: 80,
+                borderLeft: "1px solid var(--color-border-subtle)",
+              }}
+            />
+          </div>
+
+          <InfoColumn label="Treated by:" value={treatedBy} />
+        </div>
+
+        <button
             type="button"
             onClick={onEditClick}
             className="flex items-center justify-center shrink-0 rounded-lg cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             style={{
               width: 60,
               height: 60,
-              padding: 12,
+              padding: "var(--spacing-03)",
               border: "2px solid var(--color-border-subtle)",
               backgroundColor: "transparent",
             }}
@@ -142,7 +143,6 @@ export default function ScanFlowPatientHeader({
           >
             <PencilIcon size={24} color="var(--color-icon-primary)" />
           </button>
-        </div>
       </div>
     </section>
   );
@@ -152,7 +152,7 @@ function InfoColumn({ label, value }: { label: string; value: string }) {
   return (
     <div
       className="flex flex-col items-start shrink-0 whitespace-nowrap tp-body-02"
-      style={{ gap: 4 }}
+      style={{ gap: "var(--spacing-01)" }}
     >
       <span className="text-text-secondary">{label}</span>
       <span className="text-text-primary">{value}</span>
