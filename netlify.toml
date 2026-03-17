@@ -1,0 +1,11 @@
+# Netlify — build and deploy from Scanner subfolder
+[build]
+  base = "Scanner"
+  command = "npm run build"
+  publish = "dist"
+
+# SPA: all routes serve index.html (client-side routing)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
