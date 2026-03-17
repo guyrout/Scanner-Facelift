@@ -1,0 +1,31 @@
+---
+description: Use only Figma typography semantic tokens for all UI text
+globs: "**/*.tsx,**/*.jsx,**/*.css"
+alwaysApply: true
+---
+
+# Typography — Figma design system only
+
+The **only** source of truth for typography is the Figma design system:
+
+- **Figma**: [04.-Typography system - Scanner](https://www.figma.com/design/YxYVzfW9Oc603MmZxV8H0B/04.-Typography-system--Scanner-?node-id=5528-7)
+- **Tokens**: Defined in `Scanner/src/index.css` under "Typography semantic tokens".
+
+## Rules
+
+1. **Use only semantic classes** for text: `tp-code-01`, `tp-code-02`, `tp-label-01`, `tp-label-02`, `tp-label-03`, `tp-body-01`–`tp-body-04`, `tp-link-01`, `tp-link-02`, `tp-heading-01`–`tp-heading-06` (or legacy `tp-headling-01`–`tp-headling-03`), `tp-display-*-regular`, `tp-display-*-medium`.
+2. **Do not** use inline `fontSize`/`lineHeight` in JSX for body/heading/label text.
+3. **Do not** use Tailwind arbitrary font sizes (e.g. `text-[16px]`) for UI copy; use a token class instead.
+4. **Color** remains separate: pair tokens with semantic color classes (e.g. `text-text-primary`, `text-text-secondary`) or design-system color variables.
+
+## Example
+
+```tsx
+// ❌ BAD
+<span style={{ fontSize: "12px", lineHeight: "18px" }}>Label</span>
+<span className="text-[16px]">Body</span>
+
+// ✅ GOOD
+<span className="tp-body-01 text-text-secondary">Label</span>
+<span className="tp-body-03 text-text-primary">Body</span>
+```

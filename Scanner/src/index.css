@@ -1,0 +1,1147 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   FIGMA DESIGN SYSTEM — Scanner
+   1. Color modes: 02.-Color-modes — Align light mode (node 4482-1769)
+   2. Typography: 04.-Typography system - Scanner (node 5528-7)
+      → Use ONLY the semantic tokens below for all UI typography.
+      → Do not use inline font-size/line-height or one-off Tailwind text-*.
+   ============================================================================= */
+
+@theme {
+  --font-roboto: "Roboto", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* -------------------------------------------------------------------------
+     Align light mode — Figma 02.-Color-modes (node 4482-1769)
+     Semantic color tokens; dark mode can override via .dark or [data-theme].
+     ------------------------------------------------------------------------- */
+  /* Text main */
+  --color-text-primary: #121212;
+  --color-text-secondary: #000000a1;
+  --color-text-tertiary: #00000071;
+
+  /* Backgrounds main */
+  --color-page-background: #f4f4f4;
+  --color-background-layer-01: #ffffff;
+  --color-background-layer-02: #f4f4f4;
+  --color-background-accent: #dfdfdf;
+
+  /* Backgrounds overlay */
+  --color-background-elevated: #ffffff;
+  --color-background-overlay: #000000a1;
+
+  /* Backgrounds on color / inverse */
+  --color-background-on-color: #ffffff;
+  --color-background-inverse: #262626;
+
+  /* Backgrounds interactive */
+  --color-background-brand: #009ace;
+  --color-background-destructive: #d43f58;
+  --color-background-success: #00964e;
+
+  /* Backgrounds highlight */
+  --color-background-highlight-gray: #0000000b;
+  --color-background-highlight-red: #fff0f3;
+  --color-background-highlight-magenta: #fff0f9;
+  --color-background-highlight-purple: #f8f2ff;
+  --color-background-highlight-blue: #e6f7ff;
+  --color-background-highlight-green: #dcfce8;
+  --color-background-highlight-orange: #fff2ed;
+
+  /* Borders main */
+  --color-border-subtle: #00000016;
+  --color-border-accent: #0000003a;
+  --color-border-strong: #121212;
+
+  /* Borders on color */
+  --color-border-on-color-subtle: #ffffff16;
+  --color-border-on-color-accent: #ffffff39;
+  --color-border-on-color-strong: #ffffff;
+
+  /* Borders interactive */
+  --color-border-interactive: #009ace;
+  --color-border-error: #d43f58;
+  --color-border-warning: #de5637;
+  --color-border-success: #00964e;
+
+  /* Borders highlight */
+  --color-border-highlight-gray: #0000000b;
+  --color-border-highlight-red: #ffe0e7;
+  --color-border-highlight-magenta: #ffe3f4;
+  --color-border-highlight-purple: #f3e6ff;
+  --color-border-highlight-blue: #d1f1ff;
+  --color-border-highlight-green: #c6f5d6;
+  --color-border-highlight-orange: #ffe5db;
+
+  /* Text on color */
+  --color-text-on-color-primary: #ffffff;
+  --color-text-on-color-secondary: #ffffffa1;
+  --color-text-on-color-tertiary: #ffffff78;
+
+  /* Text inverse (Align light mode) */
+  --color-text-inverse-primary: #ffffff;
+  --color-text-inverse-secondary: #ffffffa1;
+  --color-text-inverse-tertiary: #ffffff78;
+
+  /* Text interactive */
+  --color-text-link: #009ace;
+  --color-text-error: #d43f58;
+  --color-text-warning: #de5637;
+  --color-text-success: #00964e;
+
+  /* Text on highlight */
+  --color-text-on-highlight-green: #006131;
+  --color-text-on-highlight-blue: #005780;
+  --color-text-on-highlight-orange: #9e2813;
+  --color-text-on-highlight-red: #a31035;
+  --color-text-on-highlight-magenta: #a30564;
+  --color-text-on-highlight-purple: #6c37a1;
+
+  /* Icons main */
+  --color-icon-primary: #121212;
+  --color-icon-secondary: #000000a1;
+  --color-icon-tertiary: #00000071;
+
+  /* Icons on color */
+  --color-icon-on-color-primary: #ffffff;
+  --color-icon-on-color-secondary: #ffffffa1;
+  --color-icon-on-color-tertiary: #ffffff78;
+
+  /* Icons inverse (Align light mode) */
+  --color-icon-inverse-primary: #ffffff;
+  --color-icon-inverse-secondary: #ffffffa1;
+  --color-icon-inverse-tertiary: #ffffff78;
+
+  /* Icons on highlight (Align light mode) */
+  --color-icon-on-highlight-red: #a31035;
+  --color-icon-on-highlight-magenta: #a30564;
+  --color-icon-on-highlight-purple: #6c37a1;
+  --color-icon-on-highlight-blue: #005780;
+  --color-icon-on-highlight-green: #006131;
+  --color-icon-on-highlight-orange: #9e2813;
+
+  /* Icons interactive */
+  --color-icon-link: #009ace;
+  --color-icon-error: #d43f58;
+  --color-icon-warning: #de5637;
+  --color-icon-success: #00964e;
+
+  /* Hovered states (Align light mode) */
+  --color-background-layer-hovered: #0000000b;
+  --color-background-accent-hovered: #0000002d;
+  --color-background-brand-hovered: #008ec2;
+  --color-background-destructive-hovered: #c42d49;
+  --color-background-success-hovered: #008744;
+  --color-background-inverse-hovered: #303030;
+  --color-background-layer-selected-hovered: #00000016;
+  --color-border-subtle-hovered: #00000020;
+  --color-border-accent-hovered: #00000057;
+  --color-border-inverse-subtle-hovered: #ffffff20;
+  --color-border-inverse-accent-hovered: #ffffff52;
+  --color-border-interactive-hovered: #008ec2;
+
+  /* Pressed states (Align light mode) */
+  --color-background-layer-pressed: #00000016;
+  --color-background-accent-pressed: #0000003a;
+  --color-background-brand-pressed: #0080b2;
+  --color-background-destructive-pressed: #b51f3f;
+  --color-background-success-pressed: #007a3d;
+  --color-background-layer-selected-pressed: #00000020;
+  --color-border-subtle-pressed: #0000002d;
+  --color-border-accent-pressed: #0000007e;
+  --color-border-inverse-subtle-pressed: #ffffff2c;
+  --color-border-inverse-accent-pressed: #ffffff86;
+
+  /* Focused states (Align light mode) */
+  --color-border-focus: #009ace;
+  --color-border-on-color-focus: #ffffff;
+  --color-border-inverse-focus: #41c1f0;
+
+  /* Selected / disabled (Align light mode) */
+  --color-background-layer-selected: #0000000b;
+  --color-background-brand-disabled: #0000000b;
+  --color-background-destructive-disabled: #0000000b;
+  --color-background-on-color-disabled: #0000000b;
+  --color-border-disabled: #00000016;
+  --color-border-on-color-disabled: #ffffff16;
+  --color-border-inverse-disabled: #ffffff16;
+  --color-text-disabled: #0000003a;
+  --color-text-on-color-disabled: #ffffff39;
+  --color-text-inverse-disabled: #ffffff39;
+  --color-icon-disabled: #0000003a;
+
+  /* Legacy aliases (map to Figma semantic tokens) */
+  --color-page-bg: var(--color-page-background);
+  --color-surface: var(--color-background-layer-01);
+  --color-surface-alt: var(--color-background-layer-02);
+  --color-focus-border: var(--color-border-focus);
+  --color-keyboard-bg: var(--color-background-inverse);
+  --color-key-bg: rgba(0, 0, 0, 0.63);
+  --color-on-color: var(--color-text-on-color-primary);
+  --color-highlight-green-bg: var(--color-background-highlight-green);
+  --color-highlight-green-text: var(--color-text-on-highlight-green);
+  --color-highlight-green-border: var(--color-border-highlight-green);
+  --color-highlight-blue-bg: var(--color-background-highlight-blue);
+  --color-highlight-blue-text: var(--color-text-on-highlight-blue);
+  --color-highlight-blue-border: var(--color-border-highlight-blue);
+  --color-highlight-gray-bg: var(--color-background-highlight-gray);
+  --color-highlight-gray-border: var(--color-border-highlight-gray);
+
+  /* Depth / shadow */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.125);
+  --page-padding: var(--spacing-04);
+  --content-max-width: 1920px;
+
+  /* -------------------------------------------------------------------------
+     Typography semantic tokens — Scanner (Figma 04.-Typography system)
+     Single source of truth: align all UI to these tokens only.
+     ------------------------------------------------------------------------- */
+  --font-roboto-mono: "Roboto Mono", ui-monospace, monospace;
+
+  /* Line heights (Figma) */
+  --line-height-medium: 24px;
+  --line-height-large: 28px;
+  --line-height-x-large: 32px;
+  --line-height-2x-large: 36px;
+  --line-height-3x-large: 44px;
+  --line-height-4x-large: 52px;
+  --line-height-5x-large: 60px;
+  /* Semantic: touch target / list row height (Figma) */
+  --height-row: var(--line-height-5x-large);
+
+  /* Code — Figma 04.-Typography system (Roboto Mono) */
+  --tp-code-01-size: 16px;
+  --tp-code-01-weight: 400;
+  --tp-code-01-height: 24px;
+  --tp-code-02-size: 16px;
+  --tp-code-02-weight: 400;
+  --tp-code-02-height: 24px;
+
+  /* Label */
+  --tp-label-01-size: 10px;
+  --tp-label-01-weight: 500;
+  --tp-label-01-height: 16px;
+  --tp-label-01-spacing: 0.1em;
+  --tp-label-02-size: 16px;
+  --tp-label-02-weight: 400;
+  --tp-label-02-height: 24px;
+  --tp-label-03-size: 18px;
+  --tp-label-03-weight: 400;
+  --tp-label-03-height: 24px;
+
+  /* Body */
+  --tp-body-01-size: 16px;
+  --tp-body-01-weight: 400;
+  --tp-body-01-height: 24px;
+  --tp-body-02-size: 16px;
+  --tp-body-02-weight: 400;
+  --tp-body-02-height: 24px;
+  --tp-body-03-size: 16px;
+  --tp-body-03-weight: 400;
+  --tp-body-03-height: 24px;
+  --tp-body-04-size: 18px;
+  --tp-body-04-weight: 400;
+  --tp-body-04-height: 28px;
+
+  /* Link */
+  --tp-link-01-size: 16px;
+  --tp-link-01-weight: 400;
+  --tp-link-01-height: 24px;
+  --tp-link-02-size: 16px;
+  --tp-link-02-weight: 500;
+  --tp-link-02-height: 24px;
+
+  /* Heading */
+  --tp-heading-01-size: 16px;
+  --tp-heading-01-weight: 500;
+  --tp-heading-01-height: 24px;
+  --tp-heading-02-size: 18px;
+  --tp-heading-02-weight: 500;
+  --tp-heading-02-height: 28px;
+  --tp-heading-03-size: 20px;
+  --tp-heading-03-weight: 500;
+  --tp-heading-03-height: 32px;
+  --tp-heading-04-size: 24px;
+  --tp-heading-04-weight: 500;
+  --tp-heading-04-height: 36px;
+  --tp-heading-05-size: 32px;
+  --tp-heading-05-weight: 500;
+  --tp-heading-05-height: 48px;
+  --tp-heading-06-size: 40px;
+  --tp-heading-06-weight: 500;
+  --tp-heading-06-height: 56px;
+
+  /* Display regular */
+  --tp-display-01-regular-size: 36px;
+  --tp-display-01-regular-weight: 400;
+  --tp-display-01-regular-height: 44px;
+  --tp-display-02-regular-size: 48px;
+  --tp-display-02-regular-weight: 400;
+  --tp-display-02-regular-height: 64px;
+  --tp-display-03-regular-size: 56px;
+  --tp-display-03-regular-weight: 400;
+  --tp-display-03-regular-height: 72px;
+  --tp-display-04-regular-size: 64px;
+  --tp-display-04-regular-weight: 400;
+  --tp-display-04-regular-height: 80px;
+  --tp-display-05-regular-size: 72px;
+  --tp-display-05-regular-weight: 400;
+  --tp-display-05-regular-height: 96px;
+
+  /* Display medium */
+  --tp-display-01-medium-size: 36px;
+  --tp-display-01-medium-weight: 500;
+  --tp-display-01-medium-height: 44px;
+  --tp-display-02-medium-size: 48px;
+  --tp-display-02-medium-weight: 500;
+  --tp-display-02-medium-height: 64px;
+  --tp-display-03-medium-size: 56px;
+  --tp-display-03-medium-weight: 500;
+  --tp-display-03-medium-height: 72px;
+  --tp-display-04-medium-size: 64px;
+  --tp-display-04-medium-weight: 500;
+  --tp-display-04-medium-height: 80px;
+  --tp-display-05-medium-size: 72px;
+  --tp-display-05-medium-weight: 500;
+  --tp-display-05-medium-height: 96px;
+
+  /* Legacy aliases: map old "headling" tokens to "heading" */
+  --tp-headling-01-size: var(--tp-heading-01-size);
+  --tp-headling-01-weight: var(--tp-heading-01-weight);
+  --tp-headling-01-height: var(--tp-heading-01-height);
+  --tp-headling-02-size: var(--tp-heading-02-size);
+  --tp-headling-02-weight: var(--tp-heading-02-weight);
+  --tp-headling-02-height: var(--tp-heading-02-height);
+  --tp-headling-03-size: var(--tp-heading-03-size);
+  --tp-headling-03-weight: var(--tp-heading-03-weight);
+  --tp-headling-03-height: var(--tp-heading-03-height);
+  --tp-headling-04-size: var(--tp-heading-04-size);
+  --tp-headling-04-weight: var(--tp-heading-04-weight);
+  --tp-headling-04-height: var(--tp-heading-04-height);
+  --tp-headling-05-size: var(--tp-heading-05-size);
+  --tp-headling-05-weight: var(--tp-heading-05-weight);
+  --tp-headling-05-height: var(--tp-heading-05-height);
+  --tp-headling-06-size: var(--tp-heading-06-size);
+  --tp-headling-06-weight: var(--tp-heading-06-weight);
+  --tp-headling-06-height: var(--tp-heading-06-height);
+
+  /* Spacing (Figma) — 4px base grid */
+  --spacing-01: 4px;
+  --spacing-02: 8px;
+  --spacing-03: 12px;
+  --spacing-04: 16px;
+  --spacing-05: 20px;
+  --spacing-06: 24px;
+  --spacing-07: 28px;
+  --spacing-08: 32px;
+  --spacing-09: 36px;
+  --spacing-10: 40px;
+  --spacing-11: 44px;
+  --spacing-12: 48px;
+
+  /* Tailwind spacing scale — aligned to Figma grid (p-1, gap-2, etc. use tokens) */
+  --spacing-1: var(--spacing-01);
+  --spacing-2: var(--spacing-02);
+  --spacing-3: var(--spacing-03);
+  --spacing-4: var(--spacing-04);
+  --spacing-5: var(--spacing-05);
+  --spacing-6: var(--spacing-06);
+  --spacing-7: var(--spacing-07);
+  --spacing-8: var(--spacing-08);
+  --spacing-9: var(--spacing-09);
+  /* 10–12 are already defined above as design tokens (40px, 44px, 48px); Tailwind uses them as-is */
+
+  /* Motion — Premium UX: smooth, visible, never rushed (see docs/MOTION-SYSTEM.md) */
+  --motion-duration-press: 180ms;       /* active press: visible and smooth */
+  --motion-duration-interact: 280ms;    /* hover, focus, state: clearly smooth */
+  --motion-duration-emphasis: 400ms;    /* page/modal enter: calm, premium */
+  --motion-duration-micro: 180ms;       /* row hover, focus ring, micro feedback */
+  --motion-duration-component: 260ms;   /* dropdown, modal content */
+  --motion-duration-page: 350ms;        /* page transition (desktop) */
+  --motion-duration-page-touch: 400ms; /* page transition (touch) */
+  /* Smoother easing: gentler acceleration/deceleration for a calmer feel */
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);       /* very smooth deceleration */
+  --motion-ease-out-soft: cubic-bezier(0.08, 1, 0.2, 1); /* page transition: extra-smooth deceleration */
+  --motion-ease-in-out: cubic-bezier(0.33, 0, 0.2, 1);   /* smooth both ends (Material-style) */
+  --motion-ease-in: cubic-bezier(0.55, 0, 0.1, 1);       /* smooth acceleration for exits */
+}
+
+/* Typography utility classes — Figma semantic tokens (only guide for typo) */
+.tp-code-01 {
+  font-family: var(--font-roboto-mono);
+  font-size: var(--tp-code-01-size);
+  font-weight: var(--tp-code-01-weight);
+  line-height: var(--tp-code-01-height);
+  letter-spacing: 0;
+}
+.tp-code-02 {
+  font-family: var(--font-roboto-mono);
+  font-size: var(--tp-code-02-size);
+  font-weight: var(--tp-code-02-weight);
+  line-height: var(--tp-code-02-height);
+  letter-spacing: 0;
+}
+.tp-label-01 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-label-01-size);
+  font-weight: var(--tp-label-01-weight);
+  line-height: var(--tp-label-01-height);
+  letter-spacing: var(--tp-label-01-spacing);
+  text-transform: uppercase;
+}
+.tp-label-02 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-label-02-size);
+  font-weight: var(--tp-label-02-weight);
+  line-height: var(--tp-label-02-height);
+  letter-spacing: 0;
+}
+.tp-label-03 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-label-03-size);
+  font-weight: var(--tp-label-03-weight);
+  line-height: var(--tp-label-03-height);
+  letter-spacing: 0;
+}
+.tp-body-01 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-body-01-size);
+  font-weight: var(--tp-body-01-weight);
+  line-height: var(--tp-body-01-height);
+  letter-spacing: 0;
+}
+.tp-body-02 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-body-02-size);
+  font-weight: var(--tp-body-02-weight);
+  line-height: var(--tp-body-02-height);
+  letter-spacing: 0;
+}
+.tp-body-03 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-body-03-size);
+  font-weight: var(--tp-body-03-weight);
+  line-height: var(--tp-body-03-height);
+  letter-spacing: 0;
+}
+.tp-body-04 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-body-04-size);
+  font-weight: var(--tp-body-04-weight);
+  line-height: var(--tp-body-04-height);
+  letter-spacing: 0;
+}
+
+
+.tp-link-01 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-link-01-size);
+  font-weight: var(--tp-link-01-weight);
+  line-height: var(--tp-link-01-height);
+  letter-spacing: 0;
+}
+.tp-link-02 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-link-02-size);
+  font-weight: var(--tp-link-02-weight);
+  line-height: var(--tp-link-02-height);
+  letter-spacing: 0;
+}
+.tp-heading-01,
+.tp-headling-01 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-heading-01-size);
+  font-weight: var(--tp-heading-01-weight);
+  line-height: var(--tp-heading-01-height);
+  letter-spacing: 0;
+}
+.tp-heading-02,
+.tp-headling-02 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-heading-02-size);
+  font-weight: var(--tp-heading-02-weight);
+  line-height: var(--tp-heading-02-height);
+  letter-spacing: 0;
+}
+.tp-heading-03,
+.tp-headling-03 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-heading-03-size);
+  font-weight: var(--tp-heading-03-weight);
+  line-height: var(--tp-heading-03-height);
+  letter-spacing: 0;
+}
+.tp-heading-04,
+.tp-headling-04 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-heading-04-size);
+  font-weight: var(--tp-heading-04-weight);
+  line-height: var(--tp-heading-04-height);
+  letter-spacing: 0;
+}
+.tp-heading-05,
+.tp-headling-05 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-heading-05-size);
+  font-weight: var(--tp-heading-05-weight);
+  line-height: var(--tp-heading-05-height);
+  letter-spacing: 0;
+}
+.tp-heading-06,
+.tp-headling-06 {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-heading-06-size);
+  font-weight: var(--tp-heading-06-weight);
+  line-height: var(--tp-heading-06-height);
+  letter-spacing: 0;
+}
+
+/* Wizard topbar step label — Figma spec line-height 32px */
+.wizard-step-label {
+  font-family: var(--font-roboto);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 32px;
+  letter-spacing: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Scan flow page — scoped Figma refinements.
+   Overrides typography & color tokens inside .scan-flow so other pages
+   keep the original values.
+   ------------------------------------------------------------------------- */
+.scan-flow {
+  --color-text-primary: #000000ed;
+  --color-icon-primary: #000000ed;
+
+  --tp-heading-05-size: 28px;
+  --tp-heading-05-height: 40px;
+  --tp-heading-06-size: 36px;
+  --tp-heading-06-height: 44px;
+
+  --tp-body-02-size: 18px;
+  --tp-body-02-height: 28px;
+
+  --tp-label-02-size: 18px;
+  --tp-label-02-height: 28px;
+  --tp-label-03-size: 24px;
+  --tp-label-03-height: 36px;
+}
+
+/* Tooth chart: remove browser focus dotted outline from rect/g when clicking teeth */
+.tooth-chart-svg,
+.tooth-chart-svg * {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+}
+.tooth-chart-svg:focus,
+.tooth-chart-svg *:focus,
+.tooth-chart-svg:focus-visible,
+.tooth-chart-svg *:focus-visible {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+}
+
+.tp-display-01-regular {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-01-regular-size);
+  font-weight: var(--tp-display-01-regular-weight);
+  line-height: var(--tp-display-01-regular-height);
+  letter-spacing: 0;
+}
+.tp-display-02-regular {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-02-regular-size);
+  font-weight: var(--tp-display-02-regular-weight);
+  line-height: var(--tp-display-02-regular-height);
+  letter-spacing: 0;
+}
+.tp-display-03-regular {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-03-regular-size);
+  font-weight: var(--tp-display-03-regular-weight);
+  line-height: var(--tp-display-03-regular-height);
+  letter-spacing: 0;
+}
+.tp-display-04-regular {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-04-regular-size);
+  font-weight: var(--tp-display-04-regular-weight);
+  line-height: var(--tp-display-04-regular-height);
+  letter-spacing: 0;
+}
+.tp-display-05-regular {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-05-regular-size);
+  font-weight: var(--tp-display-05-regular-weight);
+  line-height: var(--tp-display-05-regular-height);
+  letter-spacing: 0;
+}
+.tp-display-01-medium {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-01-medium-size);
+  font-weight: var(--tp-display-01-medium-weight);
+  line-height: var(--tp-display-01-medium-height);
+  letter-spacing: 0;
+}
+.tp-display-02-medium {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-02-medium-size);
+  font-weight: var(--tp-display-02-medium-weight);
+  line-height: var(--tp-display-02-medium-height);
+  letter-spacing: 0;
+}
+.tp-display-03-medium {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-03-medium-size);
+  font-weight: var(--tp-display-03-medium-weight);
+  line-height: var(--tp-display-03-medium-height);
+  letter-spacing: 0;
+}
+.tp-display-04-medium {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-04-medium-size);
+  font-weight: var(--tp-display-04-medium-weight);
+  line-height: var(--tp-display-04-medium-height);
+  letter-spacing: 0;
+}
+.tp-display-05-medium {
+  font-family: var(--font-roboto);
+  font-size: var(--tp-display-05-medium-size);
+  font-weight: var(--tp-display-05-medium-weight);
+  line-height: var(--tp-display-05-medium-height);
+  letter-spacing: 0;
+}
+
+/* IteroLuminaView: persist 18px font-size for intro heading and body copy (paragraphs only) */
+.itero-lumina-view h3.tp-label-02 {
+  font-size: 18px;
+}
+.itero-lumina-view .itero-lumina-intro > p.tp-body-02 {
+  font-size: 18px;
+}
+
+@font-face {
+  font-family: "Roboto";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/roboto/v47/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbGmT.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Roboto";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/roboto/v47/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbGmT.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Roboto Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/robotomono/v23/L0xuDF4xlVMF-BfR8bXMIhJHg76m0G3kq0Ph.woff2")
+    format("woff2");
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+}
+
+/* Responsive layout for large desktop screens (xl: 1280px+, 2xl: 1536px+) */
+@media (min-width: 1280px) {
+  :root {
+    --page-padding: 24px;
+    --content-max-width: 2400px;
+  }
+}
+@media (min-width: 1536px) {
+  :root {
+    --page-padding: 32px;
+    --content-max-width: 2560px;
+  }
+}
+html {
+  height: 100%;
+  min-height: 100%;
+  width: 100%;
+}
+body {
+  position: fixed; /* iOS: overflow:hidden blocks child scroll; fixed allows scrollable divs to work */
+  inset: 0;
+  position: fixed; /* Required for iOS: overflow:hidden alone blocks child scroll */
+  inset: 0;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font-roboto);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--color-text-primary);
+}
+#root {
+  height: 100%;
+  min-height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Button font reset — browsers ignore inherited font on <button> */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+/* Touch screen support: tap feedback, no delay, minimum touch targets */
+html {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+}
+/* touch-action: manipulation removes 300ms tap delay — but [role="button"] and .cursor-pointer
+   used for table rows BLOCK touch scroll when inside scroll containers. Those get pan-y pan-x
+   override below. For other elements, manipulation is kept. */
+button,
+a[href],
+input[type="checkbox"],
+input[type="radio"],
+select,
+[tabindex]:not([tabindex="-1"]) {
+  touch-action: manipulation;
+}
+/* Minimum touch target (44px per WCAG / Apple HIG) for icon-only or small controls */
+.touch-target-min {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Touch scroll — native momentum. overscroll-behavior: auto = natural bounce like phone feed. */
+[class*="overflow-y-auto"],
+[class*="overflow-x-auto"],
+[class*="overflow-auto"] {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pan-x;
+  overscroll-behavior: auto; /* Natural bounce at edges — feels like native feed */
+  scroll-behavior: auto;
+}
+
+/* Override touch-action only on interactive rows — not on * (aggressive override can cause weird feel) */
+.scrollbar-table [role="button"],
+.scrollbar-table .cursor-pointer,
+.scrollbar-table [role="option"],
+.scrollbar-table [role="listbox"],
+.scrollbar-hidden [role="button"],
+.scrollbar-hidden .cursor-pointer,
+[class*="overflow-y-auto"] [role="button"],
+[class*="overflow-y-auto"] .cursor-pointer,
+[class*="overflow-x-auto"] [role="button"],
+[class*="overflow-x-auto"] .cursor-pointer,
+[class*="overflow-auto"] [role="button"],
+[class*="overflow-auto"] .cursor-pointer {
+  touch-action: pan-y pan-x !important;
+}
+
+/* Tables: prevent text selection/highlight — touch-friendly, rows are clickable */
+.table-no-select,
+.table-no-select * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none; /* iOS: no callout on long-press */
+  -webkit-user-drag: none;     /* prevent drag-to-select */
+}
+
+/* Table scrollbar — native scroll like phone/tablet feed: momentum, rubber-band */
+.scrollbar-table {
+  overflow-x: scroll;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) rgba(0, 0, 0, 0.08);
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pan-x;
+  overscroll-behavior: auto;
+  scroll-behavior: auto;
+  /* Ensure touch scroll works: explicit scroll, no accidental block */
+  overflow-anchor: auto;
+}
+.scrollbar-table::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-table::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+}
+.scrollbar-table::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+.scrollbar-table::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+.scrollbar-table::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+}
+
+/* Hide scrollbar while keeping scroll behavior (e.g. Settings modal content) */
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pan-x;
+  overscroll-behavior: auto;
+  scroll-behavior: auto;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Checkbox — Figma 06.-Scanner-core 20579-1091: active = brand blue, white check, rounded */
+input[type="checkbox"].checkbox-scanner {
+  accent-color: var(--color-background-brand);
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color var(--motion-duration-interact) var(--motion-ease-in-out),
+    border-color var(--motion-duration-interact) var(--motion-ease-in-out),
+    transform var(--motion-duration-press) var(--motion-ease-in-out);
+}
+
+@keyframes search-caret-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.search-caret {
+  animation: search-caret-blink 1s step-end infinite;
+  color: var(--color-text-primary);
+}
+
+/* -------------------------------------------------------------------------
+   Transitions & micro-interactions — Premium UX
+   - Ease-in-out so start and end are smooth (no abrupt stops).
+   - Longer durations so every change is visible and comfortable.
+   ------------------------------------------------------------------------- */
+/* Hover, focus, border/background, filter — smooth and visible */
+.transition-ui {
+  transition-property: background-color, border-color, color, opacity, box-shadow, filter;
+  transition-duration: var(--motion-duration-interact);
+  transition-timing-function: var(--motion-ease-in-out);
+}
+.transition-ui-focus {
+  transition-property: background-color, border-color, color, opacity, box-shadow, filter, outline-width, outline-color;
+  transition-duration: var(--motion-duration-interact);
+  transition-timing-function: var(--motion-ease-in-out);
+}
+/* Press: smooth scale down and up */
+.transition-press {
+  transition: transform var(--motion-duration-press) var(--motion-ease-in-out);
+}
+.active-press:active {
+  transform: scale(0.97);
+}
+
+/* Page enter — subtle, smooth (4px so it’s felt not seen) */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-page-enter {
+  animation: page-enter 450ms var(--motion-ease-out-soft) forwards;
+}
+
+/* Step content cross-fade — smooth transition between wizard steps */
+@keyframes step-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-step-enter {
+  animation: step-fade-in var(--motion-duration-page) var(--motion-ease-out-soft) forwards;
+}
+
+/* Modal — backdrop first, then content (stagger feels pro) */
+@keyframes modal-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modal-content-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* Centered modal: same scale animation but keeps translate(-50%, -50%) for viewport center */
+@keyframes modal-content-enter-centered {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+.animate-modal-backdrop-enter {
+  animation: modal-backdrop-enter 280ms var(--motion-ease-out) both;
+}
+.animate-modal-content-enter {
+  transform-origin: center center;
+  animation: modal-content-enter var(--motion-duration-emphasis) var(--motion-ease-out) 60ms both;
+}
+.animate-modal-content-enter-centered {
+  transform-origin: center center;
+  animation: modal-content-enter-centered var(--motion-duration-emphasis) var(--motion-ease-out) 60ms both;
+}
+
+/* Row expand */
+.transition-expand {
+  transition: max-height var(--motion-duration-emphasis) var(--motion-ease-out),
+    opacity var(--motion-duration-interact) var(--motion-ease-in-out);
+}
+
+/* Form validation: subtle one-cycle shake (4px max), never aggressive — see MOTION-SYSTEM.md */
+@keyframes input-shake-error {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+.animate-input-shake-error {
+  animation: input-shake-error 220ms var(--motion-ease-in-out);
+}
+
+/* Virtual keyboard: slide up from bottom (UX best practice) */
+@keyframes keyboard-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-keyboard-enter {
+  animation: keyboard-slide-up 360ms var(--motion-ease-out-soft) forwards;
+}
+
+/* Settings modal: view-to-view transition (drill-down / back) — main ↔ scan settings */
+@keyframes settings-view-enter {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-settings-view-enter {
+  animation: settings-view-enter var(--motion-duration-emphasis) var(--motion-ease-out-soft) forwards;
+}
+
+/* Settings modal: smooth height/resize when switching views (e.g. main vs Scan Settings) */
+.settings-modal-panel {
+  transition: height var(--motion-duration-emphasis) var(--motion-ease-out-soft),
+    min-height var(--motion-duration-emphasis) var(--motion-ease-out-soft);
+}
+
+/* Settings section tiles: hover lift + active press (desktop pro feel) */
+.settings-tile {
+  transition:
+    transform var(--motion-duration-press) var(--motion-ease-in-out),
+    box-shadow var(--motion-duration-interact) var(--motion-ease-in-out),
+    background-color var(--motion-duration-interact) var(--motion-ease-in-out);
+}
+.settings-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.settings-tile:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Primary button in settings: subtle hover lift (desktop) */
+.settings-btn-primary {
+  transition:
+    transform var(--motion-duration-press) var(--motion-ease-in-out),
+    background-color var(--motion-duration-interact) var(--motion-ease-in-out),
+    box-shadow var(--motion-duration-interact) var(--motion-ease-in-out);
+}
+.settings-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 158, 206, 0.25);
+}
+.settings-btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Upgrade status: subtle circular spinner (restrained, medical UX) */
+@keyframes upgrade-spinner {
+  to { transform: rotate(360deg); }
+}
+.upgrade-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border-subtle);
+  border-top-color: var(--color-border-interactive);
+  border-radius: 50%;
+  animation: upgrade-spinner 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .upgrade-spinner {
+    animation: none;
+    border-top-color: var(--color-border-subtle);
+  }
+}
+
+/* Brightness slider (Figma): blue active track, gray inactive, circular thumb */
+.brightness-slider {
+  --slider-value: 50%;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--color-background-brand) 0%,
+    var(--color-background-brand) var(--slider-value),
+    var(--color-background-accent) var(--slider-value),
+    var(--color-background-accent) 100%
+  );
+  outline: none;
+}
+.brightness-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-background-layer-01);
+  border: 2px solid var(--color-border-subtle);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+.brightness-slider::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-background-layer-01);
+  border: 2px solid var(--color-border-subtle);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+.brightness-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--color-background-brand) 0%,
+    var(--color-background-brand) var(--slider-value),
+    var(--color-background-accent) var(--slider-value),
+    var(--color-background-accent) 100%
+  );
+}
+
+/* Adjusting state: thumb emphasis while dragging */
+.brightness-adjusting .brightness-slider::-webkit-slider-thumb {
+  box-shadow: var(--shadow-card), 0 0 0 2px var(--color-background-brand);
+}
+.brightness-adjusting .brightness-slider::-moz-range-thumb {
+  box-shadow: var(--shadow-card), 0 0 0 2px var(--color-background-brand);
+}
+
+/* Value tooltip above slider thumb: dark bubble with tail, centered on thumb */
+.brightness-value-tooltip,
+.volume-value-tooltip {
+  position: absolute;
+  left: var(--slider-value);
+  transform: translateX(-50%);
+  padding: var(--spacing-02) var(--spacing-03);
+  background: var(--color-text-primary, #1a1a1a);
+  color: white;
+  border-radius: 8px;
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: var(--shadow-card);
+}
+.brightness-value-tooltip::after,
+.volume-value-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--color-text-primary, #1a1a1a);
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transition-ui,
+  .transition-ui-focus,
+  .transition-press {
+    transition-duration: 0.01ms;
+  }
+  .settings-modal-panel {
+    transition-duration: 0.01ms;
+  }
+  .animate-page-enter,
+  .animate-step-enter,
+  .animate-modal-backdrop-enter,
+  .animate-modal-content-enter,
+  .animate-modal-content-enter-centered,
+  .animate-input-shake-error,
+  .animate-settings-view-enter {
+    animation-duration: 0.01ms;
+    animation-delay: 0ms;
+  }
+  .settings-tile:hover,
+  .settings-tile:active {
+    transform: none;
+    box-shadow: none;
+  }
+  .settings-btn-primary:hover,
+  .settings-btn-primary:active {
+    transform: none;
+    box-shadow: none;
+  }
+  .active-press:active {
+    transform: none;
+  }
+}
