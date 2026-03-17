@@ -257,11 +257,11 @@ export default function SendStepContent({
       <div className="flex-1 min-h-0 min-w-0 overflow-auto scrollbar-hidden bg-[var(--color-page-background)]" style={{ paddingBottom: 92 }}>
         <div className="flex flex-col w-full" style={{ padding: 16, gap: 16 }}>
 
-          {/* Section 1: Dropdowns row — Figma 4174:217702 */}
+          {/* Section 1: Dropdowns row — match FixedRestorativeForm: 16px 24px padding, layer-02 dropdowns */}
           <div
             ref={dropdownRef}
             className="bg-[var(--color-background-layer-01)]"
-            style={{ borderRadius: 8, padding: "20px 24px" }}
+            style={{ borderRadius: 8, padding: "16px 24px" }}
           >
             <div className="flex w-full" style={{ gap: 16 }}>
               <DropdownField
@@ -272,6 +272,7 @@ export default function SendStepContent({
                 onChange={(id) => { setTreatmentId(id); setOpenDropdown(null); }}
                 isOpen={openDropdown === "treatment"}
                 onToggle={() => setOpenDropdown(openDropdown === "treatment" ? null : "treatment")}
+                backgroundVariant="layer-02"
               />
               <div className="relative flex flex-col flex-1 min-w-0">
                 <div style={{ paddingBottom: 8 }}>
@@ -288,6 +289,7 @@ export default function SendStepContent({
                   isOpen={openDropdown === "sendto"}
                   onToggle={() => setOpenDropdown(openDropdown === "sendto" ? null : "sendto")}
                   error={sendToError}
+                  backgroundVariant="layer-02"
                 />
               </div>
               <DatePickerField
@@ -309,7 +311,7 @@ export default function SendStepContent({
           >
             <div className="flex flex-col xl:flex-row w-full h-full items-stretch" style={{ gap: 0 }}>
               {/* Left: Jaw diagram + tab bar + legend — Figma 4174:217737: tabs at top in both Tooth Chart and Table View */}
-              <div className="flex flex-col items-center justify-start flex-1 min-w-0" style={{ gap: 24, paddingTop: 0, paddingBottom: 20 }}>
+              <div className="flex flex-col items-center justify-start flex-1 min-w-0" style={{ gap: 16, paddingTop: 0, paddingBottom: 20 }}>
                 {/* Tab bar — at top of section per Figma */}
                 <div className="flex items-center self-start shrink-0" style={{ borderBottom: "1px solid var(--color-border-subtle)", width: "fit-content", height: 60 }}>
                   {(["tooth", "table"] as const).map((tab) => (
@@ -427,7 +429,7 @@ export default function SendStepContent({
               />
 
               {/* Right: TP cards — same structure as FixedRestorativeForm right panel */}
-              <div className="flex flex-col w-full xl:pt-0 xl:w-[480px] xl:shrink-0 min-w-0">
+              <div className="flex flex-col w-full max-w-[774px] xl:pt-0 xl:w-[480px] xl:max-w-none xl:shrink-0 min-w-0">
                 {selectedTeeth.length > 0 ? (
                   <div className="flex flex-col overflow-auto scrollbar-table" style={{ gap: 8, maxHeight: 450 }}>
                     {selectedTeeth.map(([num, category]) => {
@@ -686,6 +688,8 @@ export default function SendStepContent({
                 onChange={(id) => { setModalDoctorId(id); setModalDoctorOpen(false); }}
                 isOpen={modalDoctorOpen}
                 onToggle={() => setModalDoctorOpen((o) => !o)}
+                backgroundVariant="layer-02"
+                hideBorder
               />
 
               {/* Signature canvas + Clear bar */}
@@ -740,8 +744,8 @@ export default function SendStepContent({
                     className={`flex items-center cursor-pointer bg-transparent border-0 appearance-none outline-none transition-ui ${hasSignature ? "opacity-100" : "opacity-40"}`}
                     style={{ gap: 8, padding: "12px 16px", borderRadius: 8, minWidth: 72, height: 64 }}
                   >
-                    <span className="text-[var(--color-icon-secondary)]"><EraseIcon /></span>
-                    <span className={`tp-body-02 ${hasSignature ? "text-text-secondary" : "text-[var(--color-text-disabled,rgba(0,0,0,0.23))]"}`}>Clear</span>
+                    <span className={hasSignature ? "text-text-secondary" : "text-[var(--color-text-disabled,rgba(0,0,0,0.23))]"}><EraseIcon /></span>
+                    <span className={`tp-body-04 ${hasSignature ? "text-text-secondary" : "text-[var(--color-text-disabled,rgba(0,0,0,0.23))]"}`}>Clear</span>
                   </button>
                 </div>
               </div>
