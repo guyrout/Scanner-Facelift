@@ -30,7 +30,6 @@ import {
   SPRITE_H,
   DropdownField,
   DatePickerField,
-  ToggleSwitch,
 } from "./FixedRestorativeForm";
 import jawChartSvg from "../assets/procedures/jaw-tooth-chart.svg";
 import toothSprites from "../assets/procedures/tooth-sprites.svg";
