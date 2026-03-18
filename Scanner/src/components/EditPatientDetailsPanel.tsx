@@ -40,6 +40,7 @@ function Field({
   onChange,
   placeholder,
   required,
+  inputClassName,
 }: {
   id: string;
   label: string;
@@ -47,6 +48,7 @@ function Field({
   onChange: (v: string) => void;
   placeholder?: string;
   required?: boolean;
+  inputClassName?: string;
 }) {
   return (
     <div className="flex flex-col flex-1 min-w-0" style={{ gap: 8 }}>
@@ -60,7 +62,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="tp-body-02 text-text-primary w-full rounded-lg border-0 bg-[var(--color-background-layer-02)] transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 placeholder:text-text-tertiary"
+        className={`tp-body-02 text-text-primary w-full rounded-lg border-0 bg-[var(--color-background-layer-02)] transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 placeholder:text-text-tertiary ${inputClassName ?? ""}`}
         style={{ padding: "16px", minHeight: 60 }}
       />
     </div>
@@ -298,6 +300,7 @@ export default function EditPatientDetailsPanel({
                 value={chartNumber}
                 onChange={setChartNumber}
                 placeholder="Placeholder text"
+                inputClassName="max-w-[861px]"
               />
               <div className="flex-1 min-w-0" aria-hidden />
             </div>

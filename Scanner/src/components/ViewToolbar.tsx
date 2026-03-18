@@ -198,7 +198,7 @@ export default function ViewToolbar({ className, expanded: controlledExpanded, o
 
   return (
     <div
-      className={className ?? ""}
+      className={`flex ${className ?? ""}`.trim()}
       style={{
         padding: 8,
         borderRadius: 8,

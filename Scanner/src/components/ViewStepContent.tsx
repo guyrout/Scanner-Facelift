@@ -277,6 +277,225 @@ function PrepQcHeatmapBar({ step, onStepChange }: { step: number; onStepChange: 
   );
 }
 
+/* Margin line UI — Figma 4023:73770 (toast), 4024:75708 (tool window). Icons from design. */
+/* Icon touch — from design (Icon touch.svg). */
+function IconTouchML({ size = 32 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path
+        d="M20.0024 8H18.003C18.003 6.67392 17.4763 5.40215 16.5389 4.46446C15.6015 3.52678 14.3301 3 13.0044 3C11.6788 3 10.4074 3.52678 9.46995 4.46446C8.53255 5.40215 8.00592 6.67392 8.00592 8H6.00651C6.00651 6.14348 6.74379 4.36301 8.05616 3.05025C9.36853 1.7375 11.1485 1 13.0044 1C14.8604 1 16.6404 1.7375 17.9527 3.05025C19.2651 4.36301 20.0024 6.14348 20.0024 8Z"
+        fill="currentColor"
+        fillOpacity={0.63}
+      />
+      <path
+        d="M25.0009 15C24.4844 15.0019 23.9775 15.1398 23.5313 15.4C23.2618 14.9724 22.8886 14.6198 22.4464 14.3751C22.0043 14.1303 21.5074 14.0013 21.0021 14C20.4856 14.0019 19.9787 14.1398 19.5325 14.4C19.1688 13.8275 18.6219 13.3952 17.981 13.1737C17.3401 12.9521 16.643 12.9543 16.0036 13.18V8C16.0036 7.20435 15.6876 6.44129 15.1251 5.87868C14.5627 5.31607 13.7999 5 13.0044 5C12.209 5 11.4462 5.31607 10.8837 5.87868C10.3213 6.44129 10.0053 7.20435 10.0053 8V19.1L7.77599 17.58C7.26494 17.1993 6.64371 16.9957 6.00651 17C5.41167 16.9985 4.82982 17.174 4.33495 17.5042C3.84008 17.8344 3.45455 18.3043 3.22736 18.8542C3.00017 19.4041 2.94159 20.0092 3.05908 20.5925C3.17656 21.1758 3.4648 21.711 3.88714 22.13L11.8848 29.43C13.017 30.4437 14.484 31.0029 16.0036 31H21.0021C22.858 31 24.638 30.2625 25.9504 28.9497C27.2627 27.637 28 25.8565 28 24V18C28 17.2043 27.684 16.4413 27.1216 15.8787C26.5591 15.3161 25.7963 15 25.0009 15ZM26.0006 24C26.0006 25.3261 25.474 26.5978 24.5366 27.5355C23.5992 28.4732 22.3278 29 21.0021 29H16.0036C14.9931 29.0122 14.0125 28.6568 13.2444 28L5.29673 20.7C5.11204 20.5137 5.00792 20.2623 5.00681 20C5.00681 19.8143 5.05851 19.6322 5.15612 19.4743C5.25372 19.3163 5.39338 19.1886 5.55943 19.1056C5.72549 19.0225 5.91139 18.9874 6.09629 19.004C6.2812 19.0207 6.45781 19.0886 6.60634 19.2L12.0047 22.9V8C12.0047 7.73478 12.1101 7.48043 12.2975 7.29289C12.485 7.10535 12.7393 7 13.0044 7C13.2696 7 13.5239 7.10535 13.7113 7.29289C13.8988 7.48043 14.0041 7.73478 14.0041 8V19H16.0036V16C16.0036 15.7348 16.1089 15.4804 16.2964 15.2929C16.4838 15.1054 16.7381 15 17.0033 15C17.2684 15 17.5227 15.1054 17.7102 15.2929C17.8976 15.4804 18.003 15.7348 18.003 16V19H20.0024V17C20.0024 16.7348 20.1077 16.4804 20.2952 16.2929C20.4827 16.1054 20.7369 16 21.0021 16C21.2672 16 21.5215 16.1054 21.709 16.2929C21.8965 16.4804 22.0018 16.7348 22.0018 17V19H24.0012V18C24.0012 17.7348 24.1065 17.4804 24.294 17.2929C24.4815 17.1054 24.7358 17 25.0009 17C25.266 17 25.5203 17.1054 25.7078 17.2929C25.8953 17.4804 26.0006 17.7348 26.0006 18V24Z"
+        fill="currentColor"
+        fillOpacity={0.63}
+      />
+    </svg>
+  );
+}
+function IconCheckmarkEmpty() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path d="M8.125 15.0009L2.5 9.37594L3.38375 8.49219L8.125 13.2328L16.6163 4.74219L17.5 5.62594L8.125 15.0009Z" fill="currentColor" />
+    </svg>
+  );
+}
+function IconChevronRightML() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path d="M22.0016 16L12.0016 26L10.6016 24.6L19.2016 16L10.6016 7.4L12.0016 6L22.0016 16Z" fill="currentColor" />
+    </svg>
+  );
+}
+function IconDeleteML() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path d="M8.75 7.5H7.5V15H8.75V7.5Z" fill="currentColor" />
+      <path d="M12.5 7.5H11.25V15H12.5V7.5Z" fill="currentColor" />
+      <path d="M2.5 3.75V5H3.75V17.5C3.75 17.8315 3.8817 18.1495 4.11612 18.3839C4.35054 18.6183 4.66848 18.75 5 18.75H15C15.3315 18.75 15.6495 18.6183 15.8839 18.3839C16.1183 18.1495 16.25 17.8315 16.25 17.5V5H17.5V3.75H2.5ZM5 17.5V5H15V17.5H5Z" fill="currentColor" />
+      <path d="M12.5 1.25H7.5V2.5H12.5V1.25Z" fill="currentColor" />
+    </svg>
+  );
+}
+function IconDrawML() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path d="M11.9625 17.4997C11.5381 17.5014 11.1229 17.3767 10.7696 17.1416C10.4164 16.9064 10.1411 16.5715 9.97891 16.1793C9.8167 15.7872 9.77487 15.3556 9.85877 14.9397C9.94266 14.5237 10.1485 14.1421 10.45 13.8435L13.6625 10.6247C13.7572 10.5458 13.8344 10.4479 13.8892 10.3375C13.944 10.227 13.9751 10.1064 13.9807 9.98319C13.9863 9.86002 13.9661 9.73704 13.9215 9.6221C13.8769 9.50715 13.8088 9.40276 13.7217 9.31557C13.6345 9.22839 13.5301 9.16033 13.4151 9.11573C13.3002 9.07113 13.1772 9.05097 13.054 9.05654C12.9309 9.0621 12.8102 9.09327 12.6998 9.14805C12.5893 9.20284 12.4915 9.28004 12.4125 9.37473L8.125 13.656C7.71756 14.0475 7.17443 14.2661 6.60938 14.2661C6.04432 14.2661 5.50119 14.0475 5.09375 13.656C4.69377 13.2542 4.46921 12.7104 4.46921 12.1435C4.46921 11.5766 4.69377 11.0327 5.09375 10.631L10.4562 5.26848C10.5509 5.18951 10.6281 5.09168 10.6829 4.98123C10.7377 4.87077 10.7689 4.75011 10.7744 4.62694C10.78 4.50377 10.7598 4.38079 10.7152 4.26585C10.6706 4.1509 10.6026 4.04651 10.5154 3.95932C10.4282 3.87214 10.3238 3.80408 10.2089 3.75948C10.0939 3.71488 9.97096 3.69472 9.84779 3.70029C9.72462 3.70585 9.60396 3.73702 9.4935 3.79181C9.38304 3.84659 9.28521 3.92379 9.20625 4.01848L4.00625 9.18723L3.125 8.31223L8.30625 3.12473C8.71437 2.7553 9.24897 2.55703 9.79929 2.571C10.3496 2.58497 10.8735 2.81011 11.2623 3.19977C11.6512 3.58943 11.8752 4.11374 11.8881 4.66408C11.9009 5.21443 11.7015 5.74862 11.3312 6.15598L5.975 11.5122C5.81012 11.6785 5.7176 11.9031 5.7176 12.1372C5.7176 12.3714 5.81012 12.596 5.975 12.7622C6.14351 12.9227 6.3673 13.0122 6.6 13.0122C6.8327 13.0122 7.05649 12.9227 7.225 12.7622L11.5125 8.47473C11.7073 8.2595 11.9438 8.08608 12.2077 7.965C12.4715 7.84391 12.7572 7.77767 13.0474 7.77031C13.3376 7.76294 13.6263 7.81459 13.896 7.92214C14.1656 8.02968 14.4106 8.19088 14.6161 8.39594C14.8216 8.60101 14.9833 8.84568 15.0914 9.11511C15.1995 9.38454 15.2518 9.67312 15.245 9.96334C15.2382 10.2536 15.1726 10.5394 15.052 10.8035C14.9315 11.0676 14.7586 11.3045 14.5438 11.4997L11.325 14.7185C11.1831 14.8886 11.11 15.1056 11.12 15.3269C11.13 15.5482 11.2224 15.7578 11.379 15.9144C11.5357 16.0711 11.7452 16.1635 11.9665 16.1735C12.1878 16.1835 12.4049 16.1104 12.575 15.9685L15.35 13.1997L16.25 14.0997L13.475 16.8747C13.2771 17.0743 13.0414 17.2323 12.7817 17.3396C12.522 17.447 12.2435 17.5014 11.9625 17.4997Z" fill="currentColor" />
+    </svg>
+  );
+}
+function IconChevronLeftML() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path d="M10 16L20 6L21.4 7.4L12.8 16L21.4 24.6L20 26L10 16Z" fill="currentColor" />
+    </svg>
+  );
+}
+function IconCloseEmptyML() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path d="M24 9.4L22.6 8L16 14.6L9.4 8L8 9.4L14.6 16L8 22.6L9.4 24L16 17.4L22.6 24L24 22.6L17.4 16L24 9.4Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+/* Toast — Figma 4023:73770. Depth 01: 0 2px 12px rgba(0,0,0,0.13). Body/tp-body-02: 18px, 28px, Regular. */
+function MarginLineToast({ toothLabel = "17" }: { toothLabel?: string }) {
+  return (
+    <div
+      className="flex items-start overflow-hidden bg-[var(--color-background-elevated)] text-[var(--color-text-primary)]"
+      style={{
+        borderRadius: 8,
+        padding: 16,
+        gap: 16,
+        boxShadow: "0px 2px 12px 0px rgba(0,0,0,0.13)",
+        width: "fit-content",
+      }}
+    >
+      <div
+        className="flex items-start overflow-hidden shrink-0"
+        style={{ gap: 8, width: "fit-content" }}
+      >
+        <div className="relative shrink-0 overflow-hidden" style={{ width: 32, height: 32 }}>
+          <IconTouchML size={32} />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
+          <p className="tp-body-02 h-fit text-[var(--color-text-primary)] w-full whitespace-nowrap">
+            Tap on{" "}
+            <span className="font-medium underline decoration-solid [text-decoration-skip-ink:none]">
+              tooth {toothLabel}
+            </span>{" "}
+            to detect the margin line.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Margin Line window — Figma 4024:75708. Border: border-subtle rgba(0,0,0,0.09). px 4px, rounded 8px, 344px. */
+const SPACING_02 = 8;
+const SPACING_03 = 12;
+const MEDIUM_RADIUS = 8;
+const SMALL_RADIUS = 4;
+const ITEM_HEIGHT = 60;
+
+function MarginLinePanel({
+  onClose,
+  toothLabel = "17",
+  onToothPrev,
+  onToothNext,
+  onDetectMargin,
+  onMarkManually,
+  onUndo,
+  onClear,
+}: {
+  onClose: () => void;
+  toothLabel?: string;
+  onToothPrev?: () => void;
+  onToothNext?: () => void;
+  onDetectMargin?: () => void;
+  onMarkManually?: () => void;
+  onUndo?: () => void;
+  onClear?: () => void;
+}) {
+  const itemStyle = {
+    padding: SPACING_03,
+    gap: SPACING_02,
+    borderRadius: MEDIUM_RADIUS,
+  };
+  const rowClass =
+    "flex flex-1 items-center min-h-0 min-w-0 border-0 cursor-pointer appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)] text-left w-full";
+  return (
+    <div
+      className="flex flex-col overflow-hidden bg-[var(--color-background-elevated)] border border-solid rounded-[8px]"
+      style={{
+        width: 344,
+        paddingLeft: 4,
+        paddingRight: 4,
+        borderColor: "var(--color-border-subtle)",
+      }}
+    >
+      {/* Item 01 — Figma 4024:76170. tp-headling-03: 20px Medium, line-height 32px. */}
+      <div className="flex flex-col justify-center overflow-hidden shrink-0" style={{ height: ITEM_HEIGHT, width: "100%" }}>
+        <div className={`flex items-center ${rowClass}`} style={itemStyle}>
+          <span className="tp-headling-03 text-[var(--color-text-primary)] flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+            Margin line
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-[4px] border-0 bg-transparent p-0 outline-none transition-ui hover:opacity-70"
+            style={{ width: 32, height: 32 }}
+            aria-label="Close margin line"
+          >
+            <IconCloseEmptyML />
+          </button>
+        </div>
+      </div>
+      {/* Item 02 — Figma 4024:75710. Column h-60: blue row (flex-1 = 52px) + divider h-8, border at top 3px. */}
+      <div className="flex shrink-0 flex-col overflow-hidden" style={{ height: ITEM_HEIGHT, width: "100%" }}>
+        <div
+          className="flex flex-1 min-h-0 items-center min-w-0 rounded-[8px]"
+          style={{
+            ...itemStyle,
+            backgroundColor: "var(--color-background-highlight-blue)",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onToothPrev}
+            className="flex shrink-0 cursor-pointer items-center justify-center overflow-hidden border-0 bg-transparent p-0 outline-none transition-ui hover:opacity-70 text-[var(--color-icon-primary)]"
+            style={{ width: 32, height: 32 }}
+            aria-label="Previous tooth"
+          >
+            <IconChevronLeftML />
+          </button>
+          <span className="tp-body-02 flex-1 overflow-hidden text-center text-ellipsis whitespace-nowrap text-[var(--color-text-primary)] font-medium">
+            Tooth {toothLabel}
+          </span>
+          <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-[4px]" style={{ width: 32, height: 32 }}>
+            <button
+              type="button"
+              onClick={onToothNext}
+              className="flex size-full cursor-pointer items-center justify-center border-0 bg-transparent p-0 outline-none transition-ui hover:opacity-70 text-[var(--color-icon-primary)]"
+              aria-label="Next tooth"
+            >
+              <IconChevronRightML />
+            </button>
+          </div>
+        </div>
+        <div className="relative h-[8px] w-full shrink-0 overflow-hidden" aria-hidden>
+          <div
+            className="absolute left-0 right-0 border-t border-solid border-[var(--color-border-subtle)]"
+            style={{ top: 3, height: 1 }}
+          />
+        </div>
+      </div>
+      {/* Items 03–06 — Figma 4024:75711–75714. Icon 20px, tp-body-02: 18px Regular, line-height 28px. */}
+      {[
+        { label: "Detect margin", icon: <IconCheckmarkEmpty />, onClick: onDetectMargin },
+        { label: "Mark manually", icon: <IconDrawML />, onClick: onMarkManually },
+        { label: "Undo", icon: <UndoIcon />, onClick: onUndo },
+        { label: "Clear", icon: <IconDeleteML />, onClick: onClear },
+      ].map(({ label, icon, onClick }) => (
+        <div key={label} className="flex shrink-0 flex-col justify-center overflow-hidden" style={{ height: ITEM_HEIGHT, width: "100%" }}>
+          <button type="button" className={`flex items-center ${rowClass}`} style={itemStyle} onClick={onClick}>
+            <span className="flex shrink-0 text-[var(--color-icon-primary)]" style={{ width: 20, height: 20 }}>
+              {icon}
+            </span>
+            <span className="tp-body-02 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[var(--color-text-primary)]">
+              {label}
+            </span>
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PrepQcInfoToast({ onClose }: { onClose: () => void }) {
   return (
     <div
@@ -368,6 +587,7 @@ export default function ViewStepContent({
   const [showPrepQcToast, setShowPrepQcToast] = useState(false);
   const [prepQcStep, setPrepQcStep] = useState(0.1);
   const [activeTools, setActiveTools] = useState<Set<ViewToolId>>(new Set());
+  const [marginLineTooth, setMarginLineTooth] = useState("17");
 
   const [isPostProcessing, setIsPostProcessing] = useState(comingFromScan);
   const [postProcessProgress, setPostProcessProgress] = useState(0);
@@ -482,6 +702,21 @@ export default function ViewStepContent({
         </div>
       )}
 
+      {/* Bottom-left: Margin line tool window — Figma 4024:75708 */}
+      {!isPostProcessing && activeTools.has("margin-line") && (
+        <div
+          className="absolute z-20"
+          style={{ bottom: 12, left: 20 }}
+        >
+          <MarginLinePanel
+            toothLabel={marginLineTooth}
+            onClose={() => setActiveTools((prev) => { const next = new Set(prev); next.delete("margin-line"); return next; })}
+            onToothPrev={() => setMarginLineTooth((t) => (Number(t) > 1 ? String(Number(t) - 1) : t))}
+            onToothNext={() => setMarginLineTooth((t) => (Number(t) < 32 ? String(Number(t) + 1) : t))}
+          />
+        </div>
+      )}
+
       {/* Bottom-center: Refresh/reset trim button */}
       {!isPostProcessing && showTrimMenu && (
         <div className="absolute z-20 left-1/2 -translate-x-1/2" style={{ bottom: 20 }}>
@@ -515,9 +750,19 @@ export default function ViewStepContent({
         </div>
       )}
 
+      {/* Center-top: Margin line toast — Figma 4023:73770 */}
+      {!isPostProcessing && activeTools.has("margin-line") && (
+        <div
+          className="absolute z-20 left-1/2 -translate-x-1/2"
+          style={{ top: 12 }}
+        >
+          <MarginLineToast toothLabel={marginLineTooth} />
+        </div>
+      )}
+
       {/* Right: floating toolbar + toast column */}
       <div
-        className="absolute flex flex-col items-end z-20"
+        className="absolute flex flex-row items-center justify-end w-fit z-20"
         style={{ top: 12, right: 15, gap: 8 }}
       >
         <ViewToolbar
