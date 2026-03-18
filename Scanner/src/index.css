@@ -922,7 +922,7 @@ input[type="checkbox"].checkbox-scanner {
   animation: modal-content-enter-centered var(--motion-duration-emphasis) var(--motion-ease-out) 60ms both;
 }
 
-/* Edit patient panel: reveal from bottom edge of patient header (scale down from top) */
+/* Edit patient panel: reveal from bottom edge of patient header (scale from top) */
 @keyframes edit-panel-enter {
   from {
     opacity: 0;
@@ -933,9 +933,45 @@ input[type="checkbox"].checkbox-scanner {
     transform: scaleY(1);
   }
 }
+@keyframes edit-panel-exit {
+  from {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
 .animate-edit-panel-enter {
   transform-origin: top center;
   animation: edit-panel-enter 320ms var(--motion-ease-out) 50ms both;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+.animate-edit-panel-exit {
+  transform-origin: top center;
+  animation: edit-panel-exit 320ms var(--motion-ease-in-out) both;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+@keyframes edit-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes edit-backdrop-exit {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.animate-edit-backdrop-enter {
+  animation: edit-backdrop-enter 320ms var(--motion-ease-out) 50ms both;
+  will-change: opacity;
+  backface-visibility: hidden;
+}
+.animate-edit-backdrop-exit {
+  animation: edit-backdrop-exit 320ms var(--motion-ease-in-out) both;
+  will-change: opacity;
+  backface-visibility: hidden;
 }
 
 /* Row expand */
@@ -1143,6 +1179,9 @@ input[type="checkbox"].checkbox-scanner {
   .animate-modal-content-enter,
   .animate-modal-content-enter-centered,
   .animate-edit-panel-enter,
+  .animate-edit-panel-exit,
+  .animate-edit-backdrop-enter,
+  .animate-edit-backdrop-exit,
   .animate-input-shake-error,
   .animate-settings-view-enter {
     animation-duration: 0.01ms;

@@ -6,6 +6,7 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
+import { CheckIcon } from "./Icons";
 
 export interface EditPatientDetailsPanelProps {
   isOpen: boolean;
@@ -83,6 +84,24 @@ export default function EditPatientDetailsPanel({
   const [dob, setDob] = React.useState(dateOfBirth);
   const [chartNumber, setChartNumber] = React.useState(patientId);
   const [genderOpen, setGenderOpen] = React.useState(false);
+  const [isExiting, setIsExiting] = React.useState(false);
+  const prevOpenRef = React.useRef(isOpen);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const backdropRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (prevOpenRef.current && !isOpen) {
+      setIsExiting(true);
+    }
+    prevOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  const handleBackdropAnimationEnd = React.useCallback((e: React.AnimationEvent<HTMLDivElement>) => {
+    if (!isExiting || e.target !== backdropRef.current) return;
+    if (e.animationName.includes("edit-backdrop-exit")) {
+      requestAnimationFrame(() => setIsExiting(false));
+    }
+  }, [isExiting]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -127,23 +146,26 @@ export default function EditPatientDetailsPanel({
     setChartNumber("");
   };
 
-  if (!isOpen) return null;
+  if (!isOpen && !isExiting) return null;
 
   return createPortal(
     <>
-      {/* Overlay starts below scan header + patient header (77 + 164 = 241px) */}
+      {/* Overlay: same timing as panel (320ms + 50ms delay on enter); unmount when backdrop exit finishes */}
       <div
-        className="fixed left-0 right-0 bottom-0 animate-modal-backdrop-enter"
-        style={{ top: 241, backgroundColor: "var(--color-background-overlay)", zIndex: 9998 }}
-        onClick={onClose}
+        ref={backdropRef}
+        className={`fixed left-0 right-0 bottom-0 ${isExiting ? "animate-edit-backdrop-exit" : "animate-edit-backdrop-enter"}`}
+        style={{ top: 241, backgroundColor: "var(--color-background-overlay)", zIndex: 9998, ...(isExiting ? { pointerEvents: "none" as const } : {}) }}
+        onAnimationEnd={handleBackdropAnimationEnd}
+        onClick={isExiting ? undefined : onClose}
         aria-hidden
       />
-      {/* Panel — full width, directly below patient header, content height with max, rounded bottom 8px */}
+      {/* Panel — full width, directly below patient header; exit animates scaleY(1) → scaleY(0) from top */}
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Edit patient details"
-        className="fixed left-0 right-0 flex flex-col bg-[var(--color-background-layer-01)] animate-edit-panel-enter overflow-hidden"
+        className={`fixed left-0 right-0 flex flex-col bg-[var(--color-background-layer-01)] overflow-hidden ${isExiting ? "animate-edit-panel-exit" : "animate-edit-panel-enter"}`}
         style={{
           top: 241,
           maxHeight: "calc(100vh - 241px)",
@@ -179,8 +201,8 @@ export default function EditPatientDetailsPanel({
           </div>
         </div>
 
-        {/* Form — Figma: gap 16 between rows, gap 16 between fields in row */}
-        <div className="flex flex-col flex-1 min-h-0 overflow-auto" style={{ gap: 20 }}>
+        {/* Form — gap 16 between rows; horizontal padding so focus rings (ring+offset) aren't clipped by overflow */}
+        <div className="flex flex-col flex-1 min-h-0 overflow-auto" style={{ gap: 20, paddingLeft: 6, paddingRight: 6 }}>
           <div className="flex flex-col shrink-0" style={{ gap: 16 }}>
             <div className="flex gap-4 w-full">
               <Field
@@ -210,36 +232,53 @@ export default function EditPatientDetailsPanel({
                     onClick={() => setGenderOpen((o) => !o)}
                     aria-expanded={genderOpen}
                     aria-haspopup="listbox"
-                    className="tp-body-02 flex items-center justify-between w-full rounded-lg border-0 bg-[var(--color-background-layer-02)] text-left transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
-                    style={{ padding: "16px", minHeight: 60 }}
+                    aria-label="Gender at birth"
+                    className="tp-body-02 flex items-center justify-between w-full rounded-lg border bg-[var(--color-background-layer-02)] text-left transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 hover:bg-[var(--color-background-layer-hovered)]"
+                    style={{
+                      padding: "16px",
+                      minHeight: 60,
+                      borderColor: genderOpen ? "var(--color-border-interactive)" : "var(--color-border-subtle)",
+                    }}
                   >
                     <span className={genderVal ? "text-text-primary" : "text-text-tertiary"}>
                       {GENDER_OPTIONS.find((o) => o.label === genderVal)?.label ?? "Select"}
                     </span>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden className={`shrink-0 transition-transform ${genderOpen ? "rotate-180" : ""}`}>
                       <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
                   {genderOpen && (
                     <ul
                       role="listbox"
+                      aria-label="Gender at birth"
                       className="absolute left-0 right-0 top-full z-20 mt-1 flex flex-col overflow-auto rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle"
                       style={{ boxShadow: "var(--shadow-card)" }}
                     >
-                      {GENDER_OPTIONS.map((opt) => (
-                        <li key={opt.id} role="option">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setGenderVal(opt.label);
-                              setGenderOpen(false);
-                            }}
-                            className="tp-body-02 flex w-full items-center gap-3 text-left px-4 py-3 transition-ui hover:bg-[var(--color-background-layer-hovered)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-border-focus)]"
-                          >
-                            {opt.label}
-                          </button>
-                        </li>
-                      ))}
+                      {GENDER_OPTIONS.map((opt) => {
+                        const selected = opt.label === genderVal;
+                        return (
+                          <li key={opt.id} role="option" aria-selected={selected}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setGenderVal(opt.label);
+                                setGenderOpen(false);
+                              }}
+                              className={`tp-body-02 flex w-full items-center gap-3 text-left px-4 py-3 transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-border-focus)] ${
+                                selected ? "bg-[var(--color-background-layer-02)]" : "hover:bg-[var(--color-background-layer-hovered)]"
+                              }`}
+                              style={{ height: 60 }}
+                            >
+                              {selected ? (
+                                <CheckIcon size={24} color="var(--color-icon-primary)" className="shrink-0" />
+                              ) : (
+                                <span className="w-6 shrink-0" aria-hidden />
+                              )}
+                              <span className="truncate">{opt.label}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
