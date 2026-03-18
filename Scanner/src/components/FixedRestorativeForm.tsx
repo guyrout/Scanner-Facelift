@@ -1050,7 +1050,7 @@ export default function FixedRestorativeForm({
               const rt = RESTORATION_TYPES.find(r => r.label === category);
               const detail = getToothDetail(editingTooth);
               return (
-                <div ref={editPanelRef} className="flex flex-col h-full" style={{ gap: 12 }}>
+                <div ref={editPanelRef} className="flex flex-col h-full w-full" style={{ gap: 12 }}>
                   {/* Header: badge + title + edit icon */}
                   <div className="flex flex-col" style={{ gap: 12 }}>
                     <div className="flex flex-col" style={{ gap: 8 }}>
@@ -1086,7 +1086,7 @@ export default function FixedRestorativeForm({
                     <div style={{ height: 1, backgroundColor: "var(--color-border-subtle)" }} />
                   </div>
 
-                  {/* Dropdowns */}
+                  {/* Dropdowns — same background and stroke as Send to dropdown (layer-02); portal so list isn't clipped by overflow-hidden */}
                   <DropdownField
                     id={`edit-spec-${editingTooth}`}
                     value={detail.specification}
@@ -1094,6 +1094,8 @@ export default function FixedRestorativeForm({
                     onChange={(id) => { updateToothDetail(editingTooth, "specification", id); setOpenEditDropdown(null); }}
                     isOpen={openEditDropdown === "spec"}
                     onToggle={() => setOpenEditDropdown(openEditDropdown === "spec" ? null : "spec")}
+                    backgroundVariant="layer-02"
+                    listZIndex={10001}
                   />
                   <DropdownField
                     id={`edit-material-${editingTooth}`}
@@ -1102,6 +1104,8 @@ export default function FixedRestorativeForm({
                     onChange={(id) => { updateToothDetail(editingTooth, "material", id); setOpenEditDropdown(null); }}
                     isOpen={openEditDropdown === "material"}
                     onToggle={() => setOpenEditDropdown(openEditDropdown === "material" ? null : "material")}
+                    backgroundVariant="layer-02"
+                    listZIndex={10001}
                   />
                   <DropdownField
                     id={`edit-shade-${editingTooth}`}
@@ -1110,6 +1114,8 @@ export default function FixedRestorativeForm({
                     onChange={(id) => { updateToothDetail(editingTooth, "shadeSystem", id); setOpenEditDropdown(null); }}
                     isOpen={openEditDropdown === "shade"}
                     onToggle={() => setOpenEditDropdown(openEditDropdown === "shade" ? null : "shade")}
+                    backgroundVariant="layer-02"
+                    listZIndex={10001}
                   />
                   <DropdownField
                     id={`edit-body-${editingTooth}`}
@@ -1118,6 +1124,8 @@ export default function FixedRestorativeForm({
                     onChange={(id) => { updateToothDetail(editingTooth, "body", id); setOpenEditDropdown(null); }}
                     isOpen={openEditDropdown === "body"}
                     onToggle={() => setOpenEditDropdown(openEditDropdown === "body" ? null : "body")}
+                    backgroundVariant="layer-02"
+                    listZIndex={10001}
                   />
 
                   {/* + Additional info link */}
