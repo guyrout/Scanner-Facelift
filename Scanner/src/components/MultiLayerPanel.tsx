@@ -23,12 +23,9 @@ interface MultiLayerPanelProps {
 }
 
 const PANEL_WIDTH = 352;
-const HEADER_PADDING_V = 8;
 const HEADER_PADDING_H = 16;
 const CARD_PADDING = 16;
-const CARD_GAP = 16;
 const SLIDER_GAP = 12;
-const RADIUS = 8;
 
 function OpacitySlider({
   value,
