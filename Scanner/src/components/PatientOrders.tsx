@@ -210,7 +210,7 @@ export default function PatientOrders({ patient, onBack, onOpenSettings }: Patie
 
       <section
         className="flex items-center justify-center w-full bg-surface shrink-0 border-b border-border-subtle overflow-clip"
-        style={{ padding: "12px 40px", height: 138 }}
+        style={{ padding: "12px 40px", height: 164 }}
         aria-label="Patient information"
       >
         <div className="flex items-center w-full" style={{ height: 140, gap: 16 }}>
