@@ -253,7 +253,7 @@ export default function ViewToolbar({ className, expanded: controlledExpanded, o
                 </span>
                 {expanded && (
                   <span
-                    className="tp-body-01"
+                    className="tp-body-01 font-medium"
                     style={{
                       color: isActive
                         ? "var(--color-border-interactive)"
