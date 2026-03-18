@@ -9,6 +9,7 @@
 import { useState, useRef, useCallback } from "react";
 import ScanFlowHeader, { type ScanWizardStep } from "./ScanFlowHeader";
 import ScanFlowPatientHeader from "./ScanFlowPatientHeader";
+import EditPatientDetailsPanel from "./EditPatientDetailsPanel";
 import ProcedureTypeSelector, { type ProcedureType } from "./ProcedureTypeSelector";
 import FixedRestorativeForm, { type ToothDetail, type ToggleState } from "./FixedRestorativeForm";
 import ScanStepContent from "./ScanStepContent";
@@ -21,7 +22,7 @@ export interface ScanFlowPageProps {
   onOpenSettings?: () => void;
 }
 
-const PLACEHOLDER_PATIENT = {
+const INITIAL_PATIENT = {
   patientName: "Mina Young",
   patientId: "14129123",
   dateOfBirth: "09/20/2000",
@@ -36,6 +37,8 @@ export default function ScanFlowPage({ onBack, onOpenSettings }: ScanFlowPagePro
   const [selectedProcedure, setSelectedProcedure] = useState<ProcedureType | null>(null);
   const [showProcedureForm, setShowProcedureForm] = useState(false);
   const [toolbarExpanded, setToolbarExpanded] = useState(false);
+  const [editPatientOpen, setEditPatientOpen] = useState(false);
+  const [patient, setPatient] = useState(INITIAL_PATIENT);
 
   const cameraStateRef = useRef<CameraState>({
     radius: 4, phi: Math.PI / 2.2, theta: 0,
@@ -70,26 +73,32 @@ export default function ScanFlowPage({ onBack, onOpenSettings }: ScanFlowPagePro
 
   return (
     <div className="scan-flow flex flex-col w-full h-full min-h-0 overflow-hidden bg-[var(--color-background-layer-01)]">
-      <ScanFlowHeader
-        currentStep={currentStep}
-        onStepClick={handleStepChange}
-        onInfoClick={onBack}
-        onSettingsClick={onOpenSettings}
-      />
+      <div className={editPatientOpen ? "relative z-[10000]" : undefined}>
+        <ScanFlowHeader
+          currentStep={currentStep}
+          onStepClick={handleStepChange}
+          onInfoClick={onBack}
+          onSettingsClick={onOpenSettings}
+        />
+      </div>
 
       {/* Keyed wrapper: React unmounts/remounts on step change → triggers fade-in */}
       <div key={currentStep} className="animate-step-enter flex flex-col flex-1 min-h-0 min-w-0">
         {currentStep === "info" && (
           <>
-            <ScanFlowPatientHeader
-              patientName={PLACEHOLDER_PATIENT.patientName}
-              patientId={PLACEHOLDER_PATIENT.patientId}
-              dateOfBirth={PLACEHOLDER_PATIENT.dateOfBirth}
-              gender={PLACEHOLDER_PATIENT.gender}
-              lastScan={PLACEHOLDER_PATIENT.lastScan}
-              treatedBy={PLACEHOLDER_PATIENT.treatedBy}
-              onEditClick={() => {}}
+            <div className={editPatientOpen ? "relative z-[10000]" : undefined}>
+              <ScanFlowPatientHeader
+              patientName={patient.patientName}
+              patientId={patient.patientId}
+              dateOfBirth={patient.dateOfBirth}
+              gender={patient.gender}
+              lastScan={patient.lastScan}
+              treatedBy={patient.treatedBy}
+              isEditOpen={editPatientOpen}
+              onEditClick={() => setEditPatientOpen(true)}
+              onCloseEdit={() => setEditPatientOpen(false)}
             />
+            </div>
             <div className="flex-1 min-h-0 min-w-0 overflow-auto scrollbar-hidden bg-[var(--color-page-background)]">
               <div className="flex flex-col" style={{ padding: 16, minHeight: "100%" }}>
                 {showProcedureForm && selectedProcedure === "fixed-restorative" ? (
@@ -136,15 +145,19 @@ export default function ScanFlowPage({ onBack, onOpenSettings }: ScanFlowPagePro
         )}
         {currentStep === "send" && (
           <>
-            <ScanFlowPatientHeader
-              patientName={PLACEHOLDER_PATIENT.patientName}
-              patientId={PLACEHOLDER_PATIENT.patientId}
-              dateOfBirth={PLACEHOLDER_PATIENT.dateOfBirth}
-              gender={PLACEHOLDER_PATIENT.gender}
-              lastScan={PLACEHOLDER_PATIENT.lastScan}
-              treatedBy={PLACEHOLDER_PATIENT.treatedBy}
-              onEditClick={() => {}}
-            />
+            <div className={editPatientOpen ? "relative z-[10000]" : undefined}>
+              <ScanFlowPatientHeader
+                patientName={patient.patientName}
+                patientId={patient.patientId}
+                dateOfBirth={patient.dateOfBirth}
+                gender={patient.gender}
+                lastScan={patient.lastScan}
+                treatedBy={patient.treatedBy}
+                isEditOpen={editPatientOpen}
+                onEditClick={() => setEditPatientOpen(true)}
+                onCloseEdit={() => setEditPatientOpen(false)}
+              />
+            </div>
             <SendStepContent
               treatmentId={treatmentId}
               setTreatmentId={setTreatmentId}
@@ -162,6 +175,18 @@ export default function ScanFlowPage({ onBack, onOpenSettings }: ScanFlowPagePro
           </>
         )}
       </div>
+
+      <EditPatientDetailsPanel
+        isOpen={editPatientOpen}
+        onClose={() => setEditPatientOpen(false)}
+        patientName={patient.patientName}
+        patientId={patient.patientId}
+        dateOfBirth={patient.dateOfBirth}
+        gender={patient.gender}
+        treatedBy={patient.treatedBy}
+        lastScan={patient.lastScan}
+        onSave={(data) => setPatient(data)}
+      />
     </div>
   );
 }

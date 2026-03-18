@@ -13,7 +13,7 @@
  */
 
 import Avatar from "./Avatar";
-import { PencilIcon } from "./Icons";
+import { CloseIcon, PencilIcon } from "./Icons";
 
 function IdCardIcon() {
   return (
@@ -47,7 +47,10 @@ export interface ScanFlowPatientHeaderProps {
   treatedBy: string;
   lastScan?: string;
   avatarUrl?: string;
+  /** When true, show X (close) instead of edit pencil; click closes the edit panel */
+  isEditOpen?: boolean;
   onEditClick?: () => void;
+  onCloseEdit?: () => void;
 }
 
 export default function ScanFlowPatientHeader({
@@ -58,7 +61,9 @@ export default function ScanFlowPatientHeader({
   treatedBy,
   lastScan,
   avatarUrl,
+  isEditOpen,
   onEditClick,
+  onCloseEdit,
 }: ScanFlowPatientHeaderProps) {
   const [firstName = "Patient", ...rest] = patientName.trim().split(/\s+/);
   const lastName = rest.length ? rest.join(" ") : "";
@@ -130,7 +135,7 @@ export default function ScanFlowPatientHeader({
 
         <button
             type="button"
-            onClick={onEditClick}
+            onClick={isEditOpen ? onCloseEdit : onEditClick}
             className="flex items-center justify-center shrink-0 rounded-lg cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             style={{
               width: 60,
@@ -139,9 +144,13 @@ export default function ScanFlowPatientHeader({
               border: "2px solid var(--color-border-subtle)",
               backgroundColor: "transparent",
             }}
-            aria-label="Edit patient"
+            aria-label={isEditOpen ? "Close edit patient" : "Edit patient"}
           >
-            <PencilIcon size={24} color="var(--color-icon-primary)" />
+            {isEditOpen ? (
+              <CloseIcon size={24} color="var(--color-icon-primary)" />
+            ) : (
+              <PencilIcon size={24} color="var(--color-icon-primary)" />
+            )}
           </button>
       </div>
     </section>
