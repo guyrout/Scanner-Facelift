@@ -982,7 +982,7 @@ export default function FixedRestorativeForm({
 
             {/* Restoration type buttons — 60px height, single row, all visible (compact so 9 fit in one line) */}
             <div
-              className="flex items-center justify-start flex-nowrap w-full shrink-0 overflow-x-auto overflow-y-hidden scrollbar-table"
+              className="flex items-center justify-center flex-nowrap w-full shrink-0 overflow-x-auto overflow-y-hidden scrollbar-table"
               style={{ gap: 12 }}
             >
               {RESTORATION_TYPES.map((rt) => {
@@ -1044,7 +1044,7 @@ export default function FixedRestorativeForm({
           />
 
           {/* Right: edit form, selected teeth cards, or placeholder — width 429 on xl */}
-          <div className="flex flex-col w-full xl:pt-0 xl:w-[429px] xl:shrink-0 min-w-0 min-h-0">
+          <div className="flex flex-col items-center justify-center w-full xl:pt-0 xl:w-[429px] xl:shrink-0 min-w-0 min-h-0">
             {editingTooth !== null && toothSelections[editingTooth] ? (() => {
               const category = toothSelections[editingTooth];
               const rt = RESTORATION_TYPES.find(r => r.label === category);

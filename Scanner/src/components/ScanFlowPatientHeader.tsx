@@ -67,7 +67,7 @@ export default function ScanFlowPatientHeader({
   return (
     <section
       className="flex items-center justify-center w-full bg-surface shrink-0 border-b border-border-subtle overflow-clip"
-      style={{ padding: "var(--spacing-03) var(--spacing-10)" }}
+      style={{ padding: "var(--spacing-03) var(--spacing-10)", height: 138 }}
       aria-label="Patient information"
     >
       <div

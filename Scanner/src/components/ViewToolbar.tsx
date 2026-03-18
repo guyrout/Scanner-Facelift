@@ -3,7 +3,7 @@
  * Floating white toolbar in the top-right of the view viewport.
  * Spacing follows 4px layout grid: 2u = 8px, 3u = 12px.
  *
- * Tools (6): Scan color, Review tool, Occlusgram, Prep qc, Margin line, Trim.
+ * Tools (6): Occlusogram, Review tool, Occlusogram, Prep qc, Margin line, Trim.
  *
  * States:
  * - Collapsed (default): icon-only 60×60 buttons + chevron
@@ -175,7 +175,7 @@ function ChevronIcon({ up }: { up: boolean }) {
 }
 
 const VIEW_TOOLS: { id: ViewToolId; label: string; Icon: () => React.JSX.Element }[] = [
-  { id: "scan-color", label: "Scan color", Icon: IconScanColor },
+  { id: "scan-color", label: "Occlusogram", Icon: IconScanColor },
   { id: "review-tool", label: "Review tool", Icon: IconReviewTool },
   { id: "occlusgram", label: "Occlusgram", Icon: IconOcclusgram },
   { id: "prep-qc", label: "Prep qc", Icon: IconPrepQc },
