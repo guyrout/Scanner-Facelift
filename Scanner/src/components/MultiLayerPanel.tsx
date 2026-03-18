@@ -15,11 +15,17 @@ export interface LayerItem {
   disabled?: boolean;
 }
 
+export type SelectedLayerId = string | "add" | null;
+
 interface MultiLayerPanelProps {
   className?: string;
   layers: LayerItem[];
   layerOpacities: Record<string, number>;
   onLayerOpacityChange: (layerId: string, value: number) => void;
+  onLayerVisibilityChange?: (layerId: string, visible: boolean) => void;
+  /** Controlled: which header thumbnail / layer is selected. When set, panel is fully controlled. */
+  selectedLayerId?: SelectedLayerId;
+  onSelectedLayerChange?: (id: SelectedLayerId) => void;
 }
 
 const PANEL_WIDTH = 352;
@@ -79,9 +85,35 @@ export default function MultiLayerPanel({
   layers,
   layerOpacities,
   onLayerOpacityChange,
+  onLayerVisibilityChange,
+  selectedLayerId,
+  onSelectedLayerChange,
 }: MultiLayerPanelProps) {
   const [expanded, setExpanded] = useState(true);
-  const [activeThumbIndex, setActiveThumbIndex] = useState(0);
+  const [internalSelectedIndex, setInternalSelectedIndex] = useState(0);
+
+  const isControlled = selectedLayerId !== undefined;
+  const activeThumbIndex = isControlled
+    ? selectedLayerId === "add"
+      ? 3
+      : Math.max(
+          0,
+          layers.findIndex((l) => l.id === selectedLayerId),
+        )
+    : internalSelectedIndex;
+
+  const setActiveThumbIndex = useCallback(
+    (index: number) => {
+      if (isControlled) {
+        if (index === 3) onSelectedLayerChange?.("add");
+        else if (layers[index]) onSelectedLayerChange?.(layers[index].id);
+        else onSelectedLayerChange?.(layers[0]?.id ?? null);
+      } else {
+        setInternalSelectedIndex(index);
+      }
+    },
+    [isControlled, layers, onSelectedLayerChange],
+  );
 
   return (
     <div
@@ -150,10 +182,13 @@ export default function MultiLayerPanel({
               style={{
                 width: 60,
                 height: 60,
-                backgroundColor: "unset",
-                background: "unset",
+                ...(activeThumbIndex === 3
+                  ? { backgroundColor: "#a6e2f9" }
+                  : { backgroundColor: "unset", background: "unset" }),
               }}
               aria-label="Add layer"
+              aria-pressed={activeThumbIndex === 3}
+              onClick={() => setActiveThumbIndex(3)}
             >
               <div className="flex h-[32px] w-[44px] shrink-0 items-center justify-center overflow-hidden">
                 <img
@@ -210,24 +245,65 @@ export default function MultiLayerPanel({
           {layers.map((layer) => (
             <div
               key={layer.id}
-              className="flex flex-col rounded-lg shrink-0 w-full"
+              role="button"
+              tabIndex={layer.disabled ? -1 : 0}
+              className={`flex flex-col rounded-lg shrink-0 w-full ${!layer.disabled ? "cursor-pointer" : ""}`}
               style={{
                 padding: CARD_PADDING,
                 gap: 4,
                 backgroundColor: "var(--color-background-layer-02)",
+                ...(layer.disabled ? { opacity: 0.65 } : {}),
               }}
+              aria-disabled={layer.disabled}
+              aria-label={`Select ${layer.label}`}
+              aria-pressed={
+                isControlled
+                  ? selectedLayerId === layer.id
+                  : layers.findIndex((l) => l.id === layer.id) === activeThumbIndex
+              }
+              onClick={
+                layer.disabled
+                  ? undefined
+                  : () => {
+                      const idx = layers.findIndex((l) => l.id === layer.id);
+                      if (idx >= 0) setActiveThumbIndex(idx);
+                      onSelectedLayerChange?.(layer.id);
+                    }
+              }
+              onKeyDown={
+                layer.disabled
+                  ? undefined
+                  : (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        const idx = layers.findIndex((l) => l.id === layer.id);
+                        if (idx >= 0) setActiveThumbIndex(idx);
+                        onSelectedLayerChange?.(layer.id);
+                      }
+                    }
+              }
             >
               <div className="flex items-center justify-between shrink-0 w-full">
                 <span
-                  className={`tp-headling-02 text-text-primary whitespace-nowrap ${layer.disabled ? "opacity-45" : ""}`}
+                  className={`tp-headling-02 text-text-primary whitespace-nowrap ${layer.disabled ? "opacity-75 pointer-events-none" : ""}`}
                 >
                   {layer.label}
                 </span>
                 <button
                   type="button"
-                  className="flex items-center justify-center shrink-0 cursor-pointer border-0 bg-transparent p-0 outline-none transition-ui hover:opacity-70 rounded overflow-hidden"
+                  className="flex items-center justify-center shrink-0 cursor-pointer border-0 bg-transparent p-0 outline-none transition-ui hover:opacity-70 rounded overflow-hidden focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
                   style={{ width: 24, height: 24 }}
-                  aria-label={layer.disabled ? "Layer hidden" : "Layer visible"}
+                  aria-label={layer.disabled ? "Show layer" : "Hide layer"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const willShow = !layer.disabled;
+                    onLayerVisibilityChange?.(layer.id, willShow);
+                    if (willShow) {
+                      const idx = layers.findIndex((l) => l.id === layer.id);
+                      if (idx >= 0) setActiveThumbIndex(idx);
+                      onSelectedLayerChange?.(layer.id);
+                    }
+                  }}
                 >
                   <img
                     src={layer.disabled ? "/panel/actions-dropdown-2.svg" : "/panel/actions-dropdown-1.svg"}
@@ -239,12 +315,15 @@ export default function MultiLayerPanel({
               </div>
               {layer.sublabel && (
                 <span
-                  className={`tp-body-02 text-text-secondary w-full ${layer.disabled ? "opacity-45" : ""}`}
+                  className={`tp-body-02 text-text-secondary w-full ${layer.disabled ? "opacity-75 pointer-events-none" : ""}`}
                 >
                   {layer.sublabel}
                 </span>
               )}
-              <div className="flex flex-col shrink-0 w-full" style={{ gap: SLIDER_GAP }}>
+              <div
+                className={`flex flex-col shrink-0 w-full ${layer.disabled ? "pointer-events-none" : ""}`}
+                style={{ gap: SLIDER_GAP }}
+              >
                 <OpacitySlider
                   value={layerOpacities[layer.id] ?? 100}
                   onChange={(v) => onLayerOpacityChange(layer.id, v)}

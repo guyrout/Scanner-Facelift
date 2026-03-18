@@ -13,14 +13,14 @@
 
 import { useState, useEffect, useRef, useCallback, lazy, Suspense, type MutableRefObject } from "react";
 import ViewToolbar, { type ViewToolId } from "./ViewToolbar";
-import MultiLayerPanel, { type LayerItem } from "./MultiLayerPanel";
+import MultiLayerPanel, { type LayerItem, type SelectedLayerId } from "./MultiLayerPanel";
 import type { ViewMode, CameraState } from "./PlyModelViewer";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer"));
 
-const VIEW_LAYERS: LayerItem[] = [
+const VIEW_LAYER_DEFS: LayerItem[] = [
   { id: "pre-treatment", label: "Pre-treatment", sublabel: "Upper arch" },
-  { id: "treatment-scan", label: "Treatment scan", sublabel: "Upper arch", disabled: true },
+  { id: "treatment-scan", label: "Treatment scan", sublabel: "Upper arch" },
 ];
 
 function CutIcon() {
@@ -601,11 +601,27 @@ export default function ViewStepContent({
   const [currentTrimPath, setCurrentTrimPath] = useState<Point[]>([]);
 
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>(() =>
-    Object.fromEntries(VIEW_LAYERS.map((l) => [l.id, 100])),
+    Object.fromEntries(VIEW_LAYER_DEFS.map((l) => [l.id, 100])),
   );
+  const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>(() => ({
+    "pre-treatment": true,
+    "treatment-scan": false,
+  }));
+  const [selectedLayerId, setSelectedLayerId] = useState<SelectedLayerId>("pre-treatment");
+  const viewLayers: LayerItem[] = VIEW_LAYER_DEFS.map((l) => ({
+    ...l,
+    disabled: !layerVisibility[l.id],
+  }));
   const handleLayerOpacityChange = useCallback((layerId: string, value: number) => {
     setLayerOpacities((prev) => ({ ...prev, [layerId]: value }));
   }, []);
+  const handleLayerVisibilityChange = useCallback((layerId: string, visible: boolean) => {
+    setLayerVisibility((prev) => ({ ...prev, [layerId]: visible }));
+  }, []);
+  const opacityForViewer =
+    selectedLayerId && selectedLayerId !== "add" && viewLayers.some((l) => l.id === selectedLayerId)
+      ? (layerOpacities[selectedLayerId] ?? 100) / 100
+      : (layerOpacities["pre-treatment"] ?? 100) / 100;
 
   const handleTrimDrawStart = useCallback((p: Point) => {
     setCurrentTrimPath([p]);
@@ -682,7 +698,7 @@ export default function ViewStepContent({
             viewMode={viewMode}
             cameraStateRef={cameraStateRef}
             showOcclusgramHeatmap={activeTools.has("occlusgram")}
-            opacity={(layerOpacities["pre-treatment"] ?? 100) / 100}
+            opacity={opacityForViewer}
           />
         </Suspense>
       </div>
@@ -690,9 +706,12 @@ export default function ViewStepContent({
       {/* Top-left: multi layer panel — Figma 4024:77272 */}
       <div className="absolute z-20" style={{ top: 12, left: 23 }}>
         <MultiLayerPanel
-          layers={VIEW_LAYERS}
+          layers={viewLayers}
           layerOpacities={layerOpacities}
           onLayerOpacityChange={handleLayerOpacityChange}
+          onLayerVisibilityChange={handleLayerVisibilityChange}
+          selectedLayerId={selectedLayerId}
+          onSelectedLayerChange={setSelectedLayerId}
         />
       </div>
 
