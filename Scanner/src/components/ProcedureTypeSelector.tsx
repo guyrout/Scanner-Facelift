@@ -101,9 +101,7 @@ export default function ProcedureTypeSelector({
                   aspectRatio: "533 / 261",
                   borderRadius: 16,
                   padding: "clamp(16px, 1.5vw, 28px) clamp(16px, 1.6vw, 30px)",
-                  backgroundColor: isSelected
-                    ? "var(--color-background-highlight-blue)"
-                    : "var(--color-background-layer-02)",
+                  backgroundColor: "var(--color-background-highlight-blue)",
                   borderColor: isSelected
                     ? "var(--color-border-interactive)"
                     : "var(--color-border-subtle)",
