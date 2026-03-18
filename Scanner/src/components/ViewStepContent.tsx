@@ -379,7 +379,6 @@ function MarginLineToast({ toothLabel = "17" }: { toothLabel?: string }) {
 const SPACING_02 = 8;
 const SPACING_03 = 12;
 const MEDIUM_RADIUS = 8;
-const SMALL_RADIUS = 4;
 const ITEM_HEIGHT = 60;
 
 function MarginLinePanel({
