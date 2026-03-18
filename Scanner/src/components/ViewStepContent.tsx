@@ -458,7 +458,10 @@ function MarginLinePanel({
           >
             <IconChevronLeftML />
           </button>
-          <span className="tp-body-02 flex-1 overflow-hidden text-center text-ellipsis whitespace-nowrap text-[var(--color-text-primary)] font-semibold">
+          <span
+            className="tp-body-02 flex-1 overflow-hidden text-center text-ellipsis whitespace-nowrap text-[var(--color-text-primary)]"
+            style={{ fontWeight: 600 }}
+          >
             Tooth {toothLabel}
           </span>
           <div className="flex shrink-0 items-center justify-center overflow-hidden rounded-[4px]" style={{ width: 32, height: 32 }}>
