@@ -311,7 +311,7 @@ export default function SendStepContent({
           >
             <div className="flex flex-col xl:flex-row w-full h-full items-stretch" style={{ gap: 0 }}>
               {/* Left: Jaw diagram + tab bar + legend — Figma 4174:217737: tabs at top in both Tooth Chart and Table View */}
-              <div className="flex flex-col items-center justify-start flex-1 min-w-0" style={{ gap: 16, paddingTop: 0, paddingBottom: 20 }}>
+              <div className="flex flex-col items-center justify-start flex-1 min-w-0" style={{ gap: 32, paddingTop: 0, paddingBottom: 20 }}>
                 {/* Tab bar — at top of section per Figma */}
                 <div className="flex items-center self-start shrink-0" style={{ borderBottom: "1px solid var(--color-border-subtle)", width: "fit-content", height: 60 }}>
                   {(["tooth", "table"] as const).map((tab) => (
