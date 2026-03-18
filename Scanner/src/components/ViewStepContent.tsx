@@ -803,7 +803,7 @@ export default function ViewStepContent({
 
       {/* Right: floating toolbar + toast column */}
       <div
-        className="absolute flex flex-row items-center justify-end w-fit z-20"
+        className="absolute flex flex-col items-center justify-end w-fit z-20"
         style={{ top: 12, right: 15, gap: 8 }}
       >
         <ViewToolbar
