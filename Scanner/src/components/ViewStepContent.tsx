@@ -708,7 +708,7 @@ export default function ViewStepContent({
       </div>
 
       {/* Top-left: multi layer panel — Figma 4024:77272 */}
-      <div className="absolute z-20" style={{ top: 12, left: 23 }}>
+      <div className="absolute z-20" style={{ top: 12, left: 16 }}>
         <MultiLayerPanel
           layers={viewLayers}
           layerOpacities={layerOpacities}
@@ -751,7 +751,7 @@ export default function ViewStepContent({
       {!isPostProcessing && activeTools.has("margin-line") && (
         <div
           className="absolute z-20"
-          style={{ bottom: 12, left: 20 }}
+          style={{ bottom: 12, left: 16 }}
         >
           <MarginLinePanel
             toothLabel={marginLineTooth}
