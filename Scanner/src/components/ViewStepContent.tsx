@@ -421,6 +421,7 @@ function MarginLinePanel({
         paddingLeft: 4,
         paddingRight: 4,
         borderColor: "var(--color-border-subtle)",
+        boxShadow: "0px 4px 12px rgba(0,0,0,0.08)",
       }}
     >
       {/* Item 01 — Figma 4024:76170. tp-headling-03: 20px Medium, line-height 32px. */}
