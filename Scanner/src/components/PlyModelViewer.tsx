@@ -238,10 +238,12 @@ function PlyMesh({
   url,
   viewMode,
   showOcclusgramHeatmap,
+  opacity = 1,
 }: {
   url: string;
   viewMode: ViewMode;
   showOcclusgramHeatmap?: boolean;
+  opacity?: number;
 }) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
 
@@ -268,6 +270,11 @@ function PlyMesh({
   }, [geometry, showHeat, viewMode]);
 
   const heatmapMaterial = useMemo(() => createHeatmapMaterial(1), []);
+  const useTransparency = opacity < 1;
+  useEffect(() => {
+    heatmapMaterial.transparent = useTransparency;
+    heatmapMaterial.opacity = opacity;
+  }, [heatmapMaterial, opacity, useTransparency]);
 
   if (!geometry) return null;
 
@@ -288,6 +295,8 @@ function PlyMesh({
           roughness={0.55}
           metalness={0.02}
           side={THREE.DoubleSide}
+          transparent={useTransparency}
+          opacity={opacity}
         />
       ) : hasColors ? (
         <meshStandardMaterial
@@ -295,6 +304,8 @@ function PlyMesh({
           roughness={0.5}
           metalness={0.0}
           side={THREE.DoubleSide}
+          transparent={useTransparency}
+          opacity={opacity}
         />
       ) : (
         <meshStandardMaterial
@@ -302,6 +313,8 @@ function PlyMesh({
           roughness={0.55}
           metalness={0.02}
           side={THREE.DoubleSide}
+          transparent={useTransparency}
+          opacity={opacity}
         />
       )}
     </mesh>
@@ -412,6 +425,8 @@ interface PlyModelViewerProps {
   viewMode?: ViewMode;
   cameraStateRef?: MutableRefObject<CameraState>;
   showOcclusgramHeatmap?: boolean;
+  /** Opacity for the 3D model (0–1). Default 1. */
+  opacity?: number;
 }
 
 export default function PlyModelViewer({
@@ -419,6 +434,7 @@ export default function PlyModelViewer({
   viewMode = "color",
   cameraStateRef,
   showOcclusgramHeatmap = false,
+  opacity = 1,
 }: PlyModelViewerProps) {
   return (
     <Canvas
@@ -442,6 +458,7 @@ export default function PlyModelViewer({
           url={url}
           viewMode={viewMode}
           showOcclusgramHeatmap={showOcclusgramHeatmap}
+          opacity={opacity}
         />
       </Suspense>
     </Canvas>

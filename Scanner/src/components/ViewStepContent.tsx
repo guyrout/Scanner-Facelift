@@ -13,9 +13,15 @@
 
 import { useState, useEffect, useRef, useCallback, lazy, Suspense, type MutableRefObject } from "react";
 import ViewToolbar, { type ViewToolId } from "./ViewToolbar";
+import MultiLayerPanel, { type LayerItem } from "./MultiLayerPanel";
 import type { ViewMode, CameraState } from "./PlyModelViewer";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer"));
+
+const VIEW_LAYERS: LayerItem[] = [
+  { id: "pre-treatment", label: "Pre-treatment", sublabel: "Upper arch" },
+  { id: "treatment-scan", label: "Treatment scan", sublabel: "Upper arch", disabled: true },
+];
 
 function CutIcon() {
   return (
@@ -594,6 +600,13 @@ export default function ViewStepContent({
   const [trimPaths, setTrimPaths] = useState<Point[][]>([]);
   const [currentTrimPath, setCurrentTrimPath] = useState<Point[]>([]);
 
+  const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>(() =>
+    Object.fromEntries(VIEW_LAYERS.map((l) => [l.id, 100])),
+  );
+  const handleLayerOpacityChange = useCallback((layerId: string, value: number) => {
+    setLayerOpacities((prev) => ({ ...prev, [layerId]: value }));
+  }, []);
+
   const handleTrimDrawStart = useCallback((p: Point) => {
     setCurrentTrimPath([p]);
   }, []);
@@ -669,8 +682,18 @@ export default function ViewStepContent({
             viewMode={viewMode}
             cameraStateRef={cameraStateRef}
             showOcclusgramHeatmap={activeTools.has("occlusgram")}
+            opacity={(layerOpacities["pre-treatment"] ?? 100) / 100}
           />
         </Suspense>
+      </div>
+
+      {/* Top-left: multi layer panel — Figma 4024:77272 */}
+      <div className="absolute z-20" style={{ top: 12, left: 23 }}>
+        <MultiLayerPanel
+          layers={VIEW_LAYERS}
+          layerOpacities={layerOpacities}
+          onLayerOpacityChange={handleLayerOpacityChange}
+        />
       </div>
 
       {/* Trim drawing overlay — above 3D viewport, below UI controls */}
