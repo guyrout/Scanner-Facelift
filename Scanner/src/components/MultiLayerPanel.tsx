@@ -296,9 +296,10 @@ export default function MultiLayerPanel({
                   aria-label={layer.disabled ? "Show layer" : "Hide layer"}
                   onClick={(e) => {
                     e.stopPropagation();
-                    const willShow = !layer.disabled;
-                    onLayerVisibilityChange?.(layer.id, willShow);
-                    if (willShow) {
+                    // Toggle visibility: disabled (hidden) -> show; visible -> hide. Eye controls hide/show of 3D model and panel active/inactive.
+                    const newVisible = layer.disabled;
+                    onLayerVisibilityChange?.(layer.id, newVisible);
+                    if (newVisible) {
                       const idx = layers.findIndex((l) => l.id === layer.id);
                       if (idx >= 0) setActiveThumbIndex(idx);
                       onSelectedLayerChange?.(layer.id);

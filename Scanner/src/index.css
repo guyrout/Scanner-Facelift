@@ -26,9 +26,9 @@
   --color-background-layer-02: #f4f4f4;
   --color-background-accent: #dfdfdf;
 
-  /* Backgrounds overlay */
+  /* Backgrounds overlay — Figma backgrounds-overlay / background-overlay (UI-Refresh-2025 Q2, e.g. 4302:155603) */
   --color-background-elevated: #ffffff;
-  --color-background-overlay: #000000a1;
+  --color-background-overlay: rgba(0, 0, 0, 0.63);
 
   /* Backgrounds on color / inverse */
   --color-background-on-color: #ffffff;
@@ -695,7 +695,10 @@ body {
   height: 100%;
   min-height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pan-x;
 }
 
 /* Button font reset — browsers ignore inherited font on <button> */
@@ -741,19 +744,29 @@ select,
   scroll-behavior: auto;
 }
 
-/* Override touch-action only on interactive rows — not on * (aggressive override can cause weird feel) */
+/* Let touch scroll work inside scroll containers: interactive children must allow pan (not only manipulation) */
 .scrollbar-table [role="button"],
 .scrollbar-table .cursor-pointer,
 .scrollbar-table [role="option"],
 .scrollbar-table [role="listbox"],
+.scrollbar-table [tabindex]:not([tabindex="-1"]),
 .scrollbar-hidden [role="button"],
 .scrollbar-hidden .cursor-pointer,
+.scrollbar-hidden [tabindex]:not([tabindex="-1"]),
 [class*="overflow-y-auto"] [role="button"],
 [class*="overflow-y-auto"] .cursor-pointer,
+[class*="overflow-y-auto"] [tabindex]:not([tabindex="-1"]),
 [class*="overflow-x-auto"] [role="button"],
 [class*="overflow-x-auto"] .cursor-pointer,
+[class*="overflow-x-auto"] [tabindex]:not([tabindex="-1"]),
 [class*="overflow-auto"] [role="button"],
-[class*="overflow-auto"] .cursor-pointer {
+[class*="overflow-auto"] .cursor-pointer,
+[class*="overflow-auto"] [tabindex]:not([tabindex="-1"]),
+#root [role="button"],
+#root .cursor-pointer,
+#root [tabindex]:not([tabindex="-1"]),
+#root button,
+#root a[href] {
   touch-action: pan-y pan-x !important;
 }
 

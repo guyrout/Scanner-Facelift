@@ -5,7 +5,7 @@
  * Right: Help, Battery, Settings.
  */
 
-import { HomeIcon, HelpIcon, BatteryIcon, SettingsIcon } from "./Icons";
+import { HomeIcon, AlarmIcon, CameraIcon, HelpIcon, BatteryIcon, SettingsIcon } from "./Icons";
 import WizardTopbarSwitcher, { type ScanWizardStep } from "./WizardTopbarSwitcher";
 
 const STEP_LABELS: Record<ScanWizardStep, string> = {
@@ -66,8 +66,26 @@ export default function ScanFlowHeader({
         <WizardTopbarSwitcher currentStep={currentStep} onStepClick={onStepClick} />
       </div>
 
-      {/* Right: Help, Battery, Settings (same as OrdersHeader — always visible) */}
+      {/* Right: Alarm + Camera (View & Send only), then Help, Battery, Settings */}
       <div className="flex items-center justify-end gap-1 h-[var(--height-row)] min-w-0">
+        {(currentStep === "view" || currentStep === "send") && (
+          <>
+            <button
+              type="button"
+              className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              aria-label="Alarm"
+            >
+              <AlarmIcon size={32} color="var(--color-icon-primary)" />
+            </button>
+            <button
+              type="button"
+              className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              aria-label="Camera"
+            >
+              <CameraIcon size={32} color="var(--color-icon-primary)" />
+            </button>
+          </>
+        )}
         <button
           type="button"
           onClick={onHelpClick}

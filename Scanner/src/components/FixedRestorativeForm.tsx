@@ -224,6 +224,11 @@ export interface DropdownFieldProps {
   hideBorder?: boolean;
 }
 
+/** Portaled listbox is under `document.body`; click-outside logic must treat it as part of the field (see edit panel mousedown handlers). */
+function isDropdownPortalTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("[data-dropdown-portal]") !== null;
+}
+
 const dropdownListContent = (
   id: string,
   value: string,
@@ -234,6 +239,7 @@ const dropdownListContent = (
   <ul
     role="listbox"
     aria-labelledby={`dropdown-${id}`}
+    data-dropdown-portal=""
     className="flex max-h-60 flex-col overflow-auto rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table"
     style={listStyle}
   >
@@ -795,6 +801,7 @@ export default function FixedRestorativeForm({
   useEffect(() => {
     if (!openEditDropdown) return;
     const handleClick = (e: MouseEvent) => {
+      if (isDropdownPortalTarget(e.target)) return;
       if (editPanelRef.current && !editPanelRef.current.contains(e.target as Node)) {
         setOpenEditDropdown(null);
       }
@@ -813,6 +820,7 @@ export default function FixedRestorativeForm({
   useEffect(() => {
     if (editingTooth === null) return;
     const handleClick = (e: MouseEvent) => {
+      if (isDropdownPortalTarget(e.target)) return;
       if (editPanelRef.current && !editPanelRef.current.contains(e.target as Node)) {
         setEditingTooth(null);
         setOpenEditDropdown(null);
@@ -1144,7 +1152,7 @@ export default function FixedRestorativeForm({
                 </div>
               );
             })() : selectedTeethEntries.length > 0 ? (
-              <div className="flex flex-col overflow-auto scrollbar-table" style={{ gap: 8, maxHeight: 450 }}>
+              <div className="flex flex-col overflow-auto scrollbar-table w-full" style={{ gap: 8, maxHeight: 450 }}>
                 {selectedTeethEntries.map(([num, category]) => {
                   const rt = RESTORATION_TYPES.find(r => r.label === category);
                   const badge = (

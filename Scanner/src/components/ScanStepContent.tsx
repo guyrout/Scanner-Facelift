@@ -19,6 +19,8 @@
 import { useState, useCallback, lazy, Suspense, type MutableRefObject } from "react";
 import ScanTabBar, { type TabData } from "./ScanTabBar";
 import ScanToolbar from "./ScanToolbar";
+import PrepEditPanel from "./PrepEditPanel";
+import SwapScansModal from "./SwapScansModal";
 import ToothMap from "./ToothMap";
 import JawSelector, { type JawSelection } from "./JawSelector";
 import VirtualKeyboard from "./VirtualKeyboard";
@@ -50,6 +52,10 @@ export default function ScanStepContent({ toolbarExpanded, onToolbarExpandedChan
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("color");
+  const [prepEditOpen, setPrepEditOpen] = useState(false);
+  const [deselectEditNonce, setDeselectEditNonce] = useState(0);
+  const [swapModalOpen, setSwapModalOpen] = useState(false);
+  const [deselectSwapNonce, setDeselectSwapNonce] = useState(0);
 
   function cycleJaw(dir: 1 | -1) {
     const idx = JAW_ORDER.indexOf(selectedJaw);
@@ -169,28 +175,57 @@ export default function ScanStepContent({ toolbarExpanded, onToolbarExpandedChan
           <ScanToolbar
             expanded={toolbarExpanded}
             onExpandedChange={onToolbarExpandedChange}
+            deselectEditNonce={deselectEditNonce}
+            deselectSwapNonce={deselectSwapNonce}
             onToolClick={(toolId, isActive) => {
               if (toolId === "scan-color") {
                 setViewMode(isActive ? "stone" : "color");
+              }
+              if (toolId === "edit") {
+                setPrepEditOpen(isActive);
+              }
+              if (toolId === "swap") {
+                setSwapModalOpen(isActive);
               }
             }}
           />
         </div>
 
-        {/* Bottom-left: camera preview */}
-        <div
-          className="absolute"
-          style={{
-            left: 28,
-            bottom: 28,
-            width: 400,
-            height: 227,
-            borderRadius: 16,
-            backgroundColor: "var(--color-background-inverse)",
-            border: "1px solid var(--color-border-subtle)",
-            padding: 10,
-          }}
-        />
+        {/* Bottom-left: dark preview rectangle — Figma 4014:72504 when Edit (prep edit) is not active */}
+        {!prepEditOpen && (
+          <div
+            className="absolute z-10 shrink-0"
+            style={{
+              left: 28,
+              bottom: 28,
+              width: 400,
+              height: 227,
+              borderRadius: 16,
+              backgroundColor: "var(--color-background-inverse)",
+              border: "1px solid var(--color-border-subtle)",
+              padding: 10,
+            }}
+            aria-hidden
+          />
+        )}
+
+        {/* Bottom-left: Prep edit menu — Figma 4285:156904 when Edit tool is active */}
+        {prepEditOpen && (
+          <div className="absolute z-20" style={{ left: 28, bottom: 28 }}>
+            <PrepEditPanel
+              onClose={() => {
+                setPrepEditOpen(false);
+                setDeselectEditNonce((n) => n + 1);
+              }}
+              onSelect={() => {
+                /* hook for Select action */
+              }}
+              onEraseAndScan={() => {
+                /* hook for Erase and scan */
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {editingTabId !== null && (
@@ -200,6 +235,18 @@ export default function ScanStepContent({ toolbarExpanded, onToolbarExpandedChan
           onClose={handleCloseKeyboard}
         />
       )}
+
+      {/* Swap scans — Figma 4291:158458 */}
+      <SwapScansModal
+        open={swapModalOpen}
+        onClose={() => {
+          setSwapModalOpen(false);
+          setDeselectSwapNonce((n) => n + 1);
+        }}
+        onConfirm={() => {
+          /* apply swap */
+        }}
+      />
     </div>
   );
 }

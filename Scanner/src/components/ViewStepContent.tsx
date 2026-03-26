@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useRef, useCallback, lazy, Suspense, type MutableRefObject } from "react";
 import ViewToolbar, { type ViewToolId } from "./ViewToolbar";
+import ReviewToolPanel from "./ReviewToolPanel";
 import MultiLayerPanel, { type LayerItem, type SelectedLayerId } from "./MultiLayerPanel";
 import type { ViewMode, CameraState } from "./PlyModelViewer";
 
@@ -619,13 +620,25 @@ export default function ViewStepContent({
   const handleLayerOpacityChange = useCallback((layerId: string, value: number) => {
     setLayerOpacities((prev) => ({ ...prev, [layerId]: value }));
   }, []);
-  const handleLayerVisibilityChange = useCallback((layerId: string, visible: boolean) => {
-    setLayerVisibility((prev) => ({ ...prev, [layerId]: visible }));
-  }, []);
+  const handleLayerVisibilityChange = useCallback(
+    (layerId: string, visible: boolean) => {
+      setLayerVisibility((prev) => ({ ...prev, [layerId]: visible }));
+      // When hiding the currently selected layer, switch selection to the first other visible layer (if any).
+      if (!visible && selectedLayerId === layerId) {
+        const firstVisibleId = VIEW_LAYER_DEFS.find((l) => l.id !== layerId && layerVisibility[l.id])?.id;
+        if (firstVisibleId) setSelectedLayerId(firstVisibleId);
+      }
+    },
+    [selectedLayerId, layerVisibility],
+  );
   const opacityForViewer =
-    selectedLayerId && selectedLayerId !== "add" && viewLayers.some((l) => l.id === selectedLayerId)
+    selectedLayerId && selectedLayerId !== "add" && layerVisibility[selectedLayerId] && viewLayers.some((l) => l.id === selectedLayerId)
       ? (layerOpacities[selectedLayerId] ?? 100) / 100
-      : (layerOpacities["pre-treatment"] ?? 100) / 100;
+      : selectedLayerId && selectedLayerId !== "add" && viewLayers.some((l) => l.id === selectedLayerId)
+        ? 0
+        : layerVisibility["pre-treatment"]
+          ? (layerOpacities["pre-treatment"] ?? 100) / 100
+          : 0;
 
   const handleTrimDrawStart = useCallback((p: Point) => {
     setCurrentTrimPath([p]);
@@ -805,11 +818,8 @@ export default function ViewStepContent({
         </div>
       )}
 
-      {/* Right: floating toolbar + toast column */}
-      <div
-        className="absolute flex flex-col items-center justify-end w-fit z-20"
-        style={{ top: 12, right: 15, gap: 8 }}
-      >
+      {/* Right: floating toolbar — Figma 1497:27534; Review tool panel 4302:155715 (16px below toolbar) */}
+      <div className="absolute z-20 flex w-fit flex-col items-end" style={{ top: 12, right: 15 }}>
         <ViewToolbar
           expanded={toolbarExpanded}
           onExpandedChange={onToolbarExpandedChange}
@@ -832,8 +842,21 @@ export default function ViewStepContent({
             }
           }}
         />
+        {!isPostProcessing && activeTools.has("review-tool") && (
+          <ReviewToolPanel
+            onClose={() =>
+              setActiveTools((prev) => {
+                const next = new Set(prev);
+                next.delete("review-tool");
+                return next;
+              })
+            }
+          />
+        )}
         {!isPostProcessing && showPrepQcToast && (
-          <PrepQcInfoToast onClose={() => setShowPrepQcToast(false)} />
+          <div style={{ marginTop: 8 }}>
+            <PrepQcInfoToast onClose={() => setShowPrepQcToast(false)} />
+          </div>
         )}
       </div>
     </div>

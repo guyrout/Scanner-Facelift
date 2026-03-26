@@ -12,13 +12,17 @@
  * - Active: light-blue background (#A6E2F9) on icon only, blue label text (#009ACE)
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface ScanToolbarProps {
   className?: string;
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   onToolClick?: (toolId: string, isActive: boolean) => void;
+  /** Increment to clear the Edit tool active state (e.g. when Prep edit panel closes). */
+  deselectEditNonce?: number;
+  /** Increment to clear the Swap tool active state (e.g. when Swap modal closes). */
+  deselectSwapNonce?: number;
 }
 
 type ToolId = "scan-color" | "feedback" | "edit" | "swap";
@@ -137,16 +141,47 @@ function ChevronIcon({ up }: { up: boolean }) {
 }
 
 const TOOLS: { id: ToolId; label: string; Icon: () => React.JSX.Element }[] = [
-  { id: "scan-color", label: "Occlusogram", Icon: IconScanColor },
+  { id: "scan-color", label: "monochrome", Icon: IconScanColor },
   { id: "feedback", label: "Feedback", Icon: IconFeedback },
   { id: "edit", label: "Edit", Icon: IconEdit },
   { id: "swap", label: "Swap", Icon: IconSwap },
 ];
 
-export default function ScanToolbar({ className, expanded: controlledExpanded, onExpandedChange, onToolClick }: ScanToolbarProps) {
+export default function ScanToolbar({
+  className,
+  expanded: controlledExpanded,
+  onExpandedChange,
+  onToolClick,
+  deselectEditNonce = 0,
+  deselectSwapNonce = 0,
+}: ScanToolbarProps) {
   const [internalExpanded, setInternalExpanded] = useState(false);
   const expanded = controlledExpanded ?? internalExpanded;
   const [activeTools, setActiveTools] = useState<Set<ToolId>>(new Set());
+  const prevDeselectEditNonce = useRef(0);
+  const prevDeselectSwapNonce = useRef(0);
+
+  useEffect(() => {
+    if (deselectEditNonce <= prevDeselectEditNonce.current) return;
+    prevDeselectEditNonce.current = deselectEditNonce;
+    setActiveTools((prev) => {
+      if (!prev.has("edit")) return prev;
+      const next = new Set(prev);
+      next.delete("edit");
+      return next;
+    });
+  }, [deselectEditNonce]);
+
+  useEffect(() => {
+    if (deselectSwapNonce <= prevDeselectSwapNonce.current) return;
+    prevDeselectSwapNonce.current = deselectSwapNonce;
+    setActiveTools((prev) => {
+      if (!prev.has("swap")) return prev;
+      const next = new Set(prev);
+      next.delete("swap");
+      return next;
+    });
+  }, [deselectSwapNonce]);
 
   function toggleExpanded() {
     const next = !expanded;
