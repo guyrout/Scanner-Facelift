@@ -297,7 +297,7 @@ export default function MultiLayerPanel({
                   onClick={(e) => {
                     e.stopPropagation();
                     // Toggle visibility: disabled (hidden) -> show; visible -> hide. Eye controls hide/show of 3D model and panel active/inactive.
-                    const newVisible = layer.disabled;
+                    const newVisible = Boolean(layer.disabled);
                     onLayerVisibilityChange?.(layer.id, newVisible);
                     if (newVisible) {
                       const idx = layers.findIndex((l) => l.id === layer.id);

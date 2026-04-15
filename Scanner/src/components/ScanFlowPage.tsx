@@ -17,12 +17,23 @@ import ViewStepContent from "./ViewStepContent";
 import SendStepContent from "./SendStepContent";
 import type { CameraState } from "./PlyModelViewer";
 
+export interface ScanFlowPatientSnapshot {
+  patientName: string;
+  patientId: string;
+  dateOfBirth: string;
+  gender: string;
+  lastScan: string;
+  treatedBy: string;
+}
+
 export interface ScanFlowPageProps {
   onBack: () => void;
   onOpenSettings?: () => void;
+  /** Patient captured on the pre-wizard “Patient details” screen (Home → Scan). */
+  initialPatient?: ScanFlowPatientSnapshot;
 }
 
-const INITIAL_PATIENT = {
+const DEFAULT_PATIENT: ScanFlowPatientSnapshot = {
   patientName: "Mina Young",
   patientId: "14129123",
   dateOfBirth: "09/20/2000",
@@ -31,14 +42,14 @@ const INITIAL_PATIENT = {
   treatedBy: "Doctor Name | 12367854",
 };
 
-export default function ScanFlowPage({ onBack, onOpenSettings }: ScanFlowPageProps) {
+export default function ScanFlowPage({ onBack, onOpenSettings, initialPatient }: ScanFlowPageProps) {
   const [currentStep, setCurrentStep] = useState<ScanWizardStep>("info");
   const previousStepRef = useRef<ScanWizardStep>("info");
   const [selectedProcedure, setSelectedProcedure] = useState<ProcedureType | null>(null);
   const [showProcedureForm, setShowProcedureForm] = useState(false);
   const [toolbarExpanded, setToolbarExpanded] = useState(false);
   const [editPatientOpen, setEditPatientOpen] = useState(false);
-  const [patient, setPatient] = useState(INITIAL_PATIENT);
+  const [patient, setPatient] = useState<ScanFlowPatientSnapshot>(() => initialPatient ?? DEFAULT_PATIENT);
 
   const cameraStateRef = useRef<CameraState>({
     radius: 4, phi: Math.PI / 2.2, theta: 0,

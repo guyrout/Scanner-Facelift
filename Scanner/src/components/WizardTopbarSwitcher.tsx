@@ -36,11 +36,14 @@ const SHAPE_PATH =
 export interface WizardTopbarSwitcherProps {
   currentStep: ScanWizardStep;
   onStepClick?: (step: ScanWizardStep) => void;
+  /** When false, step segments are not clickable (e.g. pre-wizard patient details). */
+  interactive?: boolean;
 }
 
 export default function WizardTopbarSwitcher({
   currentStep,
   onStepClick,
+  interactive = true,
 }: WizardTopbarSwitcherProps) {
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
@@ -105,11 +108,13 @@ export default function WizardTopbarSwitcher({
 
               <button
                 type="button"
-                onClick={() => onStepClick?.(step.id)}
+                onClick={() => interactive && onStepClick?.(step.id)}
                 aria-selected={isCurrent}
                 aria-label={`Step ${index + 1}: ${step.label}`}
+                aria-disabled={!interactive}
+                tabIndex={interactive ? 0 : -1}
                 role="tab"
-                className="wizard-step-label absolute inset-0 flex items-center justify-center cursor-pointer bg-transparent border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
+                className={`wizard-step-label absolute inset-0 flex items-center justify-center bg-transparent border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 ${interactive ? "cursor-pointer" : "cursor-default pointer-events-none"}`}
                 style={{ color: textColor }}
               >
                 {step.label}

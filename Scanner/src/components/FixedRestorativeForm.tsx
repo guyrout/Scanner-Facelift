@@ -209,6 +209,8 @@ function DeleteIcon() {
 export interface DropdownFieldProps {
   id: string;
   label?: string;
+  /** When `label` is omitted, used as the trigger’s accessible name (otherwise falls back to `label`). */
+  ariaLabel?: string;
   value: string;
   options: { id: string; label: string }[];
   onChange: (id: string) => void;
@@ -265,7 +267,21 @@ const dropdownListContent = (
   </ul>
 );
 
-export function DropdownField({ id, label, value, options, onChange, isOpen, onToggle, error, errorText, listZIndex, backgroundVariant = "layer-01", hideBorder = false }: DropdownFieldProps) {
+export function DropdownField({
+  id,
+  label,
+  ariaLabel,
+  value,
+  options,
+  onChange,
+  isOpen,
+  onToggle,
+  error,
+  errorText,
+  listZIndex,
+  backgroundVariant = "layer-01",
+  hideBorder = false,
+}: DropdownFieldProps) {
   const selected = options.find((o) => o.id === value);
   const displayLabel = selected?.label ?? value;
   const isPlaceholder = !selected || selected.id === "";
@@ -298,7 +314,7 @@ export function DropdownField({ id, label, value, options, onChange, isOpen, onT
         onClick={onToggle}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        aria-label={label}
+        aria-label={ariaLabel ?? label ?? "Select"}
         className={`flex items-center justify-between w-full overflow-clip text-left transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 hover:bg-[var(--color-background-layer-hovered)] ${
           !hideBorder && backgroundVariant === "layer-02" ? "border border-border-subtle bg-[var(--color-background-layer-02)]" : ""
         }`}
@@ -410,9 +426,20 @@ export interface DatePickerFieldProps {
   onToggle: () => void;
   onClose: () => void;
   containerRef: React.RefObject<HTMLDivElement | null>;
+  /** Accessible name for the calendar popover (default: choose due date). */
+  calendarAriaLabel?: string;
 }
 
-export function DatePickerField({ label, value, onChange, isOpen, onToggle, onClose, containerRef }: DatePickerFieldProps) {
+export function DatePickerField({
+  label,
+  value,
+  onChange,
+  isOpen,
+  onToggle,
+  onClose,
+  containerRef,
+  calendarAriaLabel = "Choose due date",
+}: DatePickerFieldProps) {
   const [viewDate, setViewDate] = useState(() => value ?? new Date());
 
   useEffect(() => {
@@ -478,7 +505,7 @@ export function DatePickerField({ label, value, onChange, isOpen, onToggle, onCl
       {isOpen && (
         <div
           role="dialog"
-          aria-label="Choose due date"
+          aria-label={calendarAriaLabel}
           className="absolute left-0 top-full z-20 mt-1 flex flex-col items-start overflow-clip bg-[var(--color-background-elevated)]"
           style={{ borderRadius: 8, boxShadow: "0px 2px 12px 0px rgba(0,0,0,0.13)", width: 375 }}
         >

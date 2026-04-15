@@ -21,6 +21,10 @@ interface SearchInputProps {
   ariaLabel?: string;
   /** Optional unique ID when multiple SearchInputs on page */
   id?: string;
+  /** Mirror + placeholder typography (default tp-body-03). Patient details / Figma large search uses tp-body-04. */
+  typographyClassName?: string;
+  /** Replaces default max-width wrapper classes (e.g. w-full max-w-[418px]) */
+  containerClassName?: string;
 }
 
 const SearchInput = forwardRef<SearchInputRef, SearchInputProps>(function SearchInput(
@@ -34,6 +38,8 @@ const SearchInput = forwardRef<SearchInputRef, SearchInputProps>(function Search
     placeholder = "Search patient",
     ariaLabel,
     id: propId,
+    typographyClassName = "tp-body-03",
+    containerClassName,
   },
   ref
 ) {
@@ -60,7 +66,13 @@ const SearchInput = forwardRef<SearchInputRef, SearchInputProps>(function Search
   };
 
   return (
-    <div className="w-full max-w-[288px] xl:max-w-[400px] min-w-0 shrink-0 rounded-lg" dir="ltr">
+    <div
+      className={
+        containerClassName ??
+        "w-full max-w-[288px] xl:max-w-[400px] min-w-0 shrink-0 rounded-lg"
+      }
+      dir="ltr"
+    >
       <div
         role="search"
         className={`
@@ -94,7 +106,7 @@ const SearchInput = forwardRef<SearchInputRef, SearchInputProps>(function Search
               <>
                 {/* Visible text + caret inside the field */}
                 <div
-                  className="tp-body-03 flex items-center w-fit overflow-hidden pointer-events-none text-left text-text-primary"
+                  className={`${typographyClassName} flex items-center w-fit overflow-hidden pointer-events-none text-left text-text-primary`}
                   aria-hidden
                 >
                   <span className="truncate max-w-[200px]">{value}</span>
@@ -107,7 +119,7 @@ const SearchInput = forwardRef<SearchInputRef, SearchInputProps>(function Search
               </>
             ) : (
               <span
-                className="tp-body-03 text-text-tertiary truncate text-left"
+                className={`${typographyClassName} text-text-tertiary truncate text-left`}
                 aria-hidden
               >
                 {placeholder}
@@ -124,7 +136,7 @@ const SearchInput = forwardRef<SearchInputRef, SearchInputProps>(function Search
               onChange={(e) => onChange(e.target.value)}
               onFocus={onFocus}
               onBlur={onBlur}
-              className="absolute inset-0 w-full bg-transparent outline-none opacity-0 tp-body-03 text-text-primary cursor-text text-left"
+              className={`absolute inset-0 w-full bg-transparent outline-none opacity-0 ${typographyClassName} text-text-primary cursor-text text-left`}
               placeholder={placeholder}
               autoComplete="off"
               readOnly

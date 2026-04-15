@@ -5,7 +5,8 @@ import HomePage from "./components/HomePage";
 import OrdersPage from "./components/OrdersPage";
 import PatientList from "./components/PatientList";
 import PatientOrders from "./components/PatientOrders";
-import ScanFlowPage from "./components/ScanFlowPage";
+import ScanFlowPage, { type ScanFlowPatientSnapshot } from "./components/ScanFlowPage";
+import ScanPatientDetailsPage from "./components/ScanPatientDetailsPage";
 import SettingsModal from "./components/SettingsModal";
 import { DENTISTS, SHOW_ALL_DRS_ID } from "./components/OrdersHeader";
 import type { Patient } from "./data/patients";
@@ -44,7 +45,9 @@ function App() {
   const [showLogin, setShowLogin] = useState(true);
   const [showHome, setShowHome] = useState(true);
   const [showOrdersPage, setShowOrdersPage] = useState(false);
+  const [showScanPatientDetails, setShowScanPatientDetails] = useState(false);
   const [showScanFlow, setShowScanFlow] = useState(false);
+  const [scanEntryPatient, setScanEntryPatient] = useState<ScanFlowPatientSnapshot | null>(null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsInitialView, setSettingsInitialView] = useState<"main" | "scan">("main");
@@ -95,25 +98,46 @@ function App() {
                 setShowHome(false);
                 setShowOrdersPage(false);
                 setShowScanFlow(false);
+                setShowScanPatientDetails(false);
               }}
               onOrdersClick={() => {
                 setShowHome(false);
                 setShowOrdersPage(true);
                 setShowScanFlow(false);
+                setShowScanPatientDetails(false);
               }}
               onScanClick={() => {
                 setShowHome(false);
                 setShowOrdersPage(false);
-                setShowScanFlow(true);
+                setShowScanFlow(false);
+                setShowScanPatientDetails(true);
               }}
               onOpenSettings={() => openSettings()}
+            />
+          </div>
+        ) : showScanPatientDetails ? (
+          <div key="scan-patient-details" className="animate-page-enter flex flex-col w-full h-full min-h-0">
+            <ScanPatientDetailsPage
+              selectedDoctorName={selectedDoctorName}
+              onBack={() => {
+                setShowScanPatientDetails(false);
+                setShowHome(true);
+              }}
+              onOpenSettings={() => openSettings()}
+              onContinue={(p) => {
+                setScanEntryPatient(p);
+                setShowScanPatientDetails(false);
+                setShowScanFlow(true);
+              }}
             />
           </div>
         ) : showScanFlow ? (
           <div key="scan-flow" className="animate-page-enter flex flex-col w-full h-full min-h-0">
             <ScanFlowPage
+              initialPatient={scanEntryPatient ?? undefined}
               onBack={() => {
                 setShowScanFlow(false);
+                setScanEntryPatient(null);
                 setShowHome(true);
               }}
               onOpenSettings={() => openSettings()}

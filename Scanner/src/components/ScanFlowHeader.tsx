@@ -20,6 +20,8 @@ export type { ScanWizardStep };
 export interface ScanFlowHeaderProps {
   currentStep: ScanWizardStep;
   onStepClick?: (step: ScanWizardStep) => void;
+  /** When false, wizard segments are not clickable (pre-wizard screens). */
+  wizardStepperInteractive?: boolean;
   onInfoClick: () => void;
   onHelpClick?: () => void;
   onBatteryClick?: () => void;
@@ -29,6 +31,7 @@ export interface ScanFlowHeaderProps {
 export default function ScanFlowHeader({
   currentStep,
   onStepClick,
+  wizardStepperInteractive = true,
   onInfoClick,
   onHelpClick,
   onBatteryClick,
@@ -63,7 +66,11 @@ export default function ScanFlowHeader({
 
       {/* Center: Wizard topbar switcher (Figma 6096-19093) */}
       <div className="flex items-center justify-center min-w-0">
-        <WizardTopbarSwitcher currentStep={currentStep} onStepClick={onStepClick} />
+        <WizardTopbarSwitcher
+          currentStep={currentStep}
+          onStepClick={onStepClick}
+          interactive={wizardStepperInteractive}
+        />
       </div>
 
       {/* Right: Alarm + Camera (View & Send only), then Help, Battery, Settings */}

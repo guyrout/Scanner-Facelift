@@ -113,6 +113,32 @@ export function CaretDownIcon({ size = 24, className, color = "currentColor" }: 
   );
 }
 
+/** Filled chevron down — UI-Refresh forms / dropdowns (Figma 4043:75545, Chevron down). */
+export function ChevronDownFilledIcon({ size = 24, className, color = "var(--color-icon-primary)" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 16.5L5.25 7.5H18.75L12 16.5Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
+/** Calendar — UI-Refresh date fields (Figma 4043:75545, Calendar). */
+export function CalendarIcon({ size = 24, className, color = "var(--color-icon-primary)" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden xmlns="http://www.w3.org/2000/svg">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M8 1.5C8.41421 1.5 8.75 1.83579 8.75 2.25V3.75H15.25V2.25C15.25 1.83579 15.5858 1.5 16 1.5C16.4142 1.5 16.75 1.83579 16.75 2.25V3.75H18.25C19.4926 3.75 20.5 4.75736 20.5 6V7.5H3.5V6C3.5 4.75736 4.50736 3.75 5.75 3.75H7.25V2.25C7.25 1.83579 7.58579 1.5 8 1.5ZM3.5 9H20.5V19.5C20.5 20.7426 19.4926 21.75 18.25 21.75H5.75C4.50736 21.75 3.5 20.7426 3.5 19.5V9Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
 export function CaretUpIcon({ size = 24, className, color = "currentColor" }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
