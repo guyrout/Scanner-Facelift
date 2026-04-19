@@ -4,8 +4,6 @@
  *
  * Layout:
  * ┌──────────────────────────────────────────────────────┐
- * │  ScanTabBar (Pre-treatment | Treatment Scan | +)     │
- * ├───────────┬──────────────────────────┬───────────────┤
  * │           │                          │   ScanToolbar │
  * │ ToothMap  │   3D Scan Viewport       │               │
  * │           │   (placeholder image)    │               │
@@ -16,27 +14,17 @@
  * └───────────┴──────────────────────────┴───────────────┘
  */
 
-import { useState, useCallback, lazy, Suspense, type MutableRefObject } from "react";
-import ScanTabBar26A, { type TabData } from "./ScanTabBar26A";
+import { useState, lazy, Suspense, type MutableRefObject } from "react";
 import ScanToolbar26A from "./ScanToolbar26A";
 import PrepEditPanel26A from "./PrepEditPanel26A";
 import SwapScansModal26A from "./SwapScansModal26A";
 import ToothMap26A from "./ToothMap26A";
 import JawSelector26A, { type JawSelection } from "./JawSelector26A";
-import VirtualKeyboard from "../VirtualKeyboard";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer26A"));
 
 const JAW_ORDER: JawSelection[] = ["upper", "lower", "both"];
-
-const DEFAULT_TABS: TabData[] = [
-  { id: "pre-treatment", label: "Pre-treatment", hasScanData: false },
-  { id: "treatment-scan", label: "Treatment Scan", hasScanData: false },
-  { id: "additional-scan", label: "Additional scan", hasScanData: false },
-];
-
-let nextTabId = 1;
 
 interface ScanStepContentProps {
   toolbarExpanded?: boolean;
@@ -45,12 +33,8 @@ interface ScanStepContentProps {
 }
 
 export default function ScanStepContent26A({ toolbarExpanded, onToolbarExpandedChange, cameraStateRef }: ScanStepContentProps) {
-  const [tabs, setTabs] = useState<TabData[]>(DEFAULT_TABS);
-  const [activeTabId, setActiveTabId] = useState(DEFAULT_TABS[0].id);
   const [selectedJaw, setSelectedJaw] = useState<JawSelection>("upper");
 
-  const [editingTabId, setEditingTabId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("color");
   const [prepEditOpen, setPrepEditOpen] = useState(false);
   const [deselectEditNonce, setDeselectEditNonce] = useState(0);
@@ -63,82 +47,8 @@ export default function ScanStepContent26A({ toolbarExpanded, onToolbarExpandedC
     setSelectedJaw(JAW_ORDER[next]);
   }
 
-  const handleAddTab = useCallback((label: string) => {
-    const id = `tab-${nextTabId++}`;
-    const newTab: TabData = { id, label, hasScanData: false };
-    setTabs((prev) => [...prev, newTab]);
-    setActiveTabId(id);
-  }, []);
-
-  const handleDeleteTab = useCallback(
-    (id: string) => {
-      setTabs((prev) => {
-        const tab = prev.find((t) => t.id === id);
-        if (!tab || tab.hasScanData) return prev;
-
-        const filtered = prev.filter((t) => t.id !== id);
-        if (filtered.length === 0) return prev;
-
-        if (activeTabId === id) {
-          const oldIdx = prev.findIndex((t) => t.id === id);
-          const nextActive = filtered[Math.min(oldIdx, filtered.length - 1)];
-          setActiveTabId(nextActive.id);
-        }
-        return filtered;
-      });
-    },
-    [activeTabId],
-  );
-
-  const handleStartEditing = useCallback(
-    (tabId: string) => {
-      const tab = tabs.find((t) => t.id === tabId);
-      if (!tab) return;
-      setEditingTabId(tabId);
-      setEditDraft(tab.label);
-    },
-    [tabs],
-  );
-
-  const commitEdit = useCallback(() => {
-    if (!editingTabId) return;
-    const trimmed = editDraft.trim();
-    if (trimmed) {
-      setTabs((prev) =>
-        prev.map((t) => (t.id === editingTabId ? { ...t, label: trimmed } : t)),
-      );
-    }
-    setEditingTabId(null);
-    setEditDraft("");
-  }, [editingTabId, editDraft]);
-
-  const handleKeyPress = useCallback(
-    (key: string) => setEditDraft((prev) => prev + key),
-    [],
-  );
-
-  const handleBackspace = useCallback(
-    () => setEditDraft((prev) => prev.slice(0, -1)),
-    [],
-  );
-
-  const handleCloseKeyboard = useCallback(() => {
-    commitEdit();
-  }, [commitEdit]);
-
   return (
     <div className="relative flex flex-col flex-1 min-h-0 min-w-0">
-      <ScanTabBar26A
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onTabChange={setActiveTabId}
-        onAddTab={handleAddTab}
-        onDeleteTab={handleDeleteTab}
-        editingTabId={editingTabId}
-        editDraft={editDraft}
-        onStartEditing={handleStartEditing}
-      />
-
       <div className="relative flex-1 min-h-0 min-w-0" style={{ backgroundColor: "var(--color-page-background)" }}>
         {/* 3D model viewport — fills entire area */}
         <div className="absolute inset-0 overflow-hidden">
@@ -153,7 +63,7 @@ export default function ScanStepContent26A({ toolbarExpanded, onToolbarExpandedC
           </Suspense>
         </div>
 
-        {/* Top-left: tooth map */}
+        {/* Top-left: tooth map — same chart also shown on View (26A replaces multi-layer panel there) */}
         <div className="absolute z-10" style={{ top: 12, left: 23 }}>
           <ToothMap26A className="shrink-0" />
         </div>
@@ -227,14 +137,6 @@ export default function ScanStepContent26A({ toolbarExpanded, onToolbarExpandedC
           </div>
         )}
       </div>
-
-      {editingTabId !== null && (
-        <VirtualKeyboard
-          onKeyPress={handleKeyPress}
-          onBackspace={handleBackspace}
-          onClose={handleCloseKeyboard}
-        />
-      )}
 
       {/* Swap scans — Figma 4291:158458 */}
       <SwapScansModal26A

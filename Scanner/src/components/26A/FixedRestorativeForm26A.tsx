@@ -17,7 +17,8 @@ import toothSprites from "../../assets/procedures/tooth-sprites.svg";
 import starFillSvg from "../../assets/procedures/star-fill.svg";
 import starOutlineSvg from "../../assets/procedures/star-outline.svg";
 import implantBasePlaceholder from "../../assets/procedures/implant-base-placeholder.png";
-import { CaretDownIcon, CaretUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightSmallIcon, CloseIcon, PencilIcon } from "../Icons";
+import { AddEmptyIcon, CaretDownIcon, CaretUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightSmallIcon, CloseIcon } from "../Icons";
+import CrownModal26A from "./CrownModal26A";
 
 export const RESTORATION_TYPES = [
   { color: "#9F00A7", label: "Crown" },
@@ -169,17 +170,6 @@ export const TOOTH_SPRITES: Record<number, Partial<Record<string, SpriteRect>>> 
   38: { Crown: [169, 3779, 58, 102], Missing: [238, 3773, 58, 102], "Implant based": [301, 3781, 58, 102], Select: [100, 3779, 58, 102] },
 };
 
-function DeleteIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <path d="M8.75 7.5H7.5V15H8.75V7.5Z" fill="currentColor" />
-      <path d="M12.5 7.5H11.25V15H12.5V7.5Z" fill="currentColor" />
-      <path d="M2.5 3.75V5H3.75V17.5C3.75 17.8315 3.8817 18.1495 4.11612 18.3839C4.35054 18.6183 4.66848 18.75 5 18.75H15C15.3315 18.75 15.6495 18.6183 15.8839 18.3839C16.1183 18.1495 16.25 17.8315 16.25 17.5V5H17.5V3.75H2.5ZM5 17.5V5H15V17.5H5Z" fill="currentColor" />
-      <path d="M12.5 1.25H7.5V2.5H12.5V1.25Z" fill="currentColor" />
-    </svg>
-  );
-}
-
 export interface DropdownFieldProps {
   id: string;
   label?: string;
@@ -200,11 +190,6 @@ export interface DropdownFieldProps {
   hideBorder?: boolean;
   /** Optional icon or element shown before the selected label in the trigger (e.g. Study model artwork). */
   triggerLeading?: ReactNode;
-}
-
-/** Portaled listbox is under `document.body`; click-outside logic must treat it as part of the field (see edit panel mousedown handlers). */
-function isDropdownPortalTarget(target: EventTarget | null): boolean {
-  return target instanceof Element && target.closest("[data-dropdown-portal]") !== null;
 }
 
 const dropdownListContent = (
@@ -729,8 +714,6 @@ export default function FixedRestorativeForm26A({
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   /** Per-tooth contextual menu: which tooth is being assigned, and where on screen */
   const [toothContextMenu, setToothContextMenu] = useState<{ tooth: number; x: number; y: number } | null>(null);
-  const [editingTooth, setEditingTooth] = useState<number | null>(null);
-  const [openEditDropdown, setOpenEditDropdown] = useState<string | null>(null);
   const [implantBaseModalOpen, setImplantBaseModalOpen] = useState(false);
   const [implantBaseModalTeeth, setImplantBaseModalTeeth] = useState<number[]>([]);
   const [implantBaseModalCaseId, setImplantBaseModalCaseId] = useState("");
@@ -750,10 +733,10 @@ export default function FixedRestorativeForm26A({
   const [implantModalRestorationDropdown, setImplantModalRestorationDropdown] = useState<string | null>(null);
   const [implantModalCrownDropdown, setImplantModalCrownDropdown] = useState<string | null>(null);
   const implantBaseModalRef = useRef<HTMLDivElement>(null);
+  const [crownModalTooth, setCrownModalTooth] = useState<number | null>(null);
   const restorationTypeLabel = "Crown";
   const dropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
-  const editPanelRef = useRef<HTMLDivElement>(null);
   const toothChartSvgRef = useRef<SVGSVGElement>(null);
   const toothContextMenuRef = useRef<HTMLDivElement>(null);
 
@@ -765,8 +748,6 @@ export default function FixedRestorativeForm26A({
       x: rect.left + (x / 1171) * rect.width,
       y: rect.top + (y / 277) * rect.height,
     });
-    setEditingTooth(null);
-    setOpenEditDropdown(null);
   }
 
   function handleRemoveTooth(toothNum: number) {
@@ -780,7 +761,7 @@ export default function FixedRestorativeForm26A({
       delete next[toothNum];
       return next;
     });
-    if (editingTooth === toothNum) setEditingTooth(null);
+    if (crownModalTooth === toothNum) setCrownModalTooth(null);
   }
 
   function getToothDetail(toothNum: number) {
@@ -808,38 +789,6 @@ export default function FixedRestorativeForm26A({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [openDropdown]);
-
-  useEffect(() => {
-    if (!openEditDropdown) return;
-    const handleClick = (e: MouseEvent) => {
-      if (isDropdownPortalTarget(e.target)) return;
-      if (editPanelRef.current && !editPanelRef.current.contains(e.target as Node)) {
-        setOpenEditDropdown(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [openEditDropdown]);
-
-  useEffect(() => {
-    if (editingTooth !== null && !toothSelections[editingTooth]) {
-      setEditingTooth(null);
-      setOpenEditDropdown(null);
-    }
-  }, [toothSelections, editingTooth]);
-
-  useEffect(() => {
-    if (editingTooth === null) return;
-    const handleClick = (e: MouseEvent) => {
-      if (isDropdownPortalTarget(e.target)) return;
-      if (editPanelRef.current && !editPanelRef.current.contains(e.target as Node)) {
-        setEditingTooth(null);
-        setOpenEditDropdown(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [editingTooth]);
 
   useEffect(() => {
     if (!implantBaseModalOpen) return;
@@ -878,7 +827,6 @@ export default function FixedRestorativeForm26A({
       return next;
     });
     setImplantBaseModalOpen(false);
-    setEditingTooth(null);
     setSelectedImplantId(null);
   }
 
@@ -1073,7 +1021,7 @@ export default function FixedRestorativeForm26A({
               const toothNum = Number(num);
               const detail = getToothDetail(toothNum);
               const rt = RESTORATION_TYPES.find(r => r.label === category);
-              const isEditing = editingTooth === toothNum;
+              const isCrownModalOpen = crownModalTooth === toothNum;
               const matLabel = MATERIAL_OPTIONS.find(o => o.id === detail.material)?.label ?? "-";
               const specLabel = SPEC_OPTIONS.find(o => o.id === detail.specification)?.label ?? "-/-";
               const shadeLabel = detail.shadeSystem || detail.body
@@ -1081,131 +1029,45 @@ export default function FixedRestorativeForm26A({
                 : "-/-/-";
 
               return (
-                <div key={num} className="flex flex-col w-full">
-                  <div
-                    className="flex w-full items-center"
-                    style={{
-                      border: "1px solid var(--color-border-subtle)",
-                      borderRadius: 8,
-                      padding: "16px 20px",
-                      gap: 0,
-                      background: isEditing ? "var(--color-background-layer-02, #f5f5f5)" : "var(--color-surface, white)",
-                    }}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <span className="tp-body-02 text-text-primary">{toothNum}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="tp-body-02 text-text-primary flex items-center gap-2">
-                        {rt && <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", backgroundColor: rt.color, flexShrink: 0 }} />}
-                        {category}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="tp-body-02 text-text-primary">{matLabel === "Material" ? "-" : matLabel}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="tp-body-02 text-text-primary">{specLabel === "Specification" ? "-/-" : specLabel}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="tp-body-02 text-text-primary">{shadeLabel}</span>
-                    </div>
-                    <div className="flex-1 min-w-0 flex items-center justify-end gap-3">
-                      <button
-                        type="button"
-                        className="tp-body-02 bg-transparent border-0 cursor-pointer appearance-none outline-none hover:underline"
-                        style={{ color: "var(--color-text-link, #009ace)", padding: 0 }}
-                        onClick={() => {
-                          if (isEditing) {
-                            setEditingTooth(null);
-                            setOpenEditDropdown(null);
-                          } else {
-                            setEditingTooth(toothNum);
-                            setOpenEditDropdown(null);
-                          }
-                        }}
-                      >
-                        {isEditing ? "Hide Details" : "Show Details"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTooth(toothNum)}
-                        className="flex items-center justify-center cursor-pointer bg-transparent border-0 appearance-none outline-none text-[var(--color-icon-secondary)] hover:text-[var(--color-icon-primary)] transition-ui shrink-0"
-                        style={{ width: 20, height: 20 }}
-                        aria-label={`Remove tooth ${toothNum}`}
-                      >
-                        <DeleteIcon />
-                      </button>
-                    </div>
+                <div
+                  key={num}
+                  className="flex w-full items-center"
+                  style={{
+                    border: "1px solid var(--color-border-subtle)",
+                    borderRadius: 8,
+                    padding: "16px 20px",
+                    gap: 0,
+                    background: isCrownModalOpen ? "var(--color-background-layer-02, #f5f5f5)" : "var(--color-surface, white)",
+                  }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className="tp-body-02 text-text-primary">{toothNum}</span>
                   </div>
-
-                  {/* Inline edit panel */}
-                  {isEditing && (
-                    <div
-                      ref={editPanelRef}
-                      className="flex flex-col w-full"
-                      style={{
-                        border: "1px solid var(--color-border-subtle)",
-                        borderTop: "none",
-                        borderBottomLeftRadius: 8,
-                        borderBottomRightRadius: 8,
-                        padding: "16px 20px",
-                        gap: 12,
-                        background: "var(--color-background-layer-02, #f5f5f5)",
-                      }}
+                  <div className="flex-1 min-w-0">
+                    <span className="tp-body-02 text-text-primary flex items-center gap-2">
+                      {rt && <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", backgroundColor: rt.color, flexShrink: 0 }} />}
+                      {category}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="tp-body-02 text-text-primary">{matLabel === "Material" ? "-" : matLabel}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="tp-body-02 text-text-primary">{specLabel === "Specification" ? "-/-" : specLabel}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="tp-body-02 text-text-primary">{shadeLabel}</span>
+                  </div>
+                  <div className="flex-1 min-w-0 flex items-center justify-end">
+                    <button
+                      type="button"
+                      className="tp-body-02 bg-transparent border-0 cursor-pointer appearance-none outline-none hover:underline"
+                      style={{ color: "var(--color-text-link, #009ace)", padding: 0 }}
+                      onClick={() => setCrownModalTooth(toothNum)}
                     >
-                      <div className="flex w-full" style={{ gap: 12 }}>
-                        <div className="flex-1 min-w-0">
-                          <DropdownField
-                            id={`edit-spec-${toothNum}`}
-                            value={detail.specification}
-                            options={SPEC_OPTIONS}
-                            onChange={(id) => { updateToothDetail(toothNum, "specification", id); setOpenEditDropdown(null); }}
-                            isOpen={openEditDropdown === "spec"}
-                            onToggle={() => setOpenEditDropdown(openEditDropdown === "spec" ? null : "spec")}
-                            backgroundVariant="layer-02"
-                            listZIndex={10001}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <DropdownField
-                            id={`edit-material-${toothNum}`}
-                            value={detail.material}
-                            options={MATERIAL_OPTIONS}
-                            onChange={(id) => { updateToothDetail(toothNum, "material", id); setOpenEditDropdown(null); }}
-                            isOpen={openEditDropdown === "material"}
-                            onToggle={() => setOpenEditDropdown(openEditDropdown === "material" ? null : "material")}
-                            backgroundVariant="layer-02"
-                            listZIndex={10001}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <DropdownField
-                            id={`edit-shade-${toothNum}`}
-                            value={detail.shadeSystem}
-                            options={SHADE_OPTIONS}
-                            onChange={(id) => { updateToothDetail(toothNum, "shadeSystem", id); setOpenEditDropdown(null); }}
-                            isOpen={openEditDropdown === "shade"}
-                            onToggle={() => setOpenEditDropdown(openEditDropdown === "shade" ? null : "shade")}
-                            backgroundVariant="layer-02"
-                            listZIndex={10001}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <DropdownField
-                            id={`edit-body-${toothNum}`}
-                            value={detail.body}
-                            options={BODY_OPTIONS}
-                            onChange={(id) => { updateToothDetail(toothNum, "body", id); setOpenEditDropdown(null); }}
-                            isOpen={openEditDropdown === "body"}
-                            onToggle={() => setOpenEditDropdown(openEditDropdown === "body" ? null : "body")}
-                            backgroundVariant="layer-02"
-                            listZIndex={10001}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                      Show Details
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -1263,7 +1125,7 @@ export default function FixedRestorativeForm26A({
             <div
               className="flex flex-col flex-1 items-center justify-center"
               style={{
-                border: "1px dashed var(--color-border-strong, rgba(0,0,0,0.23))",
+                border: "1px dashed rgba(224, 224, 224, 1)",
                 borderRadius: 4,
                 padding: "14px",
                 height: 276,
@@ -1293,7 +1155,7 @@ export default function FixedRestorativeForm26A({
                   }}
                   aria-label="Add attachment"
                 >
-                  <PencilIcon size={24} color="var(--color-icon-primary)" />
+                  <AddEmptyIcon size={24} color="var(--color-icon-primary)" />
                   <span className="tp-body-02 text-text-primary">Add</span>
                 </button>
               </div>
@@ -1327,7 +1189,7 @@ export default function FixedRestorativeForm26A({
                   onChange={(e) => setNoteText(e.target.value)}
                   style={{
                     backgroundColor: "var(--color-background-layer-01)",
-                    border: "1px solid #e0e0e0",
+                    border: "1px solid rgba(224, 224, 224, 1)",
                     borderRadius: 8,
                     padding: "12px 16px",
                     outline: "none",
@@ -1349,7 +1211,7 @@ export default function FixedRestorativeForm26A({
                 }}
                 aria-label="Add note"
               >
-                <PencilIcon size={24} color="var(--color-icon-primary)" />
+                <AddEmptyIcon size={24} color="var(--color-icon-primary)" />
                 <span className="tp-body-02 text-text-primary">Add</span>
               </button>
             </div>
@@ -1671,6 +1533,21 @@ export default function FixedRestorativeForm26A({
       </div>,
       document.body
     )}
+
+    {/* Crown configuration modal — Figma 4513:191332 */}
+    {crownModalTooth !== null && (
+      <CrownModal26A
+        tooth={crownModalTooth}
+        detail={getToothDetail(crownModalTooth)}
+        onDetailChange={(field, value) => updateToothDetail(crownModalTooth, field, value)}
+        onClose={() => setCrownModalTooth(null)}
+        onDelete={() => {
+          handleRemoveTooth(crownModalTooth);
+          setCrownModalTooth(null);
+        }}
+      />
+    )}
+
     {/* Contextual tooth-treatment popover */}
     {toothContextMenu && typeof document !== "undefined" && createPortal(
       <div
@@ -1737,8 +1614,11 @@ export default function FixedRestorativeForm26A({
                   setImplantBaseModalTab("Recents");
                   setSelectedImplantId(null);
                   setImplantBaseModalOpen(true);
+                } else if (rt.label === "Crown") {
+                  setToothSelections((prev) => ({ ...prev, [toothContextMenu.tooth]: "Crown" }));
+                  setCrownModalTooth(toothContextMenu.tooth);
                 } else {
-                  setToothSelections(prev => ({ ...prev, [toothContextMenu.tooth]: rt.label }));
+                  setToothSelections((prev) => ({ ...prev, [toothContextMenu.tooth]: rt.label }));
                 }
                 setToothContextMenu(null);
               }}

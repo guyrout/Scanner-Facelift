@@ -177,6 +177,18 @@ export function BackspaceIcon({ size = 29, className, color = "currentColor" }: 
   );
 }
 
+/** Add (plus) icon — Attachments / Note “Add” (Add empty Icon.svg) */
+export function AddEmptyIcon({ size = 24, className, color = "var(--color-icon-primary)" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden>
+      <path
+        d="M12.75 11.25V6H11.25V11.25H6V12.75H11.25V18H12.75V12.75H18V11.25H12.75Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
 /** Pencil / edit outline icon */
 export function PencilIcon({ size = 24, className, color = "currentColor" }: IconProps) {
   return (

@@ -1,0 +1,9 @@
+{
+  "name": "scanner-facelift",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix Scanner",
+    "build": "npm run build --prefix Scanner",
+    "lint": "npm run lint --prefix Scanner"
+  }
+}

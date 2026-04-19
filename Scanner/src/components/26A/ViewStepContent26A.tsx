@@ -15,7 +15,9 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense, type MutableR
 import ViewToolbar26A, { type ViewToolId } from "./ViewToolbar26A";
 import ReviewToolPanel26A from "./ReviewToolPanel26A";
 import MultiLayerPanel26A, { type LayerItem, type SelectedLayerId } from "./MultiLayerPanel26A";
+import ToothMap26A from "./ToothMap26A";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
+import { getScanFlowVersion } from "../../utils/scanFlowVersionManager";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer26A"));
 
@@ -591,6 +593,7 @@ export default function ViewStepContent26A({
   cameraStateRef,
   comingFromScan = false,
 }: ViewStepContentProps) {
+  const isScanFlow26A = getScanFlowVersion() === "26A";
   const [viewMode, setViewMode] = useState<ViewMode>("color");
   const [showTrimMenu, setShowTrimMenu] = useState(false);
   const [showPrepQc, setShowPrepQc] = useState(false);
@@ -720,16 +723,20 @@ export default function ViewStepContent26A({
         </Suspense>
       </div>
 
-      {/* Top-left: multi layer panel — Figma 4024:77272 */}
+      {/* Top-left: 26A — dental chart (moved from Scan); 26B — multi layer panel — Figma 4024:77272 */}
       <div className="absolute z-20" style={{ top: 12, left: 16 }}>
-        <MultiLayerPanel26A
-          layers={viewLayers}
-          layerOpacities={layerOpacities}
-          onLayerOpacityChange={handleLayerOpacityChange}
-          onLayerVisibilityChange={handleLayerVisibilityChange}
-          selectedLayerId={selectedLayerId}
-          onSelectedLayerChange={setSelectedLayerId}
-        />
+        {isScanFlow26A ? (
+          <ToothMap26A className="shrink-0" />
+        ) : (
+          <MultiLayerPanel26A
+            layers={viewLayers}
+            layerOpacities={layerOpacities}
+            onLayerOpacityChange={handleLayerOpacityChange}
+            onLayerVisibilityChange={handleLayerVisibilityChange}
+            selectedLayerId={selectedLayerId}
+            onSelectedLayerChange={setSelectedLayerId}
+          />
+        )}
       </div>
 
       {/* Trim drawing overlay — above 3D viewport, below UI controls */}
