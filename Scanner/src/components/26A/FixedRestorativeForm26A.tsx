@@ -19,32 +19,6 @@ import starOutlineSvg from "../../assets/procedures/star-outline.svg";
 import implantBasePlaceholder from "../../assets/procedures/implant-base-placeholder.png";
 import { CaretDownIcon, CaretUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightSmallIcon, CloseIcon, PencilIcon } from "../Icons";
 
-function NoImageIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <path d="M21 1.06057L19.9394 0L0 19.9394L1.06057 21L2.56058 19.5H18C18.3977 19.4995 18.7789 19.3413 19.0601 19.0601C19.3413 18.7789 19.4995 18.3977 19.5 18V2.56058L21 1.06057ZM18 18H4.06058L9.90525 12.1553L11.6894 13.9393C11.9707 14.2206 12.3522 14.3786 12.75 14.3786C13.1478 14.3786 13.5293 14.2206 13.8106 13.9393L15 12.75L18 15.748V18ZM18 13.6261L16.0606 11.6867C15.7793 11.4054 15.3978 11.2474 15 11.2474C14.6022 11.2474 14.2207 11.4054 13.9394 11.6867L12.75 12.8761L10.9672 11.0933L18 4.06058V13.6261Z" fill="var(--color-icon-primary)" />
-      <path d="M3 15V12.75L6.75 9.00255L7.77997 10.0325L8.8419 8.97053L7.81065 7.93928C7.52935 7.65798 7.14782 7.49995 6.75 7.49995C6.35218 7.49995 5.97065 7.65798 5.68935 7.93928L3 10.6287V3H15V1.5H3C2.6023 1.5004 2.221 1.65856 1.93978 1.93978C1.65856 2.221 1.5004 2.6023 1.5 3V15H3Z" fill="var(--color-icon-primary)" />
-    </svg>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <path d="M20.5875 11.3321L4.08754 3.08214C3.95821 3.01746 3.81295 2.99155 3.66924 3.00752C3.52554 3.02348 3.38951 3.08065 3.27754 3.17214C3.1706 3.26176 3.09079 3.37943 3.04707 3.51192C3.00334 3.64441 2.99745 3.78648 3.03004 3.92214L5.25004 11.9996L3.00004 20.0546C2.96946 20.1679 2.96589 20.2868 2.98961 20.4017C3.01334 20.5167 3.06371 20.6244 3.13665 20.7163C3.2096 20.8082 3.3031 20.8818 3.40964 20.931C3.51617 20.9802 3.63276 21.0037 3.75004 20.9996C3.86744 20.9989 3.98304 20.9707 4.08754 20.9171L20.5875 12.6671C20.7104 12.6042 20.8135 12.5086 20.8855 12.3908C20.9575 12.273 20.9956 12.1377 20.9956 11.9996C20.9956 11.8616 20.9575 11.7262 20.8855 11.6085C20.8135 11.4907 20.7104 11.3951 20.5875 11.3321ZM4.91254 18.8321L6.57004 12.7496H13.5V11.2496H6.57004L4.91254 5.16714L18.57 11.9996L4.91254 18.8321Z" fill="#121212" />
-    </svg>
-  );
-}
-
-function NoteIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <path d="M18 16.5V21H3V3H12V1.5H3C2.60218 1.5 2.22064 1.65804 1.93934 1.93934C1.65804 2.22064 1.5 2.60218 1.5 3V21C1.5 21.3978 1.65804 21.7794 1.93934 22.0607C2.22064 22.342 2.60218 22.5 3 22.5H18C18.3978 22.5 18.7794 22.342 19.0607 22.0607C19.342 21.7794 19.5 21.3978 19.5 21V16.5H18Z" fill="black" fillOpacity={0.93} />
-      <path d="M22.1643 4.32L19.6877 1.845C19.4632 1.62513 19.1615 1.50197 18.8472 1.50197C18.5329 1.50197 18.2311 1.62513 18.0066 1.845L7.5 12.345V16.5H11.6501L22.1568 6C22.3768 5.77569 22.5 5.4741 22.5 5.16C22.5 4.8459 22.3768 4.54431 22.1568 4.32H22.1643ZM11.0272 15H9.00095V12.975L16.0854 5.8875L18.1192 7.92L11.0272 15ZM19.1774 6.8625L17.1436 4.83L18.8472 3.1275L20.8809 5.16L19.1774 6.8625Z" fill="black" fillOpacity={0.93} />
-    </svg>
-  );
-}
-
 export const RESTORATION_TYPES = [
   { color: "#9F00A7", label: "Crown" },
   { color: "#5FD4C4", label: "Bridge" },
@@ -760,7 +734,7 @@ export default function FixedRestorativeForm26A({
   const [implantBaseModalOpen, setImplantBaseModalOpen] = useState(false);
   const [implantBaseModalTeeth, setImplantBaseModalTeeth] = useState<number[]>([]);
   const [implantBaseModalCaseId, setImplantBaseModalCaseId] = useState("");
-  const [implantCaseByTooth, setImplantCaseByTooth] = useState<Record<number, string>>({});
+  const [, setImplantCaseByTooth] = useState<Record<number, string>>({});
   const [implantBaseModalTab, setImplantBaseModalTab] = useState<"Recents" | "Favorites" | "Library">("Recents");
   const [selectedImplantId, setSelectedImplantId] = useState<string | null>(null);
   const [restorationTypeAccordionOpen, setRestorationTypeAccordionOpen] = useState(false);
