@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SplashScreen from "./components/SplashScreen";
 import LoginPage from "./components/LoginPage";
 import HomePage from "./components/HomePage";
@@ -7,9 +7,12 @@ import PatientList from "./components/PatientList";
 import PatientOrders from "./components/PatientOrders";
 import ScanFlowPage, { type ScanFlowPatientSnapshot } from "./components/ScanFlowPage";
 import ScanPatientDetailsPage from "./components/ScanPatientDetailsPage";
+import ScanFlowPage26A from "./components/26A/ScanFlowPage26A";
+import ScanPatientDetailsPage26A from "./components/26A/ScanPatientDetailsPage26A";
 import SettingsModal from "./components/SettingsModal";
 import { DENTISTS, SHOW_ALL_DRS_ID } from "./components/OrdersHeader";
 import type { Patient } from "./data/patients";
+import { getScanFlowVersion } from "./utils/scanFlowVersionManager";
 
 const BRIGHTNESS_STORAGE_KEY = "scanner-brightness";
 const VOLUME_STORAGE_KEY = "scanner-volume";
@@ -54,6 +57,16 @@ function App() {
   const [brightness, setBrightness] = useState(getStoredBrightness);
   const [volume, setVolume] = useState(getStoredVolume);
   const [selectedDentistId, setSelectedDentistId] = useState<string>(SHOW_ALL_DRS_ID);
+  
+  // Track version as state so render branches stay in sync when the user switches.
+  const [scanFlowVersion, setScanFlowVersionState] = useState(() => getScanFlowVersion());
+
+  // Re-read the version from localStorage at the moment Scan is clicked.
+  const getCurrentVersion = useCallback(() => {
+    const v = getScanFlowVersion();
+    setScanFlowVersionState(v);
+    return v;
+  }, []);
 
   const openSettings = (view?: "main" | "scan") => {
     setSettingsInitialView(view ?? "main");
@@ -107,41 +120,79 @@ function App() {
                 setShowScanPatientDetails(false);
               }}
               onScanClick={() => {
+                const version = getCurrentVersion();
                 setShowHome(false);
                 setShowOrdersPage(false);
-                setShowScanFlow(false);
-                setShowScanPatientDetails(true);
+                if (version === "26A") {
+                  // 26A: skip the patient-details pre-screen; go directly to the
+                  // consolidated info step inside ScanFlowPage26A.
+                  setScanEntryPatient(null);
+                  setShowScanPatientDetails(false);
+                  setShowScanFlow(true);
+                } else {
+                  // 26B: show the patient-details pre-screen as before.
+                  setShowScanFlow(false);
+                  setShowScanPatientDetails(true);
+                }
               }}
               onOpenSettings={() => openSettings()}
             />
           </div>
         ) : showScanPatientDetails ? (
           <div key="scan-patient-details" className="animate-page-enter flex flex-col w-full h-full min-h-0">
-            <ScanPatientDetailsPage
-              selectedDoctorName={selectedDoctorName}
-              onBack={() => {
-                setShowScanPatientDetails(false);
-                setShowHome(true);
-              }}
-              onOpenSettings={() => openSettings()}
-              onContinue={(p) => {
-                setScanEntryPatient(p);
-                setShowScanPatientDetails(false);
-                setShowScanFlow(true);
-              }}
-            />
+            {scanFlowVersion === "26A" ? (
+              <ScanPatientDetailsPage26A
+                selectedDoctorName={selectedDoctorName}
+                onBack={() => {
+                  setShowScanPatientDetails(false);
+                  setShowHome(true);
+                }}
+                onOpenSettings={() => openSettings()}
+                onContinue={(p) => {
+                  setScanEntryPatient(p);
+                  setShowScanPatientDetails(false);
+                  setShowScanFlow(true);
+                }}
+              />
+            ) : (
+              <ScanPatientDetailsPage
+                selectedDoctorName={selectedDoctorName}
+                onBack={() => {
+                  setShowScanPatientDetails(false);
+                  setShowHome(true);
+                }}
+                onOpenSettings={() => openSettings()}
+                onContinue={(p) => {
+                  setScanEntryPatient(p);
+                  setShowScanPatientDetails(false);
+                  setShowScanFlow(true);
+                }}
+              />
+            )}
           </div>
         ) : showScanFlow ? (
           <div key="scan-flow" className="animate-page-enter flex flex-col w-full h-full min-h-0">
-            <ScanFlowPage
-              initialPatient={scanEntryPatient ?? undefined}
-              onBack={() => {
-                setShowScanFlow(false);
-                setScanEntryPatient(null);
-                setShowHome(true);
-              }}
-              onOpenSettings={() => openSettings()}
-            />
+            {scanFlowVersion === "26A" ? (
+              <ScanFlowPage26A
+                initialPatient={scanEntryPatient ?? undefined}
+                onBack={() => {
+                  setShowScanFlow(false);
+                  setScanEntryPatient(null);
+                  setShowHome(true);
+                }}
+                onOpenSettings={() => openSettings()}
+              />
+            ) : (
+              <ScanFlowPage
+                initialPatient={scanEntryPatient ?? undefined}
+                onBack={() => {
+                  setShowScanFlow(false);
+                  setScanEntryPatient(null);
+                  setShowHome(true);
+                }}
+                onOpenSettings={() => openSettings()}
+              />
+            )}
           </div>
         ) : showOrdersPage ? (
           <div key="orders" className="animate-page-enter flex flex-col w-full h-full min-h-0">
