@@ -11,6 +11,7 @@ import ViewStepContent26A from "./ViewStepContent26A";
 import SignCaseModal26A from "./SignCaseModal26A";
 import type { ToothDetail, ToggleState } from "./FixedRestorativeForm26A";
 import type { CameraState } from "./PlyModelViewer26A";
+import type { JawSelection } from "./JawSelector26A";
 
 export interface SendStepContentProps {
   treatmentId: string;
@@ -29,6 +30,8 @@ export interface SendStepContentProps {
   onToolbarExpandedChange?: (expanded: boolean) => void;
   cameraStateRef?: MutableRefObject<CameraState>;
   comingFromScan?: boolean;
+  selectedJaw: JawSelection;
+  onSelectedJawChange: (jaw: JawSelection) => void;
   /** Close control on the sign modal — e.g. return to View step */
   onExitSend?: () => void;
 }
@@ -40,6 +43,8 @@ export default function SendStepContent26A(props: SendStepContentProps) {
     onToolbarExpandedChange,
     cameraStateRef,
     comingFromScan = false,
+    selectedJaw,
+    onSelectedJawChange,
     onExitSend,
   } = props;
 
@@ -55,6 +60,8 @@ export default function SendStepContent26A(props: SendStepContentProps) {
           onToolbarExpandedChange={onToolbarExpandedChange}
           cameraStateRef={cameraStateRef}
           comingFromScan={comingFromScan}
+          selectedJaw={selectedJaw}
+          onSelectedJawChange={onSelectedJawChange}
         />
       </div>
       <SignCaseModal26A sendToId={sendToId} onConfirmSend={handleConfirmSend} onRequestClose={onExitSend} />
