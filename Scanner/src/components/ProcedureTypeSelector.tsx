@@ -6,8 +6,7 @@
  */
 
 import studyModelSvg from "../assets/procedures/study-model.svg";
-/** 26B procedure card — distinct asset from 26A (`ProcedureTypeSelector26A`). */
-import invisalignSvg from "../assets/procedures/invisalign-26b.svg";
+import invisalignSvg from "../assets/procedures/invisalign.svg";
 import fixedRestorativeSvg from "../assets/procedures/fixed-restorative.svg";
 import applianceSvg from "../assets/procedures/appliance.svg";
 import denturesRemovableSvg from "../assets/procedures/dentures-removable.svg";
