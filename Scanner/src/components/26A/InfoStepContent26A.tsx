@@ -13,9 +13,7 @@
  */
 
 import { useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import SearchInput from "../SearchInput";
-import type { SearchInputRef } from "../SearchInput";
-import VirtualKeyboard from "../VirtualKeyboard";
+import { SearchIcon } from "../Icons";
 import {
   DropdownField,
   DatePickerField,
@@ -26,7 +24,7 @@ import {
   type ToggleState,
 } from "./FixedRestorativeForm26A";
 import FixedRestorativeForm26A from "./FixedRestorativeForm26A";
-import { patients } from "../../data/patients";
+import PatientSearchModal26A from "./PatientSearchModal26A";
 import type { Patient } from "../../data/patients";
 import type { ScanFlowPatientSnapshot } from "./ScanFlowPage26A";
 import Avatar from "../Avatar";
@@ -35,8 +33,6 @@ import studyModelSvg from "../../assets/procedures/study-model.svg";
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
-
-const KEYBOARD_HEIGHT = 340;
 
 const textFieldShell =
   "flex w-full min-h-[60px] items-center gap-2 rounded-lg bg-[var(--color-background-layer-02)] px-4 py-4 outline-none transition-ui focus-within:ring-2 focus-within:ring-[var(--color-border-focus)] focus-within:ring-offset-0";
@@ -94,8 +90,9 @@ function formatDob(d: Date): string {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Doctor details — Figma 6171:2244                                   */
-/* Horizontal card: avatar (48px) | name + subtitle | License label + value */
+/*  Doctor details — Figma UI-Refresh 6171:2244 (Rx Form — doctor details) */
+/* Card: p-12 outer → row px-16 py-17 gap-12; avatar column 8px top spacer + 48px avatar; */
+/* name column fixed 568px; license column flex-1; gap-4 between stacked lines. */
 /* ------------------------------------------------------------------ */
 
 function DoctorDetailsSection({ doctorName }: { doctorName: string | null | undefined }) {
@@ -104,25 +101,29 @@ function DoctorDetailsSection({ doctorName }: { doctorName: string | null | unde
   const first = parts[0] ?? "D";
   const last = parts.slice(1).join(" ") || "S";
   return (
-    <div
-      className="flex w-full items-center"
-      style={{ ...CARD_STYLE, height: 124, padding: "12px 16px", gap: 12 }}
-    >
-      {/* Avatar */}
-      <div className="flex flex-row items-center shrink-0" style={{ marginTop: 8 }}>
-        <Avatar firstName={first} lastName={last} size={48} initialsFontSize={18} />
-      </div>
+    <div className="flex w-full flex-col items-stretch overflow-hidden rounded-2xl p-3" style={CARD_STYLE}>
+      <div className="flex w-full items-center gap-3 px-4 py-[17px]">
+        {/* Avatar — Figma: 8px spacer above 48px circle, column aligned with name block */}
+        <div className="flex shrink-0 flex-row items-center self-stretch">
+          <div className="flex h-full min-h-0 flex-col items-start justify-center">
+            <div className="h-2 w-[43px] shrink-0" aria-hidden />
+            <Avatar firstName={first} lastName={last} size={48} initialsFontSize={18} />
+          </div>
+        </div>
 
-      {/* Name + subtitle */}
-      <div className="flex flex-col gap-1 min-w-0 shrink-0" style={{ width: 568 }}>
-        <span className="tp-heading-03 text-text-primary whitespace-nowrap">{name}</span>
-        <span className="tp-body-02 text-text-secondary whitespace-nowrap">QA Person - Dentist - Michael QA</span>
-      </div>
+        {/* Name + role — fixed width 568px (Figma) */}
+        <div className="flex w-[568px] shrink-0 flex-col justify-center gap-1 whitespace-nowrap">
+          <span className="tp-heading-03 text-text-primary">{name}</span>
+          <span className="tp-body-02 text-text-secondary">QA Person - Dentist - Michael QA</span>
+        </div>
 
-      {/* License */}
-      <div className="flex flex-1 flex-col gap-1 min-w-0">
-        <span className="tp-heading-03 text-text-primary">License</span>
-        <span className="tp-body-02 text-text-secondary truncate">123456789012345678901234567890123</span>
+        {/* License — fills remainder (Figma: flex 1 0 0) */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-row items-center self-stretch">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col items-start justify-center gap-1 whitespace-nowrap">
+            <span className="tp-heading-03 text-text-primary">License</span>
+            <span className="tp-body-02 text-text-secondary">123456789012345678901234567890123</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -169,9 +170,7 @@ export default function InfoStepContent26A({
   noteText, setNoteText,
 }: InfoStepContent26AProps) {
   /* ---- Patient fields ---- */
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const [patientSearchModalOpen, setPatientSearchModalOpen] = useState(false);
 
   const nameParts = patient.patientName.trim().split(/\s+/);
   const [firstName, setFirstName] = useState(nameParts[0] ?? "");
@@ -197,18 +196,15 @@ export default function InfoStepContent26A({
 
   const isStudyModel = treatmentId === "study-model";
 
-  /* ---- Patient search ---- */
-  const filteredPatients = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.trim().toLowerCase();
-    return patients
-      .filter(
-        (p) =>
-          `${p.firstName} ${p.lastName}`.toLowerCase().includes(q) ||
-          p.patientId.toLowerCase().includes(q),
-      )
-      .slice(0, 8);
-  }, [searchQuery]);
+  const hasPatientFieldData = useMemo(
+    () =>
+      firstName.trim().length > 0 ||
+      lastName.trim().length > 0 ||
+      gender !== "" ||
+      dobDate !== null ||
+      chartNumber.trim().length > 0,
+    [firstName, lastName, gender, dobDate, chartNumber],
+  );
 
   function applyPatient(p: Patient) {
     setFirstName(p.firstName);
@@ -216,10 +212,22 @@ export default function InfoStepContent26A({
     setGender(p.gender as "" | "Male" | "Female");
     setDobDate(parsePatientDob(p.dateOfBirth));
     setChartNumber(p.patientId);
-    setSearchQuery("");
-    setSearchFocused(false);
-    searchInputRef.current?.blur();
     commitPatient(p.firstName, p.lastName, p.gender as "" | "Male" | "Female", parsePatientDob(p.dateOfBirth), p.patientId);
+  }
+
+  function clearPatientFields() {
+    setFirstName("");
+    setLastName("");
+    setGender("");
+    setDobDate(null);
+    setChartNumber("");
+    onPatientChange({
+      ...patient,
+      patientName: "",
+      patientId: "",
+      dateOfBirth: "",
+      gender: "",
+    });
   }
 
   function commitPatient(fn: string, ln: string, g: "" | "Male" | "Female", dob: Date | null, chart: string) {
@@ -239,7 +247,7 @@ export default function InfoStepContent26A({
   return (
     <div
       className="flex-1 min-h-0 min-w-0 overflow-auto scrollbar-hidden bg-[var(--color-page-background)]"
-      style={{ paddingBottom: searchFocused ? KEYBOARD_HEIGHT + 16 : 16 }}
+      style={{ paddingBottom: 16 }}
     >
       <div className="flex flex-col mx-auto" style={{ padding: "16px 24px", gap: 16, maxWidth: 1400 }}>
 
@@ -248,53 +256,39 @@ export default function InfoStepContent26A({
 
         {/* ── 2. Patient — Figma 6171:2245 ────────────────────────── */}
         <div className="flex flex-col w-full" style={{ ...CARD_STYLE, padding: "32px 28px 60px 28px", gap: 16 }}>
-          {/* Header row: title + search */}
-          <div className="flex items-center justify-between w-full" style={{ height: 64 }}>
-            <h2 className="tp-heading-04 text-text-primary" style={{ fontSize: 24, lineHeight: "32px" }}>Patient</h2>
-            <div className="relative" style={{ flexShrink: 0 }}>
-              <SearchInput
-                ref={searchInputRef}
-                id="info-patient-search"
-                value={searchQuery}
-                isFocused={searchFocused}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                onChange={setSearchQuery}
-                onClear={() => { setSearchQuery(""); setSearchFocused(false); }}
-                placeholder="Search"
-                ariaLabel="Search patient"
-                typographyClassName="tp-body-04"
-                containerClassName="rounded-lg"
-              />
-              {filteredPatients.length > 0 && (
-                <ul
-                  className="absolute right-0 top-[calc(100%+4px)] z-20 max-h-[280px] overflow-y-auto rounded-lg border border-border-subtle bg-surface py-1 shadow-[var(--shadow-card)]"
-                  style={{ minWidth: 280 }}
-                  role="listbox"
-                >
-                  {filteredPatients.map((p) => (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        className="tp-body-04 flex w-full cursor-pointer border-0 bg-transparent px-4 py-3 text-left text-text-primary transition-ui hover:bg-[var(--color-background-layer-hovered)]"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => applyPatient(p)}
-                      >
-                        {p.firstName} {p.lastName}
-                        <span className="tp-body-01 text-text-secondary"> · {p.patientId}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+          {/* Header row: title + search / clear — Figma 6182:32724 */}
+          <div className="flex items-center justify-between w-full gap-4" style={{ minHeight: 64 }}>
+            <h2 className="tp-heading-04 text-text-primary flex-1 min-w-0" style={{ fontSize: 24, lineHeight: "32px" }}>Patient</h2>
+            <div className="flex items-center shrink-0" style={{ gap: 16 }}>
+              <button
+                type="button"
+                onClick={() => setPatientSearchModalOpen(true)}
+                className="flex items-center justify-center cursor-pointer bg-transparent rounded-lg border-2 border-solid border-border-subtle transition-ui hover:bg-[var(--color-background-layer-02)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+                style={{ width: 60, height: 60, padding: 12 }}
+                aria-label="Search patient"
+              >
+                <SearchIcon size={24} color="var(--color-icon-primary)" />
+              </button>
+              <button
+                type="button"
+                onClick={clearPatientFields}
+                disabled={!hasPatientFieldData}
+                className={`tp-body-02 flex items-center justify-center rounded-lg border-2 border-solid transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] ${
+                  hasPatientFieldData
+                    ? "cursor-pointer border-border-subtle bg-transparent text-text-primary hover:bg-[var(--color-background-layer-02)]"
+                    : "cursor-not-allowed border-border-subtle bg-transparent text-[var(--color-text-disabled)]"
+                }`}
+                style={{ minWidth: 72, height: 60, padding: "12px 16px" }}
+              >
+                Clear
+              </button>
             </div>
           </div>
 
-          {/* Fields grid */}
-          <div className="flex w-full" style={{ gap: 23 }}>
-            {/* Left column */}
-            <div className="flex flex-col flex-1 min-w-0" style={{ gap: 18 }}>
-              <label className="flex min-w-0 flex-col" style={{ gap: 8 }}>
+          {/* Fields: Name row, then DOB+Gender as one group, then Chart */}
+          <div className="flex w-full flex-col" style={{ gap: 18 }}>
+            <div className="flex w-full" style={{ gap: 23 }}>
+              <label className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
                 <span className="tp-body-01 text-text-secondary">
                   Name <span className="text-[var(--color-text-error,#d43f58)]">*</span>
                 </span>
@@ -307,35 +301,7 @@ export default function InfoStepContent26A({
                   autoComplete="given-name"
                 />
               </label>
-              <label className="flex min-w-0 flex-col" style={{ gap: 8 }}>
-                <span className="tp-body-01 text-text-secondary">Date of Birth <span className="text-[var(--color-text-error,#d43f58)]">*</span></span>
-                <DatePickerField
-                  label=""
-                  value={dobDate}
-                  onChange={(d) => { setDobDate(d); commitPatient(firstName, lastName, gender, d, chartNumber); }}
-                  isOpen={dobPickerOpen}
-                  onToggle={() => { setGenderDropdownOpen(false); setDobPickerOpen((o) => !o); }}
-                  onClose={() => setDobPickerOpen(false)}
-                  containerRef={dobPickerRef}
-                  calendarAriaLabel="Choose date of birth"
-                />
-              </label>
-              <label className="flex min-w-0 flex-col" style={{ gap: 8 }}>
-                <span className="tp-body-01 text-text-secondary">Chart Number</span>
-                <input
-                  type="text"
-                  value={chartNumber}
-                  onChange={(e) => { setChartNumber(e.target.value); commitPatient(firstName, lastName, gender, dobDate, e.target.value); }}
-                  placeholder="Chart number"
-                  className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
-                  autoComplete="off"
-                />
-              </label>
-            </div>
-
-            {/* Right column */}
-            <div className="flex flex-col flex-1 min-w-0" style={{ gap: 18 }}>
-              <label className="flex min-w-0 flex-col" style={{ gap: 8 }}>
+              <label className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
                 <span className="tp-body-01 text-text-secondary">
                   Last Name <span className="text-[var(--color-text-error,#d43f58)]">*</span>
                 </span>
@@ -348,26 +314,66 @@ export default function InfoStepContent26A({
                   autoComplete="family-name"
                 />
               </label>
-              <div className="flex min-w-0 flex-col" style={{ gap: 8 }} ref={dobPickerRef}>
-                <span className="tp-body-01 text-text-secondary">
-                  Gender at birth <span className="text-[var(--color-text-error,#d43f58)]">*</span>
-                </span>
-                <DropdownField
-                  id="info-gender"
-                  ariaLabel="Gender at birth"
-                  value={gender}
-                  options={[...GENDER_OPTIONS]}
-                  onChange={(id) => {
-                    const g = id as "" | "Male" | "Female";
-                    setGender(g);
-                    setGenderDropdownOpen(false);
-                    commitPatient(firstName, lastName, g, dobDate, chartNumber);
-                  }}
-                  isOpen={genderDropdownOpen}
-                  onToggle={() => { setDobPickerOpen(false); setGenderDropdownOpen((o) => !o); }}
-                  backgroundVariant="layer-02"
-                />
+            </div>
+
+            <div
+              className="flex w-full min-w-0 flex-col"
+              style={{ gap: 16 }}
+              role="group"
+              aria-label="Date of birth and gender at birth"
+            >
+              <div className="flex w-full items-start" style={{ gap: 23 }}>
+                <label className="flex min-w-0 flex-1 flex-col self-stretch" style={{ gap: 8 }}>
+                  <span className="tp-body-01 text-text-secondary">
+                    Date of Birth <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                  </span>
+                  <DatePickerField
+                    label=""
+                    value={dobDate}
+                    onChange={(d) => { setDobDate(d); commitPatient(firstName, lastName, gender, d, chartNumber); }}
+                    isOpen={dobPickerOpen}
+                    onToggle={() => { setGenderDropdownOpen(false); setDobPickerOpen((o) => !o); }}
+                    onClose={() => setDobPickerOpen(false)}
+                    containerRef={dobPickerRef}
+                    calendarAriaLabel="Choose date of birth"
+                  />
+                </label>
+                <div className="flex min-w-0 flex-1 flex-col self-stretch" style={{ gap: 8 }}>
+                  <span className="tp-body-01 text-text-secondary">
+                    Gender at birth <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                  </span>
+                  <DropdownField
+                    id="info-gender"
+                    ariaLabel="Gender at birth"
+                    value={gender}
+                    options={[...GENDER_OPTIONS]}
+                    onChange={(id) => {
+                      const g = id as "" | "Male" | "Female";
+                      setGender(g);
+                      setGenderDropdownOpen(false);
+                      commitPatient(firstName, lastName, g, dobDate, chartNumber);
+                    }}
+                    isOpen={genderDropdownOpen}
+                    onToggle={() => { setDobPickerOpen(false); setGenderDropdownOpen((o) => !o); }}
+                    backgroundVariant="layer-02"
+                  />
+                </div>
               </div>
+            </div>
+
+            <div className="flex w-full" style={{ gap: 23 }}>
+              <label className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
+                <span className="tp-body-01 text-text-secondary">Chart Number</span>
+                <input
+                  type="text"
+                  value={chartNumber}
+                  onChange={(e) => { setChartNumber(e.target.value); commitPatient(firstName, lastName, gender, dobDate, e.target.value); }}
+                  placeholder="Chart number"
+                  className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
+                  autoComplete="off"
+                />
+              </label>
+              <div className="min-w-0 flex-1" aria-hidden />
             </div>
           </div>
         </div>
@@ -599,13 +605,11 @@ export default function InfoStepContent26A({
         />
       </div>
 
-      {searchFocused && (
-        <VirtualKeyboard
-          onKeyPress={(key) => setSearchQuery((prev) => prev + key)}
-          onBackspace={() => setSearchQuery((prev) => prev.slice(0, -1))}
-          onClose={() => { searchInputRef.current?.blur(); setSearchFocused(false); }}
-        />
-      )}
+      <PatientSearchModal26A
+        open={patientSearchModalOpen}
+        onClose={() => setPatientSearchModalOpen(false)}
+        onSelectPatient={applyPatient}
+      />
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 interface AvatarProps {
   firstName: string;
   lastName: string;
@@ -7,14 +9,20 @@ interface AvatarProps {
   initialsFontSize?: number;
 }
 
-/** Figma: initials in a light gray circle; profile image when available (Align light mode) */
+/** MyAlign patient file — Figma 2079:14328: highlight-blue surface, teal initials (#005780); image when available */
+const AVATAR_SURFACE: CSSProperties = {
+  boxSizing: "border-box",
+  backgroundColor: "var(--color-background-highlight-blue)",
+  border: "1px solid var(--color-border-highlight-blue)",
+};
+
 export default function Avatar({ firstName, lastName, imageUrl, size = 36, initialsFontSize }: AvatarProps) {
   const initials = `${firstName[0]}${lastName[0]}`.toUpperCase();
   const useHeaderStyle = initialsFontSize != null;
   const initialsSize = useHeaderStyle ? initialsFontSize : size * 0.42;
   const initialsClassName = useHeaderStyle
-    ? "tp-heading-05 text-text-primary"
-    : "tp-body-03 font-medium text-text-primary";
+    ? "tp-heading-05 text-[var(--color-text-on-highlight-blue)]"
+    : "tp-body-03 font-medium text-[var(--color-text-on-highlight-blue)]";
 
   if (imageUrl) {
     return (
@@ -25,7 +33,7 @@ export default function Avatar({ firstName, lastName, imageUrl, size = 36, initi
           height: size,
           minWidth: size,
           minHeight: size,
-          backgroundColor: "var(--color-background-accent)",
+          ...AVATAR_SURFACE,
         }}
       >
         <img
@@ -56,7 +64,7 @@ export default function Avatar({ firstName, lastName, imageUrl, size = 36, initi
         height: size,
         minWidth: size,
         minHeight: size,
-        backgroundColor: "var(--color-background-accent)",
+        ...AVATAR_SURFACE,
         fontSize: initialsSize,
       }}
     >

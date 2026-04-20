@@ -8,15 +8,11 @@
 
 import { useMemo, useRef, useState } from "react";
 import ScanFlowHeader26A from "./ScanFlowHeader26A";
-import SearchInput from "../SearchInput";
-import type { SearchInputRef } from "../SearchInput";
-import VirtualKeyboard from "../VirtualKeyboard";
+import { SearchIcon } from "../Icons";
+import PatientSearchModal26A from "./PatientSearchModal26A";
 import { DatePickerField, DropdownField } from "./FixedRestorativeForm26A";
-import { patients } from "../../data/patients";
 import type { Patient } from "../../data/patients";
 import type { ScanFlowPatientSnapshot } from "./ScanFlowPage26A";
-
-const KEYBOARD_HEIGHT = 340;
 
 /** Figma: filled text fields — layer-02, no border (4044:90646 Field). */
 const textFieldShell =
@@ -63,9 +59,7 @@ export default function ScanPatientDetailsPage26A({
     ? `${selectedDoctorName} | 12367854`
     : "Doctor Name | 12367854";
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const [patientSearchModalOpen, setPatientSearchModalOpen] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -77,16 +71,6 @@ export default function ScanPatientDetailsPage26A({
   const [chartNumber, setChartNumber] = useState("");
   const [lastScanLine, setLastScanLine] = useState("—");
   const [treatedByLine, setTreatedByLine] = useState(defaultTreatedBy);
-
-  const filteredPatients = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.trim().toLowerCase();
-    return patients.filter(
-      (p) =>
-        `${p.firstName} ${p.lastName}`.toLowerCase().includes(q) ||
-        p.patientId.toLowerCase().includes(q),
-    ).slice(0, 8);
-  }, [searchQuery]);
 
   const formComplete =
     firstName.trim().length > 0 &&
@@ -103,9 +87,26 @@ export default function ScanPatientDetailsPage26A({
     setChartNumber(p.patientId);
     setLastScanLine(p.lastScanDate);
     setTreatedByLine(`${p.doctor} | ${p.patientId}`);
-    setSearchQuery("");
-    setSearchFocused(false);
-    searchInputRef.current?.blur();
+  };
+
+  const hasPatientFieldData = useMemo(
+    () =>
+      firstName.trim().length > 0 ||
+      lastName.trim().length > 0 ||
+      gender !== "" ||
+      dobDate !== null ||
+      chartNumber.trim().length > 0,
+    [firstName, lastName, gender, dobDate, chartNumber],
+  );
+
+  const clearPatientFields = () => {
+    setFirstName("");
+    setLastName("");
+    setGender("");
+    setDobDate(null);
+    setChartNumber("");
+    setLastScanLine("—");
+    setTreatedByLine(defaultTreatedBy);
   };
 
   const handleNext = () => {
@@ -134,53 +135,38 @@ export default function ScanPatientDetailsPage26A({
         className="flex flex-1 min-h-0 min-w-0 items-center justify-center transition-[padding] duration-[360ms] ease-[var(--motion-ease-out-soft)]"
         style={{
           padding: 16,
-          paddingBottom: searchFocused ? KEYBOARD_HEIGHT : 16,
         }}
       >
         <div
           className="flex w-full max-w-[1807px] flex-col gap-6 rounded-lg bg-surface px-6 py-5"
           style={{ boxShadow: "var(--shadow-card)" }}
         >
-          <h1 className="tp-heading-04 text-text-primary">Patient details</h1>
-
-          <div className="relative w-full max-w-[418px] shrink-0">
-            <SearchInput
-              ref={searchInputRef}
-              id="scan-patient-search"
-              value={searchQuery}
-              isFocused={searchFocused}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              onChange={setSearchQuery}
-              onClear={() => {
-                setSearchQuery("");
-                setSearchFocused(false);
-              }}
-              placeholder="Search"
-              ariaLabel="Search"
-              typographyClassName="tp-body-04"
-              containerClassName="w-full max-w-[418px] min-w-0 shrink-0 rounded-lg"
-            />
-            {filteredPatients.length > 0 && (
-              <ul
-                className="absolute left-0 right-0 top-[calc(100%+4px)] z-20 max-h-[280px] overflow-y-auto rounded-lg border border-border-subtle bg-surface py-1 shadow-[var(--shadow-card)]"
-                role="listbox"
+          <div className="flex w-full flex-wrap items-center justify-between gap-4">
+            <h1 className="tp-heading-04 text-text-primary flex-1 min-w-0">Patient details</h1>
+            <div className="flex items-center shrink-0" style={{ gap: 16 }}>
+              <button
+                type="button"
+                onClick={() => setPatientSearchModalOpen(true)}
+                className="flex items-center justify-center cursor-pointer bg-transparent rounded-lg border-2 border-solid border-border-subtle transition-ui hover:bg-[var(--color-background-layer-02)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+                style={{ width: 60, height: 60, padding: 12 }}
+                aria-label="Search patient"
               >
-                {filteredPatients.map((p) => (
-                  <li key={p.id}>
-                    <button
-                      type="button"
-                      className="tp-body-04 flex w-full cursor-pointer border-0 bg-transparent px-4 py-3 text-left text-text-primary transition-ui hover:bg-[var(--color-background-layer-hovered)]"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => applyPatient(p)}
-                    >
-                      {p.firstName} {p.lastName}
-                      <span className="tp-body-01 text-text-secondary"> · {p.patientId}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+                <SearchIcon size={24} color="var(--color-icon-primary)" />
+              </button>
+              <button
+                type="button"
+                onClick={clearPatientFields}
+                disabled={!hasPatientFieldData}
+                className={`tp-body-02 flex items-center justify-center rounded-lg border-2 border-solid transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] ${
+                  hasPatientFieldData
+                    ? "cursor-pointer border-border-subtle bg-transparent text-text-primary hover:bg-[var(--color-background-layer-02)]"
+                    : "cursor-not-allowed border-border-subtle bg-transparent text-[var(--color-text-disabled)]"
+                }`}
+                style={{ minWidth: 72, height: 60, padding: "12px 16px" }}
+              >
+                Clear
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-4">
@@ -286,16 +272,11 @@ export default function ScanPatientDetailsPage26A({
         </div>
       </div>
 
-      {searchFocused && (
-        <VirtualKeyboard
-          onKeyPress={(key) => setSearchQuery((prev) => prev + key)}
-          onBackspace={() => setSearchQuery((prev) => prev.slice(0, -1))}
-          onClose={() => {
-            searchInputRef.current?.blur();
-            setSearchFocused(false);
-          }}
-        />
-      )}
+      <PatientSearchModal26A
+        open={patientSearchModalOpen}
+        onClose={() => setPatientSearchModalOpen(false)}
+        onSelectPatient={applyPatient}
+      />
     </div>
   );
 }

@@ -14,10 +14,9 @@ import { createPortal } from "react-dom";
 import jawChartSvg from "../../assets/procedures/jaw-tooth-chart.svg";
 import calendarSvg from "../../assets/procedures/calendar.svg";
 import toothSprites from "../../assets/procedures/tooth-sprites.svg";
-import starFillSvg from "../../assets/procedures/star-fill.svg";
-import starOutlineSvg from "../../assets/procedures/star-outline.svg";
-import implantBasePlaceholder from "../../assets/procedures/implant-base-placeholder.png";
-import { AddEmptyIcon, CaretDownIcon, CaretUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightSmallIcon, CloseIcon } from "../Icons";
+/** Figma 4515:194756 — TOOTH - large (1_implant_sel) */
+import implantToothLarge from "../../assets/procedures/implant-tooth-large.svg";
+import { AddEmptyIcon, CaretDownIcon, CaretUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightSmallIcon } from "../Icons";
 import CrownModal26A from "./CrownModal26A";
 
 export const RESTORATION_TYPES = [
@@ -95,16 +94,25 @@ export const IMPLANT_CASE_OPTIONS: { id: string; label: string }[] = [
   { id: "case-c", label: "Case C" },
 ];
 
-/** Mock implant options for Figma implant base modal (Recents grid) */
-const IMPLANT_OPTIONS: { id: string; title: string; subtitle: string; isFavorite: boolean }[] = [
-  { id: "imp-1", title: "Straumann® Group · 2.9 mm", subtitle: "· BioAbutment", isFavorite: true },
-  { id: "imp-2", title: "Straumann® Group · 2.9 mm", subtitle: "· BioAbutment", isFavorite: false },
-  { id: "imp-3", title: "Straumann® Group · 2.9 mm", subtitle: "· BioAbutment", isFavorite: true },
-  { id: "imp-4", title: "Straumann® Group · 2.9 mm", subtitle: "· BioAbutment", isFavorite: false },
-  { id: "imp-5", title: "Straumann® Group · 2.9 mm", subtitle: "· BioAbutment", isFavorite: true },
-  { id: "imp-6", title: "Straumann® Group · 2.9 mm", subtitle: "· BioAbutment", isFavorite: false },
-  { id: "imp-7", title: "Straumann® Group · 2.9 mm", subtitle: "· BioAbutment", isFavorite: true },
-  { id: "imp-8", title: "Straumann® Group · 2.9 mm", subtitle: "· BioAbutment", isFavorite: false },
+/** Implant Based modal — Figma 4515:194320 (UI-Refresh-2026 Q2) */
+export const IMPLANT_MANUFACTURER_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
+  { id: "straumann", label: "Straumann® Group" },
+];
+
+export const IMPLANT_CONNECTION_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
+  { id: "internal-hex", label: "Internal hex" },
+];
+
+export const IMPLANT_DIAMETER_PLATFORM_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
+  { id: "29mm", label: "2.9 mm" },
+];
+
+export const IMPLANT_SCAN_BODY_TYPE_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
+  { id: "bioabutment", label: "BioAbutment" },
 ];
 
 export const RESTORATION_TYPE_OPTIONS: { id: string; label: string }[] = [
@@ -438,17 +446,21 @@ export function DatePickerField({
     onClose();
   }
 
+  const triggerAriaLabel = label.trim() || calendarAriaLabel;
+
   return (
     <div ref={containerRef} className="relative flex flex-col flex-1 min-w-0">
-      <div style={{ paddingBottom: 8 }}>
-        <span className="tp-body-01 text-text-secondary">{label}</span>
-      </div>
+      {label ? (
+        <div style={{ paddingBottom: 8 }}>
+          <span className="tp-body-01 text-text-secondary">{label}</span>
+        </div>
+      ) : null}
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
-        aria-label={label}
+        aria-label={triggerAriaLabel}
         className="flex items-center justify-between w-full overflow-clip text-left border border-border-subtle bg-[var(--color-background-layer-02)] transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 hover:bg-[var(--color-background-layer-hovered)]"
         style={{
           borderRadius: 8,
@@ -716,25 +728,16 @@ export default function FixedRestorativeForm26A({
   const [toothContextMenu, setToothContextMenu] = useState<{ tooth: number; x: number; y: number } | null>(null);
   const [implantBaseModalOpen, setImplantBaseModalOpen] = useState(false);
   const [implantBaseModalTeeth, setImplantBaseModalTeeth] = useState<number[]>([]);
-  const [implantBaseModalCaseId, setImplantBaseModalCaseId] = useState("");
   const [, setImplantCaseByTooth] = useState<Record<number, string>>({});
-  const [implantBaseModalTab, setImplantBaseModalTab] = useState<"Recents" | "Favorites" | "Library">("Recents");
-  const [selectedImplantId, setSelectedImplantId] = useState<string | null>(null);
-  const [restorationTypeAccordionOpen, setRestorationTypeAccordionOpen] = useState(false);
-  const [crownAccordionOpen, setCrownAccordionOpen] = useState(false);
+  const [implantManufacturerId, setImplantManufacturerId] = useState("");
+  const [implantConnectionId, setImplantConnectionId] = useState("");
+  const [implantDiameterPlatformId, setImplantDiameterPlatformId] = useState("");
+  const [implantScanBodyTypeId, setImplantScanBodyTypeId] = useState("");
   const [implantModalRestorationType, setImplantModalRestorationType] = useState("");
-  const [implantModalAbutmentMaterial, setImplantModalAbutmentMaterial] = useState("");
-  const [implantModalAbutmentType, setImplantModalAbutmentType] = useState("");
-  const [implantModalTiBase, setImplantModalTiBase] = useState(false);
-  const [implantModalSpec, setImplantModalSpec] = useState("");
-  const [implantModalShade, setImplantModalShade] = useState("");
-  const [implantModalMaterial, setImplantModalMaterial] = useState("");
-  const [implantModalBody, setImplantModalBody] = useState("");
-  const [implantModalRestorationDropdown, setImplantModalRestorationDropdown] = useState<string | null>(null);
-  const [implantModalCrownDropdown, setImplantModalCrownDropdown] = useState<string | null>(null);
+  const [implantModalCrownRowId, setImplantModalCrownRowId] = useState("crown");
+  const [implantModalOpenDropdown, setImplantModalOpenDropdown] = useState<string | null>(null);
   const implantBaseModalRef = useRef<HTMLDivElement>(null);
   const [crownModalTooth, setCrownModalTooth] = useState<number | null>(null);
-  const restorationTypeLabel = "Crown";
   const dropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
   const toothChartSvgRef = useRef<SVGSVGElement>(null);
@@ -779,6 +782,43 @@ export default function FixedRestorativeForm26A({
     ([a], [b]) => Number(a) - Number(b)
   );
 
+  function resetImplantModalForm() {
+    setImplantManufacturerId("");
+    setImplantConnectionId("");
+    setImplantDiameterPlatformId("");
+    setImplantScanBodyTypeId("");
+    setImplantModalRestorationType("");
+    setImplantModalCrownRowId("crown");
+    setImplantModalOpenDropdown(null);
+  }
+
+  function closeImplantModal() {
+    setImplantBaseModalOpen(false);
+    resetImplantModalForm();
+  }
+
+  function handleImplantBaseDone() {
+    if (!implantManufacturerId) return;
+    const idPieces = [
+      IMPLANT_MANUFACTURER_OPTIONS.find((o) => o.id === implantManufacturerId)?.label,
+      IMPLANT_CONNECTION_OPTIONS.find((o) => o.id === implantConnectionId)?.label,
+      IMPLANT_DIAMETER_PLATFORM_OPTIONS.find((o) => o.id === implantDiameterPlatformId)?.label,
+      IMPLANT_SCAN_BODY_TYPE_OPTIONS.find((o) => o.id === implantScanBodyTypeId)?.label,
+    ].filter((s): s is string => Boolean(s) && s !== "Select an option");
+    const implantId = idPieces.join(" · ");
+    setToothSelections(prev => {
+      const next = { ...prev };
+      implantBaseModalTeeth.forEach((t) => { next[t] = "Implant based"; });
+      return next;
+    });
+    setImplantCaseByTooth(prev => {
+      const next = { ...prev };
+      implantBaseModalTeeth.forEach((t) => { next[t] = implantId; });
+      return next;
+    });
+    closeImplantModal();
+  }
+
   useEffect(() => {
     if (!openDropdown) return;
     const handleClick = (e: MouseEvent) => {
@@ -794,8 +834,7 @@ export default function FixedRestorativeForm26A({
     if (!implantBaseModalOpen) return;
     const handleClick = (e: MouseEvent) => {
       if (implantBaseModalRef.current && !implantBaseModalRef.current.contains(e.target as Node)) {
-        setImplantBaseModalOpen(false);
-        setSelectedImplantId(null);
+        closeImplantModal();
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -812,23 +851,6 @@ export default function FixedRestorativeForm26A({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [toothContextMenu]);
-
-  function handleImplantBaseDone() {
-    const implantId = selectedImplantId ?? implantBaseModalCaseId.trim();
-    if (!implantId) return;
-    setToothSelections(prev => {
-      const next = { ...prev };
-      implantBaseModalTeeth.forEach((t) => { next[t] = "Implant based"; });
-      return next;
-    });
-    setImplantCaseByTooth(prev => {
-      const next = { ...prev };
-      implantBaseModalTeeth.forEach((t) => { next[t] = implantId; });
-      return next;
-    });
-    setImplantBaseModalOpen(false);
-    setSelectedImplantId(null);
-  }
 
   return (
     <>
@@ -906,12 +928,23 @@ export default function FixedRestorativeForm26A({
                 <clipPath id="tooth-select-clip">
                   <rect x="0" y="0" width={58} height={105} rx={18} ry={18} />
                 </clipPath>
+                {/* Glow follows sprite / implant alpha — no rectangular selection stroke */}
+                <filter id="tooth-sprite-glow-26a" x="-60%" y="-60%" width="220%" height="220%" colorInterpolationFilters="sRGB">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="var(--color-border-interactive, #009ace)" floodOpacity="0.95" />
+                </filter>
+                <filter id="tooth-sprite-glow-strong-26a" x="-80%" y="-80%" width="260%" height="260%" colorInterpolationFilters="sRGB">
+                  <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="var(--color-border-interactive, #009ace)" floodOpacity="1" />
+                </filter>
               </defs>
               {UPPER_TEETH.map((tooth, i) => {
                 const x = TOOTH_X[i];
                 const sel = toothSelections[tooth];
                 const sprite = sel ? TOOTH_SPRITES[tooth]?.[sel] : undefined;
-                const color = sel ? RESTORATION_TYPES.find(r => r.label === sel)?.color : undefined;
+                const hasSpriteVisual = Boolean(sel && sprite);
+                const contextHere = toothContextMenu?.tooth === tooth;
+                const spriteFilter = hasSpriteVisual
+                  ? (contextHere ? "url(#tooth-sprite-glow-strong-26a)" : "url(#tooth-sprite-glow-26a)")
+                  : undefined;
                 return (
                   <g
                     key={tooth}
@@ -926,20 +959,25 @@ export default function FixedRestorativeForm26A({
                     tabIndex={-1}
                   >
                     <rect x={x - 29} y={5} width={58} height={105} fill="transparent" stroke="none" focusable={false} />
-                    {sel && sprite && (
+                    {hasSpriteVisual && (
                       <>
                         <rect x={x - 29} y={5} width={58} height={105} fill="var(--color-background-layer-01)" style={{ pointerEvents: "none" }} />
-                        <svg x={x - 29} y={5} width={58} height={105} viewBox={`${sprite[0]} ${sprite[1]} ${sprite[2]} ${sprite[3]}`} style={{ pointerEvents: "none", overflow: "hidden" }}>
-                          <image href={toothSprites} width={SPRITE_W} height={SPRITE_H} />
-                        </svg>
+                        <g filter={spriteFilter}>
+                          <svg x={x - 29} y={5} width={58} height={105} viewBox={`${sprite![0]} ${sprite![1]} ${sprite![2]} ${sprite![3]}`} style={{ pointerEvents: "none", overflow: "hidden" }}>
+                            <image href={toothSprites} width={SPRITE_W} height={SPRITE_H} />
+                          </svg>
+                        </g>
                       </>
                     )}
-                    {sel && !sprite && color && (
-                      <rect x={x - 28} y={6} width={56} height={103} fill="none" stroke={color} strokeWidth={2.5} rx={6} style={{ pointerEvents: "none" }} />
-                    )}
-                    {/* Highlight ring when this tooth is in the context menu */}
-                    {toothContextMenu?.tooth === tooth && (
-                      <rect x={x - 29} y={5} width={58} height={105} fill="none" stroke="var(--color-border-focus)" strokeWidth={2.5} rx={6} style={{ pointerEvents: "none" }} />
+                    {contextHere && !hasSpriteVisual && (
+                      <circle
+                        cx={x}
+                        cy={57.5}
+                        r={32}
+                        fill="var(--color-border-interactive)"
+                        fillOpacity={0.14}
+                        style={{ pointerEvents: "none" }}
+                      />
                     )}
                   </g>
                 );
@@ -948,7 +986,11 @@ export default function FixedRestorativeForm26A({
                 const x = TOOTH_X[i];
                 const sel = toothSelections[tooth];
                 const sprite = sel ? TOOTH_SPRITES[tooth]?.[sel] : undefined;
-                const color = sel ? RESTORATION_TYPES.find(r => r.label === sel)?.color : undefined;
+                const hasSpriteVisual = Boolean(sel && sprite);
+                const contextHere = toothContextMenu?.tooth === tooth;
+                const spriteFilter = hasSpriteVisual
+                  ? (contextHere ? "url(#tooth-sprite-glow-strong-26a)" : "url(#tooth-sprite-glow-26a)")
+                  : undefined;
                 return (
                   <g
                     key={tooth}
@@ -963,19 +1005,25 @@ export default function FixedRestorativeForm26A({
                     tabIndex={-1}
                   >
                     <rect x={x - 29} y={167} width={58} height={105} fill="transparent" stroke="none" focusable={false} />
-                    {sel && sprite && (
+                    {hasSpriteVisual && (
                       <>
                         <rect x={x - 29} y={167} width={58} height={105} fill="var(--color-background-layer-01)" style={{ pointerEvents: "none" }} />
-                        <svg x={x - 29} y={167} width={58} height={105} viewBox={`${sprite[0]} ${sprite[1]} ${sprite[2]} ${sprite[3]}`} style={{ pointerEvents: "none", overflow: "hidden" }}>
-                          <image href={toothSprites} width={SPRITE_W} height={SPRITE_H} />
-                        </svg>
+                        <g filter={spriteFilter}>
+                          <svg x={x - 29} y={167} width={58} height={105} viewBox={`${sprite![0]} ${sprite![1]} ${sprite![2]} ${sprite![3]}`} style={{ pointerEvents: "none", overflow: "hidden" }}>
+                            <image href={toothSprites} width={SPRITE_W} height={SPRITE_H} />
+                          </svg>
+                        </g>
                       </>
                     )}
-                    {sel && !sprite && color && (
-                      <rect x={x - 28} y={168} width={56} height={103} fill="none" stroke={color} strokeWidth={2.5} rx={6} style={{ pointerEvents: "none" }} />
-                    )}
-                    {toothContextMenu?.tooth === tooth && (
-                      <rect x={x - 29} y={167} width={58} height={105} fill="none" stroke="var(--color-border-focus)" strokeWidth={2.5} rx={6} style={{ pointerEvents: "none" }} />
+                    {contextHere && !hasSpriteVisual && (
+                      <circle
+                        cx={x}
+                        cy={219.5}
+                        r={32}
+                        fill="var(--color-border-interactive)"
+                        fillOpacity={0.14}
+                        style={{ pointerEvents: "none" }}
+                      />
                     )}
                   </g>
                 );
@@ -1179,7 +1227,7 @@ export default function FixedRestorativeForm26A({
               <div className="flex flex-col flex-1 isolate" style={{ gap: 0 }}>
                 <div className="flex items-start justify-between" style={{ paddingBottom: 8 }}>
                   <span className="tp-body-01 text-text-secondary">Optional text note here</span>
-                  <span className="tp-label-01 text-text-secondary">{noteText.length}/100</span>
+                  <span className="tp-label-01 text-text-secondary text-[16px]">{noteText.length}/100</span>
                 </div>
                 <textarea
                   className="flex-1 resize-none tp-body-02 text-text-primary placeholder:text-text-tertiary"
@@ -1220,7 +1268,7 @@ export default function FixedRestorativeForm26A({
       </div>
     </div>
 
-    {/* Implant base selection modal — Figma 4209:174869 (UI-Refresh-2025 Q2) */}
+    {/* Implant Based modal — Figma 4515:194320 (UI-Refresh-2026 Q2) */}
     {implantBaseModalOpen && createPortal(
       <div
         className="fixed inset-0 flex flex-col items-center justify-center"
@@ -1243,287 +1291,167 @@ export default function FixedRestorativeForm26A({
             paddingLeft: "var(--spacing-06)",
             paddingRight: "var(--spacing-06)",
             gap: "var(--spacing-06)",
-            height: 920,
+            maxHeight: "min(920px, calc(100vh - 48px))",
+            overflowY: "auto",
           }}
         >
-          {/* Headline: Header + Badge — Figma Headline */}
-          <div className="flex flex-col w-full shrink-0" style={{ gap: 0 }}>
-            <div className="flex items-center w-full" style={{ gap: "var(--spacing-04)", height: 60 }}>
-              <h2 id="implant-base-modal-title" className="tp-heading-04 text-text-primary flex-1 min-w-0 truncate">
-                {implantBaseModalTeeth.length === 1
-                  ? `Tooth ${implantBaseModalTeeth[0]}`
-                  : `Tooth ${[...implantBaseModalTeeth].sort((a, b) => a - b).join(",")}`}
+          <div className="flex w-full min-w-0 flex-col" style={{ gap: 24 }}>
+            {/* Header — back + title */}
+            <div className="flex w-full items-center" style={{ gap: 4, height: 60 }}>
+              <button
+                type="button"
+                onClick={closeImplantModal}
+                className="flex shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-02)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+                style={{ width: 32, height: 32 }}
+                aria-label="Back"
+              >
+                <ChevronLeftIcon size={32} color="var(--color-icon-primary)" />
+              </button>
+              <h2 id="implant-base-modal-title" className="tp-heading-03 min-w-0 flex-1 truncate text-text-primary">
+                Implant Based
               </h2>
-              <button
-                type="button"
-                onClick={() => { setImplantBaseModalOpen(false); setSelectedImplantId(null); }}
-                className="flex items-center justify-center shrink-0 cursor-pointer bg-transparent border-0 appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-02)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-lg"
-                style={{ width: 60, height: 60 }}
-                aria-label="Close"
+            </div>
+
+            {/* Tooth strip + main row — gap 16 */}
+            <div className="flex w-full flex-col" style={{ gap: 16 }}>
+              <div
+                className="flex w-full items-center justify-center border border-solid border-border-subtle bg-[var(--color-background-subtle-02,#f4f4f4)]"
+                style={{ borderRadius: 4, minHeight: 146, paddingTop: 10, paddingBottom: 9 }}
               >
-                <CloseIcon size={32} color="var(--color-icon-primary)" />
-              </button>
-            </div>
-            <span
-              className="tp-body-02 text-[var(--color-text-inverse-primary)] inline-flex items-center justify-center self-start"
-              style={{
-                backgroundColor: "#ff8133",
-                borderRadius: 4,
-                padding: "var(--spacing-01) var(--spacing-02)",
-                minWidth: 24,
-              }}
-            >
-              Implant based
-            </span>
-          </div>
+                <div className="flex w-full flex-col items-center justify-center" style={{ gap: 12, paddingLeft: 16, paddingRight: 16 }}>
+                  {implantBaseModalTeeth.length === 0 ? (
+                    <span className="tp-body-02 text-text-tertiary">—</span>
+                  ) : (
+                    <div className="flex flex-wrap items-end justify-center" style={{ gap: 20 }}>
+                      {[...implantBaseModalTeeth].sort((a, b) => a - b).map((tooth) => (
+                        <div key={tooth} className="flex flex-col items-center justify-center" style={{ gap: 6 }}>
+                          {/* Figma 4515:194756 — TOOTH - large (viewBox 58×84), centered in 58×93 strip */}
+                          <div className="flex h-[93px] w-[58px] shrink-0 items-center justify-center">
+                            <img
+                              src={implantToothLarge}
+                              alt=""
+                              width={58}
+                              height={84}
+                              className="block h-auto max-h-[93px] w-[58px] object-contain"
+                              draggable={false}
+                              aria-hidden
+                            />
+                          </div>
+                          <span className="text-[16px] font-medium leading-6 text-[#3e3d40]">{tooth}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          {/* Tabs + scrollable body — Figma: 16px gap between tabs and content */}
-          <div className="flex flex-col flex-1 min-h-0 w-full min-w-0" style={{ gap: "var(--spacing-04)" }}>
-            {/* Tabs: Recents, Favorites, Library — Figma _Tab item: h 60, pb 12, px 24 */}
-            <div className="flex items-center w-full shrink-0" style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
-              {(["Recents", "Favorites", "Library"] as const).map((tab) => {
-                const isActive = implantBaseModalTab === tab;
-                return (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setImplantBaseModalTab(tab)}
-                    className="tp-headling-02 cursor-pointer bg-transparent border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] shrink-0"
-                    style={{
-                      height: 60,
-                      paddingBottom: "var(--spacing-03)",
-                      paddingLeft: "var(--spacing-06)",
-                      paddingRight: "var(--spacing-06)",
-                      borderBottom: isActive ? "2px solid var(--color-border-interactive)" : "2px solid transparent",
-                      marginBottom: -1,
-                      color: isActive ? "var(--color-text-primary)" : "var(--color-text-secondary)",
-                    }}
+              <div className="flex w-full flex-row items-stretch" style={{ gap: 24 }}>
+                <div className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
+                  <DropdownField
+                    id="implant-manufacturer"
+                    label="implant manufacturer"
+                    value={implantManufacturerId}
+                    options={IMPLANT_MANUFACTURER_OPTIONS}
+                    onChange={(id) => { setImplantManufacturerId(id); setImplantModalOpenDropdown(null); }}
+                    isOpen={implantModalOpenDropdown === "mfr"}
+                    onToggle={() => setImplantModalOpenDropdown((o) => (o === "mfr" ? null : "mfr"))}
+                    listZIndex={10001}
+                    backgroundVariant="layer-02"
+                  />
+                  <DropdownField
+                    id="implant-connection"
+                    label="connection"
+                    value={implantConnectionId}
+                    options={IMPLANT_CONNECTION_OPTIONS}
+                    onChange={(id) => { setImplantConnectionId(id); setImplantModalOpenDropdown(null); }}
+                    isOpen={implantModalOpenDropdown === "conn"}
+                    onToggle={() => setImplantModalOpenDropdown((o) => (o === "conn" ? null : "conn"))}
+                    listZIndex={10001}
+                    backgroundVariant="layer-02"
+                  />
+                  <DropdownField
+                    id="implant-diameter"
+                    label="Diameter/Platform"
+                    value={implantDiameterPlatformId}
+                    options={IMPLANT_DIAMETER_PLATFORM_OPTIONS}
+                    onChange={(id) => { setImplantDiameterPlatformId(id); setImplantModalOpenDropdown(null); }}
+                    isOpen={implantModalOpenDropdown === "diam"}
+                    onToggle={() => setImplantModalOpenDropdown((o) => (o === "diam" ? null : "diam"))}
+                    listZIndex={10001}
+                    backgroundVariant="layer-02"
+                  />
+                  <DropdownField
+                    id="implant-scan-body"
+                    label="Scan body type"
+                    value={implantScanBodyTypeId}
+                    options={IMPLANT_SCAN_BODY_TYPE_OPTIONS}
+                    onChange={(id) => { setImplantScanBodyTypeId(id); setImplantModalOpenDropdown(null); }}
+                    isOpen={implantModalOpenDropdown === "scan"}
+                    onToggle={() => setImplantModalOpenDropdown((o) => (o === "scan" ? null : "scan"))}
+                    listZIndex={10001}
+                    backgroundVariant="layer-02"
+                  />
+                </div>
+                <div
+                  className="flex w-[430px] shrink-0 flex-col self-stretch"
+                  style={{ paddingTop: 32 }}
+                >
+                  <div
+                    className="flex min-h-[380px] flex-1 flex-col items-center justify-center overflow-hidden rounded-lg bg-[var(--color-background-layer-02)]"
+                    style={{ padding: 24 }}
                   >
-                    {tab}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Scrollable body: cards + accordions — Figma gap 24 between sections */}
-            <div className="flex flex-col flex-1 min-h-0 overflow-auto scrollbar-table w-full" style={{ gap: "var(--spacing-06)", height: "fit-content" }}>
-          {/* Implant cards grid — Figma gap 12 between rows, 16 between cards */}
-          <div className="flex flex-col w-full shrink-0" style={{ gap: "var(--spacing-03)" }}>
-            <div className="flex flex-wrap w-full" style={{ gap: "var(--spacing-04)" }}>
-              {IMPLANT_OPTIONS.map((opt) => {
-                const isSelected = selectedImplantId === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setSelectedImplantId(opt.id)}
-                    className="flex flex-col flex-1 min-w-0 min-h-0 text-left cursor-pointer border appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-lg"
-                    style={{
-                      minWidth: 243,
-                      maxWidth: 280,
-                      padding: 8,
-                      gap: 16,
-                      backgroundColor: "var(--color-background-layer-01)",
-                      borderColor: isSelected ? "var(--color-border-interactive)" : "var(--color-border-accent)",
-                      borderWidth: isSelected ? 2 : 1,
-                    }}
-                  >
-                    <div
-                      className="relative flex items-start justify-end w-full rounded-lg"
-                      style={{
-                        height: 143,
-                        paddingTop: 8,
-                        paddingRight: 8,
-                        paddingLeft: 8,
-                        backgroundColor: "var(--color-background-layer-02)",
-                      }}
-                    >
-                      <span className="shrink-0 flex items-center justify-center" style={{ width: 24, height: 24 }} aria-hidden>
-                        <img src={opt.isFavorite ? starFillSvg : starOutlineSvg} alt="" width={24} height={24} className="block" />
-                      </span>
-                      <img
-                        src={implantBasePlaceholder}
-                        alt=""
-                        className="absolute left-1/2 top-1/2 block object-contain pointer-events-none"
-                        style={{ width: 68, height: 70, transform: "translate(-50%, -50%)" }}
-                      />
-                    </div>
-                    <div className="flex flex-col w-full" style={{ gap: 8 }}>
-                      <span className="tp-body-02 text-text-primary leading-[28px]">{opt.title}</span>
-                      <span className="tp-body-01 text-text-secondary whitespace-nowrap">{opt.subtitle}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Accordion group — Figma 02 Accordion group, gap 8 */}
-          <div className="flex flex-col w-full shrink-0" style={{ gap: "var(--spacing-02)" }}>
-            {/* 01 Restoration type */}
-            <div className="flex flex-col w-full overflow-hidden rounded-2xl" style={{ backgroundColor: "var(--color-background-layer-02)" }}>
-              <button
-                type="button"
-                onClick={() => setRestorationTypeAccordionOpen((o) => !o)}
-                className="flex items-center w-full cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-t-2xl"
-                style={{ gap: 8, padding: 16, height: 60 }}
-              >
-                <span className="tp-headling-02 text-text-primary flex-1 min-w-0 text-left">Restoration type</span>
-                <span className="shrink-0 flex items-center justify-center" style={{ width: 24, height: 24, transform: restorationTypeAccordionOpen ? "rotate(180deg)" : "none" }}>
-                  <CaretDownIcon size={24} color="var(--color-icon-primary)" />
-                </span>
-              </button>
-              {restorationTypeAccordionOpen && (
-                <div className="flex flex-col w-full" style={{ gap: 10, padding: "0 16px 16px", paddingTop: 0 }}>
-                  {/* Row 1 — Figma 4222:69964: gap 24px, two equal columns */}
-                  <div className="flex w-full" style={{ gap: 24 }}>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <DropdownField
-                        id="implant-restoration-type"
-                        label="Restoration type"
-                        value={implantModalRestorationType}
-                        options={RESTORATION_TYPE_OPTIONS}
-                        onChange={(id) => { setImplantModalRestorationType(id); setImplantModalRestorationDropdown(null); }}
-                        isOpen={implantModalRestorationDropdown === "restoration"}
-                        onToggle={() => setImplantModalRestorationDropdown((o) => (o === "restoration" ? null : "restoration"))}
-                        listZIndex={10001}
-                        hideBorder
-                      />
-                    </div>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <DropdownField
-                        id="implant-abutment-material"
-                        label="Abutment material"
-                        value={implantModalAbutmentMaterial}
-                        options={ABUTMENT_MATERIAL_OPTIONS}
-                        onChange={(id) => { setImplantModalAbutmentMaterial(id); setImplantModalRestorationDropdown(null); }}
-                        isOpen={implantModalRestorationDropdown === "abutment-material"}
-                        onToggle={() => setImplantModalRestorationDropdown((o) => (o === "abutment-material" ? null : "abutment-material"))}
-                        listZIndex={10001}
-                        hideBorder
-                      />
-                    </div>
-                  </div>
-                  {/* Row 2 — Figma 4222:69990: Abutment type + Ti Base (pt 32px) */}
-                  <div className="flex w-full" style={{ gap: 24 }}>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <DropdownField
-                        id="implant-abutment-type"
-                        label="Abutment type"
-                        value={implantModalAbutmentType}
-                        options={ABUTMENT_TYPE_OPTIONS}
-                        onChange={(id) => { setImplantModalAbutmentType(id); setImplantModalRestorationDropdown(null); }}
-                        isOpen={implantModalRestorationDropdown === "abutment-type"}
-                        onToggle={() => setImplantModalRestorationDropdown((o) => (o === "abutment-type" ? null : "abutment-type"))}
-                        listZIndex={10001}
-                        hideBorder
-                      />
-                    </div>
-                    <div className="flex flex-col flex-1 min-w-0 w-full items-start justify-start" style={{ paddingTop: 32 }}>
-                      <ToggleSwitch label="Ti Base" checked={implantModalTiBase} onChange={setImplantModalTiBase} />
+                    <div className="flex max-w-[333px] flex-col items-center" style={{ gap: 7 }}>
+                      <span className="tp-heading-03 text-center text-text-secondary">Select parameters</span>
+                      <p className="tp-body-02 max-w-[315px] text-center text-text-secondary">
+                        Select all parameters to see the preview here
+                      </p>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* 02 Crown */}
-            <div className="flex flex-col w-full overflow-hidden rounded-2xl" style={{ backgroundColor: "var(--color-background-layer-02)" }}>
-              <button
-                type="button"
-                onClick={() => setCrownAccordionOpen((o) => !o)}
-                className="flex items-center w-full cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-t-2xl"
-                style={{ gap: 8, padding: 16, height: 60 }}
-              >
-                <span className="tp-headling-02 text-text-primary flex-1 min-w-0 text-left">{restorationTypeLabel}</span>
-                <span className="shrink-0 flex items-center justify-center" style={{ width: 24, height: 24, transform: crownAccordionOpen ? "rotate(180deg)" : "none" }}>
-                  <CaretDownIcon size={24} color="var(--color-icon-primary)" />
-                </span>
-              </button>
-              {crownAccordionOpen && (
-                <div className="flex flex-col w-full" style={{ gap: 10, padding: "0 16px 16px", paddingTop: 0 }}>
-                  {/* Row 1 — Figma 4222:70517: Specification + Shade system, gap 24px */}
-                  <div className="flex w-full" style={{ gap: 24 }}>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <DropdownField
-                        id="implant-crown-spec"
-                        label="Specification"
-                        value={implantModalSpec}
-                        options={SPEC_OPTIONS}
-                        onChange={(id) => { setImplantModalSpec(id); setImplantModalCrownDropdown(null); }}
-                        isOpen={implantModalCrownDropdown === "spec"}
-                        onToggle={() => setImplantModalCrownDropdown((o) => (o === "spec" ? null : "spec"))}
-                        listZIndex={10001}
-                        hideBorder
-                      />
-                    </div>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <DropdownField
-                        id="implant-crown-shade"
-                        label="Shade system"
-                        value={implantModalShade}
-                        options={SHADE_OPTIONS}
-                        onChange={(id) => { setImplantModalShade(id); setImplantModalCrownDropdown(null); }}
-                        isOpen={implantModalCrownDropdown === "shade"}
-                        onToggle={() => setImplantModalCrownDropdown((o) => (o === "shade" ? null : "shade"))}
-                        listZIndex={10001}
-                        hideBorder
-                      />
-                    </div>
-                  </div>
-                  {/* Row 2 — Figma 4222:70520: Material + Body */}
-                  <div className="flex w-full" style={{ gap: 24 }}>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <DropdownField
-                        id="implant-crown-material"
-                        label="Material"
-                        value={implantModalMaterial}
-                        options={MATERIAL_OPTIONS}
-                        onChange={(id) => { setImplantModalMaterial(id); setImplantModalCrownDropdown(null); }}
-                        isOpen={implantModalCrownDropdown === "material"}
-                        onToggle={() => setImplantModalCrownDropdown((o) => (o === "material" ? null : "material"))}
-                        listZIndex={10001}
-                        hideBorder
-                      />
-                    </div>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <DropdownField
-                        id="implant-crown-body"
-                        label="Body"
-                        value={implantModalBody}
-                        options={BODY_OPTIONS}
-                        onChange={(id) => { setImplantModalBody(id); setImplantModalCrownDropdown(null); }}
-                        isOpen={implantModalCrownDropdown === "body"}
-                        onToggle={() => setImplantModalCrownDropdown((o) => (o === "body" ? null : "body"))}
-                        listZIndex={10001}
-                        hideBorder
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+            {/* Restoration + Crown — gap 8 */}
+            <div className="flex w-full flex-col" style={{ gap: 8 }}>
+              <DropdownField
+                id="implant-restoration-type-bottom"
+                label="Restoration type"
+                value={implantModalRestorationType}
+                options={RESTORATION_TYPE_OPTIONS}
+                onChange={(id) => { setImplantModalRestorationType(id); setImplantModalOpenDropdown(null); }}
+                isOpen={implantModalOpenDropdown === "rest"}
+                onToggle={() => setImplantModalOpenDropdown((o) => (o === "rest" ? null : "rest"))}
+                listZIndex={10001}
+                backgroundVariant="layer-02"
+              />
+              <DropdownField
+                id="implant-crown-bottom"
+                label="Crown"
+                value={implantModalCrownRowId}
+                options={RESTORATION_TYPE_OPTIONS}
+                onChange={(id) => { setImplantModalCrownRowId(id); setImplantModalOpenDropdown(null); }}
+                isOpen={implantModalOpenDropdown === "crown"}
+                onToggle={() => setImplantModalOpenDropdown((o) => (o === "crown" ? null : "crown"))}
+                listZIndex={10001}
+                backgroundVariant="layer-02"
+              />
             </div>
           </div>
 
-          </div>
-            {/* End scrollable body */}
-          </div>
-
-          {/* Footer: Done button — Figma 01 Button: h 60, min-w 72, w 120 */}
-          <div className="flex items-center justify-end w-full shrink-0" style={{ gap: "var(--spacing-02)" }}>
+          <div className="flex w-full shrink-0 justify-end" style={{ gap: 8 }}>
             <button
               type="button"
               onClick={handleImplantBaseDone}
-              disabled={!selectedImplantId}
-              className="tp-body-02 cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] disabled:cursor-not-allowed rounded-lg flex items-center justify-center shrink-0"
+              disabled={!implantManufacturerId}
+              className="tp-body-02 flex shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] disabled:cursor-not-allowed"
               style={{
                 width: 120,
                 minWidth: 72,
                 height: 60,
                 padding: "var(--spacing-03) var(--spacing-04)",
                 borderRadius: 8,
-                backgroundColor: selectedImplantId ? "var(--color-background-brand)" : "var(--color-background-brand-disabled)",
-                color: selectedImplantId ? "var(--color-text-inverse-primary)" : "var(--color-text-disabled)",
+                backgroundColor: implantManufacturerId ? "var(--color-background-brand)" : "var(--color-background-brand-disabled)",
+                color: implantManufacturerId ? "var(--color-text-inverse-primary)" : "var(--color-text-disabled)",
               }}
             >
               Done
@@ -1610,9 +1538,7 @@ export default function FixedRestorativeForm26A({
               onClick={() => {
                 if (isImplantBased) {
                   setImplantBaseModalTeeth([toothContextMenu.tooth]);
-                  setImplantBaseModalCaseId("");
-                  setImplantBaseModalTab("Recents");
-                  setSelectedImplantId(null);
+                  resetImplantModalForm();
                   setImplantBaseModalOpen(true);
                 } else if (rt.label === "Crown") {
                   setToothSelections((prev) => ({ ...prev, [toothContextMenu.tooth]: "Crown" }));
