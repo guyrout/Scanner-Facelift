@@ -169,7 +169,9 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
           onClick={() => onJawChange("upper")}
           className="absolute top-0 z-[1] outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
           style={{
-            position: "relative",
+            position: "absolute",
+            top: 0,
+            left: 0,
             width: "100%",
             height: 186,
             borderRadius: 8,
@@ -250,7 +252,9 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
           onClick={() => onJawChange("lower")}
           className="absolute bottom-0 z-[1] outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
           style={{
-            position: "relative",
+            position: "absolute",
+            bottom: 0,
+            left: 0,
             width: "100%",
             height: 186,
             borderRadius: 8,
