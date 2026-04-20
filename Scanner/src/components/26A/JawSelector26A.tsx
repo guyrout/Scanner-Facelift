@@ -4,7 +4,7 @@
  * Shows left/right chevron arrows with dividers and current jaw label.
  */
 
-export type JawSelection = "upper" | "lower" | "both";
+export type JawSelection = "upper" | "bite" | "lower";
 
 interface JawSelectorProps {
   selected: JawSelection;
@@ -15,8 +15,8 @@ interface JawSelectorProps {
 
 const JAW_LABELS: Record<JawSelection, string> = {
   upper: "Upper Jaw",
+  bite: "Bite",
   lower: "Lower Jaw",
-  both: "Both Jaws",
 };
 
 function ChevronLeft() {
