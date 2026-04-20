@@ -9,7 +9,7 @@
  *   5–8. Tooth Selector + Treatment Info + Attachments + Note — Figma 6171:2248–2251
  *        (delegated to FixedRestorativeForm26A with hideTopRow + hideToggles)
  *   Study model (treatment = study-model): Order + Scan Options match Figma 6172:3809; only
- *   Study model or Invisalign: same Order + Scan Options (2 toggles); Attachments + Note only — FixedRestorativeForm26A attachmentsNoteOnly.
+ *   Attachments + Note below (no tooth chart) — FixedRestorativeForm26A attachmentsNoteOnly.
  */
 
 import { useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
@@ -28,7 +28,7 @@ import PatientSearchModal26A from "./PatientSearchModal26A";
 import type { Patient } from "../../data/patients";
 import type { ScanFlowPatientSnapshot } from "./ScanFlowPage26A";
 import Avatar from "../Avatar";
-import invisalignSvg from "../../assets/procedures/invisalign.svg";
+import studyModelSvg from "../../assets/procedures/study-model.svg";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -194,9 +194,7 @@ export default function InfoStepContent26A({
   const [studyAlignerDropdownOpen, setStudyAlignerDropdownOpen] = useState(false);
   const [studyStageDropdownOpen, setStudyStageDropdownOpen] = useState(false);
 
-  /** Study model + Invisalign: same Order (Figma 6172:3813), Scan Options (2 toggles), and attachments-only form. */
-  const studyStyleInfoOrderAndScan = treatmentId === "study-model" || treatmentId === "invisalign";
-  const attachmentsNoteOnly = studyStyleInfoOrderAndScan;
+  const isStudyModel = treatmentId === "study-model";
 
   const hasPatientFieldData = useMemo(
     () =>
@@ -383,7 +381,7 @@ export default function InfoStepContent26A({
         {/* ── 3. Order — Figma 6171:2246; Study model: Figma 6172:3813 ─ */}
         <div className="flex flex-col w-full" style={{ ...CARD_STYLE, padding: "32px 28px", gap: 16 }}>
           <h2 className="tp-heading-04 text-text-primary" style={{ fontSize: 24, lineHeight: "36px" }}>Order</h2>
-          {studyStyleInfoOrderAndScan ? (
+          {isStudyModel ? (
             <div className="flex w-full" style={{ gap: 23 }}>
               <div className="flex flex-col flex-1 min-w-0" style={{ gap: 18 }}>
                 <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
@@ -403,8 +401,8 @@ export default function InfoStepContent26A({
                     }}
                     backgroundVariant="layer-02"
                     triggerLeading={
-                      treatmentId === "study-model" || treatmentId === "invisalign" ? (
-                        <img src={invisalignSvg} alt="" width={30} height={30} className="shrink-0 object-contain" aria-hidden />
+                      treatmentId === "study-model" ? (
+                        <img src={studyModelSvg} alt="" width={30} height={30} className="shrink-0" aria-hidden />
                       ) : undefined
                     }
                   />
@@ -477,11 +475,6 @@ export default function InfoStepContent26A({
                     isOpen={treatmentDropdownOpen}
                     onToggle={() => { setSendToDropdownOpen(false); setStudyAlignerDropdownOpen(false); setStudyStageDropdownOpen(false); setTreatmentDropdownOpen((o) => !o); }}
                     backgroundVariant="layer-02"
-                    triggerLeading={
-                      treatmentId === "study-model" || treatmentId === "invisalign" ? (
-                        <img src={invisalignSvg} alt="" width={30} height={30} className="shrink-0 object-contain" aria-hidden />
-                      ) : undefined
-                    }
                   />
                 </div>
                 <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
@@ -530,9 +523,9 @@ export default function InfoStepContent26A({
         </div>
 
         {/* ── 4. Scan Options — Figma 6171:2247; Study model: Figma 6172:3814 (2 toggles) ─ */}
-        <div className="flex flex-col w-full" style={{ ...CARD_STYLE, padding: "32px 28px", gap: studyStyleInfoOrderAndScan ? 16 : 24 }}>
+        <div className="flex flex-col w-full" style={{ ...CARD_STYLE, padding: "32px 28px", gap: isStudyModel ? 16 : 24 }}>
           <h2 className="tp-heading-04 text-text-primary" style={{ fontSize: 24, lineHeight: "36px" }}>Scan Options</h2>
-          {studyStyleInfoOrderAndScan ? (
+          {isStudyModel ? (
             <div className="flex items-start justify-between w-full" style={{ paddingTop: 10, paddingBottom: 10 }}>
               <div className="flex items-center min-w-0" style={{ gap: 23 }}>
                 <div className="flex flex-col min-w-0" style={{ gap: 11, maxWidth: 508 }}>
@@ -608,7 +601,7 @@ export default function InfoStepContent26A({
           setNoteText={setNoteText}
           hideTopRow
           hideToggles
-          attachmentsNoteOnly={attachmentsNoteOnly}
+          attachmentsNoteOnly={isStudyModel}
         />
       </div>
 

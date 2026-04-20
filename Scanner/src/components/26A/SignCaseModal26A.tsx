@@ -178,9 +178,9 @@ export default function SignCaseModal26A({ sendToId, onConfirmSend, onRequestClo
           </div>
 
           <div className="flex flex-col w-full">
-            <div className="flex h-[246px] min-h-0 flex-col isolate w-full rounded-lg border border-solid border-border-subtle overflow-hidden">
+            <div className="flex flex-col isolate w-full rounded-lg border border-solid border-border-subtle overflow-hidden">
               <div
-                className="flex min-h-0 flex-1 w-full bg-[var(--color-background-layer-02)] px-4 py-3 overflow-hidden relative"
+                className="flex h-[264px] min-h-0 w-full bg-[var(--color-background-layer-02)] px-4 py-3 overflow-hidden relative"
                 style={{ touchAction: "none" }}
               >
                 <canvas
@@ -196,7 +196,7 @@ export default function SignCaseModal26A({ sendToId, onConfirmSend, onRequestClo
                 />
               </div>
               <div
-                className="flex shrink-0 items-center justify-between w-full border-t border-solid border-border-subtle bg-[var(--color-background-subtle-02,#f4f4f4)] px-4 py-2"
+                className="flex items-center justify-between w-full border-t border-solid border-border-subtle bg-[var(--color-background-subtle-02,#f4f4f4)] px-4 py-2"
               >
                 <div className="flex items-center justify-center min-w-[72px] h-16 px-4 py-3 rounded-lg">
                   <span className={`tp-body-02 ${hasSignature ? "text-text-secondary" : "text-[var(--color-text-disabled,rgba(0,0,0,0.23))]"}`}>
