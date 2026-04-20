@@ -17,7 +17,6 @@ import ReviewToolPanel26A from "./ReviewToolPanel26A";
 import MultiLayerPanel26A, { type LayerItem, type SelectedLayerId } from "./MultiLayerPanel26A";
 import ToothMap26A from "./ToothMap26A";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
-import type { JawSelection } from "./JawSelector26A";
 import { getScanFlowVersion } from "../../utils/scanFlowVersionManager";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer26A"));
@@ -586,8 +585,6 @@ interface ViewStepContentProps {
   onToolbarExpandedChange?: (expanded: boolean) => void;
   cameraStateRef?: MutableRefObject<CameraState>;
   comingFromScan?: boolean;
-  selectedJaw: JawSelection;
-  onSelectedJawChange: (jaw: JawSelection) => void;
 }
 
 export default function ViewStepContent26A({
@@ -595,8 +592,6 @@ export default function ViewStepContent26A({
   onToolbarExpandedChange,
   cameraStateRef,
   comingFromScan = false,
-  selectedJaw,
-  onSelectedJawChange,
 }: ViewStepContentProps) {
   const isScanFlow26A = getScanFlowVersion() === "26A";
   const [viewMode, setViewMode] = useState<ViewMode>("color");
@@ -720,9 +715,6 @@ export default function ViewStepContent26A({
         >
           <PlyModelViewer
             url="/models/upper-jaw.ply"
-            {...(isScanFlow26A
-              ? { lowerUrl: "/models/lower-jaw.ply" as const, jawView: selectedJaw }
-              : {})}
             viewMode={viewMode}
             cameraStateRef={cameraStateRef}
             showOcclusgramHeatmap={activeTools.has("occlusgram")}
@@ -734,11 +726,7 @@ export default function ViewStepContent26A({
       {/* Top-left: 26A — dental chart (moved from Scan); 26B — multi layer panel — Figma 4024:77272 */}
       <div className="absolute z-20" style={{ top: 12, left: 16 }}>
         {isScanFlow26A ? (
-          <ToothMap26A
-            className="shrink-0"
-            selectedJaw={selectedJaw}
-            onJawChange={onSelectedJawChange}
-          />
+          <ToothMap26A className="shrink-0" />
         ) : (
           <MultiLayerPanel26A
             layers={viewLayers}

@@ -7,7 +7,6 @@ import {
   computeHeatIntensity,
   createHeatmapMaterial,
 } from "../../shaders/occlusalHeatmap";
-import type { JawSelection } from "./JawSelector26A";
 
 export interface CameraState {
   radius: number;
@@ -423,8 +422,6 @@ function LoadingIndicator() {
 
 interface PlyModelViewerProps {
   url: string;
-  jawView?: JawSelection;
-  lowerUrl?: string;
   viewMode?: ViewMode;
   cameraStateRef?: MutableRefObject<CameraState>;
   showOcclusgramHeatmap?: boolean;
@@ -434,17 +431,11 @@ interface PlyModelViewerProps {
 
 export default function PlyModelViewer26A({
   url,
-  jawView,
-  lowerUrl,
   viewMode = "color",
   cameraStateRef,
   showOcclusgramHeatmap = false,
   opacity = 1,
 }: PlyModelViewerProps) {
-  const upperAsset = url;
-  const lowerAsset = lowerUrl ?? url;
-  const usesJawView = jawView != null;
-
   return (
     <Canvas
       camera={{
@@ -463,32 +454,12 @@ export default function PlyModelViewer26A({
       <hemisphereLight args={["#ffffff", "#c0c0c0", 0.4]} />
       <CameraRig sharedCameraRef={cameraStateRef} />
       <Suspense fallback={<LoadingIndicator />}>
-        {!usesJawView && (
-          <PlyMesh
-            url={url}
-            viewMode={viewMode}
-            showOcclusgramHeatmap={showOcclusgramHeatmap}
-            opacity={opacity}
-          />
-        )}
-        {usesJawView && (jawView === "upper" || jawView === "bite") && (
-          <PlyMesh
-            url={upperAsset}
-            viewMode={viewMode}
-            showOcclusgramHeatmap={showOcclusgramHeatmap}
-            opacity={opacity}
-          />
-        )}
-        {usesJawView && (jawView === "lower" || jawView === "bite") && (
-          <group position={[0, jawView === "bite" && upperAsset === lowerAsset ? 0.004 : 0, 0]}>
-            <PlyMesh
-              url={lowerAsset}
-              viewMode={viewMode}
-              showOcclusgramHeatmap={showOcclusgramHeatmap}
-              opacity={opacity}
-            />
-          </group>
-        )}
+        <PlyMesh
+          url={url}
+          viewMode={viewMode}
+          showOcclusgramHeatmap={showOcclusgramHeatmap}
+          opacity={opacity}
+        />
       </Suspense>
     </Canvas>
   );

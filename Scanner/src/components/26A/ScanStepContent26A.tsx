@@ -24,23 +24,17 @@ import type { ViewMode, CameraState } from "./PlyModelViewer26A";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer26A"));
 
-const JAW_ORDER: JawSelection[] = ["upper", "bite", "lower"];
+const JAW_ORDER: JawSelection[] = ["upper", "lower", "both"];
 
 interface ScanStepContentProps {
   toolbarExpanded?: boolean;
   onToolbarExpandedChange?: (expanded: boolean) => void;
   cameraStateRef?: MutableRefObject<CameraState>;
-  selectedJaw: JawSelection;
-  onSelectedJawChange: (jaw: JawSelection) => void;
 }
 
-export default function ScanStepContent26A({
-  toolbarExpanded,
-  onToolbarExpandedChange,
-  cameraStateRef,
-  selectedJaw,
-  onSelectedJawChange,
-}: ScanStepContentProps) {
+export default function ScanStepContent26A({ toolbarExpanded, onToolbarExpandedChange, cameraStateRef }: ScanStepContentProps) {
+  const [selectedJaw, setSelectedJaw] = useState<JawSelection>("upper");
+
   const [viewMode, setViewMode] = useState<ViewMode>("color");
   const [prepEditOpen, setPrepEditOpen] = useState(false);
   const [deselectEditNonce, setDeselectEditNonce] = useState(0);
@@ -50,7 +44,7 @@ export default function ScanStepContent26A({
   function cycleJaw(dir: 1 | -1) {
     const idx = JAW_ORDER.indexOf(selectedJaw);
     const next = (idx + dir + JAW_ORDER.length) % JAW_ORDER.length;
-    onSelectedJawChange(JAW_ORDER[next]);
+    setSelectedJaw(JAW_ORDER[next]);
   }
 
   return (
@@ -65,38 +59,17 @@ export default function ScanStepContent26A({
               </div>
             }
           >
-            <PlyModelViewer
-              url="/models/upper-jaw.ply"
-              lowerUrl="/models/lower-jaw.ply"
-              jawView={selectedJaw}
-              viewMode={viewMode}
-              cameraStateRef={cameraStateRef}
-            />
+            <PlyModelViewer url="/models/upper-jaw.ply" viewMode={viewMode} cameraStateRef={cameraStateRef} />
           </Suspense>
         </div>
 
         {/* Top-left: tooth map — same chart also shown on View (26A replaces multi-layer panel there) */}
-        <div
-          className="absolute z-10"
-          style={{
-            top: 12,
-            left: 23,
-            display: "flex",
-            flexDirection: "column",
-            textAlign: "center",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <ToothMap26A
-            className="shrink-0"
-            selectedJaw={selectedJaw}
-            onJawChange={onSelectedJawChange}
-          />
+        <div className="absolute z-10" style={{ top: 12, left: 23 }}>
+          <ToothMap26A className="shrink-0" />
         </div>
 
         {/* Left: jaw selector */}
-        <div className="absolute z-10" style={{ left: 23, top: 418, width: 240 }}>
+        <div className="absolute z-10" style={{ left: 23, top: 418 }}>
           <JawSelector26A
             selected={selectedJaw}
             onPrev={() => cycleJaw(-1)}

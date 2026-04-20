@@ -5,9 +5,7 @@
  * Right: Help, Battery, Settings.
  */
 
-import { useState } from "react";
 import { HomeIcon, AlarmIcon, CameraIcon, HelpIcon, BatteryIcon, SettingsIcon } from "../Icons";
-import BatteryModal from "../BatteryModal";
 import WizardTopbarSwitcher26A, { type ScanWizardStep } from "./WizardTopbarSwitcher26A";
 
 const STEP_LABELS: Record<ScanWizardStep, string> = {
@@ -39,18 +37,9 @@ export default function ScanFlowHeader26A({
   onBatteryClick,
   onSettingsClick,
 }: ScanFlowHeaderProps) {
-  const [batteryModalOpen, setBatteryModalOpen] = useState(false);
   const stepLabel = STEP_LABELS[currentStep];
-  const handleBatteryClick = () => {
-    if (onBatteryClick) {
-      onBatteryClick();
-      return;
-    }
-    setBatteryModalOpen((prev) => !prev);
-  };
 
   return (
-    <>
     <header
       className="grid grid-cols-[1fr_2fr_1fr] items-center w-full bg-surface border-b border-border-subtle py-1.5 shrink-0"
       style={{ paddingLeft: 16, paddingRight: 16 }}
@@ -114,9 +103,9 @@ export default function ScanFlowHeader26A({
         </button>
         <button
           type="button"
-          onClick={handleBatteryClick}
+          onClick={onBatteryClick}
           aria-label="Battery status"
-          className={`flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${batteryModalOpen ? "bg-[var(--color-background-highlight-blue)]" : "bg-transparent"}`}
+          className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           <BatteryIcon size={32} color="var(--color-icon-primary)" />
         </button>
@@ -130,9 +119,5 @@ export default function ScanFlowHeader26A({
         </button>
       </div>
     </header>
-    {batteryModalOpen && !onBatteryClick && (
-      <BatteryModal onClose={() => setBatteryModalOpen(false)} level={100} />
-    )}
-    </>
   );
 }

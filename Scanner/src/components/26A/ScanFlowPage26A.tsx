@@ -14,7 +14,6 @@ import ScanStepContent26A from "./ScanStepContent26A";
 import ViewStepContent26A from "./ViewStepContent26A";
 import SendStepContent26A from "./SendStepContent26A";
 import type { CameraState } from "./PlyModelViewer26A";
-import type { JawSelection } from "./JawSelector26A";
 
 export interface ScanFlowPatientSnapshot {
   patientName: string;
@@ -51,7 +50,6 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
     radius: 4, phi: Math.PI / 2.2, theta: 0,
     targetX: 0, targetY: 0, targetZ: 0,
   });
-  const [selectedJaw, setSelectedJaw] = useState<JawSelection>("upper");
 
   const handleStepChange = useCallback((step: ScanWizardStep) => {
     previousStepRef.current = currentStep;
@@ -107,8 +105,6 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             toolbarExpanded={toolbarExpanded}
             onToolbarExpandedChange={setToolbarExpanded}
             cameraStateRef={cameraStateRef}
-            selectedJaw={selectedJaw}
-            onSelectedJawChange={setSelectedJaw}
           />
         )}
         {currentStep === "view" && (
@@ -117,8 +113,6 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             onToolbarExpandedChange={setToolbarExpanded}
             cameraStateRef={cameraStateRef}
             comingFromScan={previousStepRef.current === "scan"}
-            selectedJaw={selectedJaw}
-            onSelectedJawChange={setSelectedJaw}
           />
         )}
         {currentStep === "send" && (
@@ -139,8 +133,6 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             onToolbarExpandedChange={setToolbarExpanded}
             cameraStateRef={cameraStateRef}
             comingFromScan={previousStepRef.current === "scan"}
-            selectedJaw={selectedJaw}
-            onSelectedJawChange={setSelectedJaw}
             onExitSend={() => handleStepChange("view")}
           />
         )}
