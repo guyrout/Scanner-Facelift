@@ -63,11 +63,11 @@ const LOWER_ARCH_ACTIVE_LAYERED_HTML = lowerArchActiveLayeredSvg.replace(/^\s*<\
  */
 function buildUpperArchActiveHtmlWithReplacedTeeth(toothSelections: Record<number, string>): string {
   let html = UPPER_ARCH_ACTIVE_LAYERED_HTML;
-  UPPER_TEETH.forEach((fdi, index) => {
+  UPPER_TEETH.forEach((fdi) => {
     const selection = toothSelections[fdi];
     if (!selection || !isRegularRestoredSelection(selection)) return;
-      const figmaToothN = fdiToFigmaTooth(fdi);
-      if (figmaToothN == null) return;
+    const figmaToothN = fdiToFigmaTooth(fdi);
+    if (figmaToothN == null) return;
     if (!getRegularRestoredSvgByFigmaTooth(figmaToothN, "active")) return;
     html = html.replace(
       new RegExp(`<g\\s+id="upper-arch-tooth-${fdi}"`, "g"),
@@ -79,11 +79,11 @@ function buildUpperArchActiveHtmlWithReplacedTeeth(toothSelections: Record<numbe
 
 function buildLowerArchActiveHtmlWithReplacedTeeth(toothSelections: Record<number, string>): string {
   let html = LOWER_ARCH_ACTIVE_LAYERED_HTML;
-  LOWER_TEETH.forEach((fdi, index) => {
+  LOWER_TEETH.forEach((fdi) => {
     const selection = toothSelections[fdi];
     if (!selection || !isRegularRestoredSelection(selection)) return;
-      const figmaToothN = fdiToFigmaTooth(fdi);
-      if (figmaToothN == null) return;
+    const figmaToothN = fdiToFigmaTooth(fdi);
+    if (figmaToothN == null) return;
     if (!getRegularRestoredSvgByFigmaTooth(figmaToothN, "active")) return;
     html = html.replace(
       new RegExp(`<g\\s+id="lower-arch-tooth-${fdi}"`, "g"),
@@ -149,7 +149,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
       const layerRect = layerEl.getBoundingClientRect();
       const measuredByFdi: Record<number, ArchSlotRect> = {};
       const targetFdis = new Set<number>();
-      UPPER_TEETH.forEach((fdi, index) => {
+      UPPER_TEETH.forEach((fdi) => {
         const selection = toothSelections[fdi];
         if (!selection || !isRegularRestoredSelection(selection)) return;
         const figmaToothN = fdiToFigmaTooth(fdi);
@@ -213,7 +213,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
       const layerRect = layerEl.getBoundingClientRect();
       const measuredByFdi: Record<number, ArchSlotRect> = {};
       const targetFdis = new Set<number>();
-      LOWER_TEETH.forEach((fdi, index) => {
+      LOWER_TEETH.forEach((fdi) => {
         const selection = toothSelections[fdi];
         if (!selection || !isRegularRestoredSelection(selection)) return;
         const figmaToothN = fdiToFigmaTooth(fdi);
