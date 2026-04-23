@@ -71,6 +71,9 @@ function archOverlayHref(
 
 function hasArchSlotOverlayAsset(selection: string | undefined, fdi: number): boolean {
   if (!selection) return false;
+  if (fdiToFigmaTooth(fdi) == null) return false;
+  /** Missing always uses slot replacement (per-tooth SVG or sprite inside the arch slot). */
+  if (selection === "Missing") return true;
   return Boolean(archOverlayHref(selection, fdi, "active"));
 }
 
@@ -309,7 +312,10 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
     const rotation = getToothMarkerRotation(index, arch);
 
     const overlayHref = archOverlayHref(selection, tooth, visualFor(tooth));
-    if (overlayHref) {
+    const missingSpriteRect =
+      selection === "Missing" && !overlayHref ? TOOTH_SPRITES[tooth]?.Missing : undefined;
+
+    if (overlayHref || missingSpriteRect) {
       const slot =
         arch === "upper" ? upperSlotRectsByFdi[tooth] : lowerSlotRectsByFdi[tooth];
       const useSlot = slot != null && slot.width > 0 && slot.height > 0;
@@ -367,16 +373,29 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
                   }
           }
         >
-          <img
-            src={overlayHref}
-            alt=""
-            draggable={false}
-            className={
-              useSlot || fallbackBox != null
-                ? `block h-full w-full max-h-none max-w-none ${useSlot ? "object-fill" : "object-contain"}`
-                : "block h-fit w-fit max-h-none max-w-none shrink-0 object-contain"
+          {overlayHref ? (
+            <img
+              src={overlayHref}
+              alt=""
+              draggable={false}
+              className={
+                useSlot || fallbackBox != null
+                  ? `block h-full w-full max-h-none max-w-none ${useSlot ? "object-fill" : "object-contain"}`
+                  : "block h-fit w-fit max-h-none max-w-none shrink-0 object-contain"
             }
-          />
+            />
+          ) : missingSpriteRect ? (
+            <svg
+              viewBox={`${missingSpriteRect[0]} ${missingSpriteRect[1]} ${missingSpriteRect[2]} ${missingSpriteRect[3]}`}
+              width="100%"
+              height="100%"
+              preserveAspectRatio="xMidYMid meet"
+              className={`block max-h-none max-w-none ${useSlot || fallbackBox != null ? "h-full w-full" : "h-fit w-fit shrink-0"} object-contain`}
+              aria-hidden
+            >
+              <image href={toothSprites} width={SPRITE_W} height={SPRITE_H} />
+            </svg>
+          ) : null}
         </span>
       );
     }
