@@ -51,6 +51,13 @@ const TOOTH_SLOT_MAX_W = 20;
 const TOOTH_MASK_PADDING = 2;
 const TOOTH_MASK_FILL = "#FFF9F9";
 
+/**
+ * `lower-arch-active-layered.svg` draws a single pink interior path under the per-tooth `<g>`s.
+ * When we `visibility:hidden` a tooth group for Missing, that base path still shows in the slot;
+ * the overlay box uses this to mask it (same fill as the SVG’s interior).
+ */
+const LOWER_ARCH_INTERIOR_MASK = "#FFF0F3";
+
 /** Inline SVG markup (per-tooth `<g id="upper-arch-tooth-{FDI}">`) for devtools / future styling. */
 const UPPER_ARCH_ACTIVE_LAYERED_HTML = upperArchActiveLayeredSvg.replace(/^\s*<\?xml[^>]*>\s*/i, "");
 /** Same pattern as upper: exposes `<g id="lower-arch-tooth-{FDI}">` for lower slot measurement. */
@@ -321,6 +328,10 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
       const useSlot = slot != null && slot.width > 0 && slot.height > 0;
       /** Keep per-tooth overlay assets in a controlled box while slot rects are unavailable. */
       const fallbackBox = !useSlot ? Math.max(TOOTH_SLOT_MAX_W, 28) * 1.35 : null;
+      const lowerMissingMask =
+        arch === "lower" && selection === "Missing"
+          ? { backgroundColor: LOWER_ARCH_INTERIOR_MASK }
+          : {};
       return (
         <span
           key={tooth}
@@ -341,18 +352,19 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
                   top: slot.top,
                   width: slot.width,
                   height: slot.height,
-                  zIndex: 4 + index,
+                  zIndex: 5 + index,
                   pointerEvents: "auto",
                   cursor: "default",
                   boxSizing: "border-box",
                   overflow: "hidden",
+                  ...lowerMissingMask,
                 }
               : fallbackBox != null
                 ? {
                     position: "absolute",
                     left: markerX,
                     top: markerY,
-                    zIndex: 4 + index,
+                    zIndex: 5 + index,
                     width: fallbackBox,
                     height: fallbackBox,
                     transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
@@ -360,16 +372,18 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
                     pointerEvents: "auto",
                     cursor: "default",
                     boxSizing: "border-box",
+                    ...lowerMissingMask,
                   }
                 : {
                     position: "absolute",
                     left: markerX,
                     top: markerY,
-                    zIndex: 4 + index,
+                    zIndex: 5 + index,
                     transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
                     transformOrigin: "center center",
                     pointerEvents: "auto",
                     cursor: "default",
+                    ...lowerMissingMask,
                   }
           }
         >
