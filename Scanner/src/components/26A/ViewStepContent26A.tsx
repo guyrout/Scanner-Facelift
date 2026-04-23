@@ -18,6 +18,7 @@ import MultiLayerPanel26A, { type LayerItem, type SelectedLayerId } from "./Mult
 import ToothMap26A from "./ToothMap26A";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
 import type { JawSelection } from "./JawSelector26A";
+import { getTreatmentPlyPair } from "./treatmentScanFlow26A";
 import { getScanFlowVersion } from "../../utils/scanFlowVersionManager";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer26A"));
@@ -586,6 +587,10 @@ interface ViewStepContentProps {
   onToolbarExpandedChange?: (expanded: boolean) => void;
   cameraStateRef?: MutableRefObject<CameraState>;
   comingFromScan?: boolean;
+  /** 26A — which treatment’s assets to show in the viewer. */
+  treatmentId?: string;
+  /** 26A — same tooth state as the Information form. */
+  toothSelections?: Record<number, string>;
   selectedJaw: JawSelection;
   onSelectedJawChange: (jaw: JawSelection) => void;
 }
@@ -595,10 +600,13 @@ export default function ViewStepContent26A({
   onToolbarExpandedChange,
   cameraStateRef,
   comingFromScan = false,
+  treatmentId = "fixed-restorative",
+  toothSelections = {},
   selectedJaw,
   onSelectedJawChange,
 }: ViewStepContentProps) {
   const isScanFlow26A = getScanFlowVersion() === "26A";
+  const { upperUrl, lowerUrl } = getTreatmentPlyPair(treatmentId);
   const [viewMode, setViewMode] = useState<ViewMode>("color");
   const [showTrimMenu, setShowTrimMenu] = useState(false);
   const [showPrepQc, setShowPrepQc] = useState(false);
@@ -719,9 +727,10 @@ export default function ViewStepContent26A({
           }
         >
           <PlyModelViewer
-            url="/models/upper-jaw.ply"
+            key={isScanFlow26A ? treatmentId : "view-ply"}
+            url={isScanFlow26A ? upperUrl : "/models/upper-jaw.ply"}
             {...(isScanFlow26A
-              ? { lowerUrl: "/models/lower-jaw.ply" as const, jawView: selectedJaw }
+              ? { lowerUrl, jawView: selectedJaw }
               : {})}
             viewMode={viewMode}
             cameraStateRef={cameraStateRef}
@@ -738,6 +747,7 @@ export default function ViewStepContent26A({
             className="shrink-0"
             selectedJaw={selectedJaw}
             onJawChange={onSelectedJawChange}
+            toothSelections={toothSelections}
           />
         ) : (
           <MultiLayerPanel26A

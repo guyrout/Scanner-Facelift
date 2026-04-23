@@ -20,6 +20,7 @@ import PrepEditPanel26A from "./PrepEditPanel26A";
 import SwapScansModal26A from "./SwapScansModal26A";
 import ToothMap26A from "./ToothMap26A";
 import JawSelector26A, { type JawSelection } from "./JawSelector26A";
+import { getTreatmentPlyPair } from "./treatmentScanFlow26A";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer26A"));
@@ -30,6 +31,10 @@ interface ScanStepContentProps {
   toolbarExpanded?: boolean;
   onToolbarExpandedChange?: (expanded: boolean) => void;
   cameraStateRef?: MutableRefObject<CameraState>;
+  /** Drives PLY pair for the active order treatment (26A). */
+  treatmentId: string;
+  /** Must match the Info step tooth chart — single source of truth for map + jaw sync. */
+  toothSelections: Record<number, string>;
   selectedJaw: JawSelection;
   onSelectedJawChange: (jaw: JawSelection) => void;
 }
@@ -38,11 +43,16 @@ export default function ScanStepContent26A({
   toolbarExpanded,
   onToolbarExpandedChange,
   cameraStateRef,
+  treatmentId,
+  toothSelections,
   selectedJaw,
   onSelectedJawChange,
 }: ScanStepContentProps) {
+  const { upperUrl, lowerUrl } = getTreatmentPlyPair(treatmentId);
   const [viewMode, setViewMode] = useState<ViewMode>("color");
   const [prepEditOpen, setPrepEditOpen] = useState(false);
+  const [prepSelectionMode, setPrepSelectionMode] = useState(false);
+  const [eraseSelectionNonce, setEraseSelectionNonce] = useState(0);
   const [deselectEditNonce, setDeselectEditNonce] = useState(0);
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [deselectSwapNonce, setDeselectSwapNonce] = useState(0);
@@ -66,11 +76,14 @@ export default function ScanStepContent26A({
             }
           >
             <PlyModelViewer
-              url="/models/upper-jaw.ply"
-              lowerUrl="/models/lower-jaw.ply"
+              key={treatmentId}
+              url={upperUrl}
+              lowerUrl={lowerUrl}
               jawView={selectedJaw}
               viewMode={viewMode}
               cameraStateRef={cameraStateRef}
+              editSelectionMode={prepSelectionMode}
+              eraseSelectionNonce={eraseSelectionNonce}
             />
           </Suspense>
         </div>
@@ -92,6 +105,7 @@ export default function ScanStepContent26A({
             className="shrink-0"
             selectedJaw={selectedJaw}
             onJawChange={onSelectedJawChange}
+            toothSelections={toothSelections}
           />
         </div>
 
@@ -120,6 +134,9 @@ export default function ScanStepContent26A({
               }
               if (toolId === "edit") {
                 setPrepEditOpen(isActive);
+                if (!isActive) {
+                  setPrepSelectionMode(false);
+                }
               }
               if (toolId === "swap") {
                 setSwapModalOpen(isActive);
@@ -152,14 +169,17 @@ export default function ScanStepContent26A({
             <PrepEditPanel26A
               onClose={() => {
                 setPrepEditOpen(false);
+                setPrepSelectionMode(false);
                 setDeselectEditNonce((n) => n + 1);
               }}
               onSelect={() => {
-                /* hook for Select action */
+                setPrepSelectionMode(true);
               }}
               onEraseAndScan={() => {
-                /* hook for Erase and scan */
+                setEraseSelectionNonce((n) => n + 1);
+                setPrepSelectionMode(false);
               }}
+              selectActive={prepSelectionMode}
             />
           </div>
         )}

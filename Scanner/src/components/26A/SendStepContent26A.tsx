@@ -38,6 +38,8 @@ export interface SendStepContentProps {
 
 export default function SendStepContent26A(props: SendStepContentProps) {
   const {
+    treatmentId,
+    toothSelections,
     sendToId,
     toolbarExpanded,
     onToolbarExpandedChange,
@@ -60,6 +62,8 @@ export default function SendStepContent26A(props: SendStepContentProps) {
           onToolbarExpandedChange={onToolbarExpandedChange}
           cameraStateRef={cameraStateRef}
           comingFromScan={comingFromScan}
+          treatmentId={treatmentId}
+          toothSelections={toothSelections}
           selectedJaw={selectedJaw}
           onSelectedJawChange={onSelectedJawChange}
         />

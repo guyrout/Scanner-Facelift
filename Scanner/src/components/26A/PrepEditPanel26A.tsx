@@ -47,14 +47,23 @@ function IconEraseScan() {
   );
 }
 
+const ACTIVE_SELECTION_BG = "#A6E2F9";
+
 export interface PrepEditPanelProps {
   onClose: () => void;
   onSelect?: () => void;
   onEraseAndScan?: () => void;
+  selectActive?: boolean;
   className?: string;
 }
 
-export default function PrepEditPanel26A({ onClose, onSelect, onEraseAndScan, className }: PrepEditPanelProps) {
+export default function PrepEditPanel26A({
+  onClose,
+  onSelect,
+  onEraseAndScan,
+  selectActive = false,
+  className,
+}: PrepEditPanelProps) {
   const rowClass =
     "flex w-full items-center gap-3 rounded-lg border-0 bg-transparent cursor-pointer text-left transition-ui hover:bg-[var(--color-background-layer-hovered)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2";
 
@@ -85,7 +94,16 @@ export default function PrepEditPanel26A({ onClose, onSelect, onEraseAndScan, cl
 
       {/* Actions */}
       <div className="flex flex-col" style={{ padding: "8px" }}>
-        <button type="button" className={rowClass} style={{ padding: "12px 12px" }} onClick={() => onSelect?.()}>
+        <button
+          type="button"
+          className={rowClass}
+          style={{
+            padding: "12px 12px",
+            backgroundColor: selectActive ? ACTIVE_SELECTION_BG : "transparent",
+          }}
+          onClick={() => onSelect?.()}
+          aria-pressed={selectActive}
+        >
           <span className="flex shrink-0 text-[var(--color-icon-primary)]">
             <IconSelectWand />
           </span>

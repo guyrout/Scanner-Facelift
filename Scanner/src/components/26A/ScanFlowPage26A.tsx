@@ -6,10 +6,10 @@
  * (animate-step-enter) each time the wizard step changes.
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import ScanFlowHeader26A, { type ScanWizardStep } from "./ScanFlowHeader26A";
 import InfoStepContent26A from "./InfoStepContent26A";
-import { type ToothDetail, type ToggleState } from "./FixedRestorativeForm26A";
+import { type ToothDetail, type ToggleState, UPPER_TEETH, LOWER_TEETH } from "./FixedRestorativeForm26A";
 import ScanStepContent26A from "./ScanStepContent26A";
 import ViewStepContent26A from "./ViewStepContent26A";
 import SendStepContent26A from "./SendStepContent26A";
@@ -33,12 +33,12 @@ export interface ScanFlowPageProps {
 }
 
 const DEFAULT_PATIENT: ScanFlowPatientSnapshot = {
-  patientName: "Mina Young",
-  patientId: "14129123",
-  dateOfBirth: "09/20/2000",
-  gender: "Female",
-  lastScan: "Jan 15, 2025",
-  treatedBy: "Doctor Name | 12367854",
+  patientName: "",
+  patientId: "",
+  dateOfBirth: "",
+  gender: "",
+  lastScan: "",
+  treatedBy: "",
 };
 
 export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient }: ScanFlowPageProps) {
@@ -70,6 +70,28 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
     preTreatment: false,
   });
   const [noteText, setNoteText] = useState("");
+
+  const prevToothSelectionsRef = useRef<Record<number, string>>(toothSelections);
+  useEffect(() => {
+    const prev = prevToothSelectionsRef.current;
+    const keys = new Set([...Object.keys(prev), ...Object.keys(toothSelections)]);
+    let changedTooth: number | null = null;
+    for (const k of keys) {
+      const n = Number(k);
+      if (Number.isNaN(n)) continue;
+      if (prev[n] !== toothSelections[n]) {
+        changedTooth = n;
+        break;
+      }
+    }
+    prevToothSelectionsRef.current = { ...toothSelections };
+    if (changedTooth == null) return;
+    if (UPPER_TEETH.includes(changedTooth)) {
+      setSelectedJaw("upper");
+    } else if (LOWER_TEETH.includes(changedTooth)) {
+      setSelectedJaw("lower");
+    }
+  }, [toothSelections]);
 
   return (
     <div className="scan-flow flex flex-col w-full h-full min-h-0 overflow-hidden bg-[var(--color-background-layer-01)]">
@@ -107,6 +129,8 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             toolbarExpanded={toolbarExpanded}
             onToolbarExpandedChange={setToolbarExpanded}
             cameraStateRef={cameraStateRef}
+            treatmentId={treatmentId}
+            toothSelections={toothSelections}
             selectedJaw={selectedJaw}
             onSelectedJawChange={setSelectedJaw}
           />
@@ -117,6 +141,8 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             onToolbarExpandedChange={setToolbarExpanded}
             cameraStateRef={cameraStateRef}
             comingFromScan={previousStepRef.current === "scan"}
+            treatmentId={treatmentId}
+            toothSelections={toothSelections}
             selectedJaw={selectedJaw}
             onSelectedJawChange={setSelectedJaw}
           />

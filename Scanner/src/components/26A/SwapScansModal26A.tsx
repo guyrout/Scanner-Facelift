@@ -76,8 +76,10 @@ export interface SwapScansModalProps {
 const CARD_RADIUS = 16;
 const CARD_PADDING = 16;
 /** Modal column width + preview block height (Figma) */
-const MODAL_W = 600;
+const MODAL_W = 522;
 const PREVIEW_H = 400;
+const LOWER_PREVIEW_IMG_W = 384;
+const LOWER_PREVIEW_IMG_H = 276;
 const CANCEL_BTN_SIZE = 60;
 /** Swap control between preview cards (Figma) */
 const SWAP_BTN_SIZE = 60;
@@ -119,6 +121,16 @@ export default function SwapScansModal26A({
     padding: CARD_PADDING,
   };
 
+  const lowerPreviewStyle: CSSProperties = {
+    ...previewStyle,
+    height: "100%",
+  };
+
+  const lowerPreviewImageStyle: CSSProperties = {
+    width: LOWER_PREVIEW_IMG_W,
+    height: LOWER_PREVIEW_IMG_H,
+  };
+
   const node = (
     <div
       className="fixed inset-0 z-[10050] flex items-center justify-center"
@@ -136,7 +148,7 @@ export default function SwapScansModal26A({
 
       <div
         className="relative z-10 flex w-full flex-col items-center animate-modal-content-enter"
-        style={{ width: MODAL_W, maxWidth: "100%" }}
+        style={{ width: MODAL_W, maxWidth: "100%", height: "100%", justifyContent: "center" }}
         onClick={(e) => e.stopPropagation()}
       >
         <span id="swap-scans-title" className="sr-only">
@@ -144,7 +156,7 @@ export default function SwapScansModal26A({
         </span>
 
         {/* Top scan card */}
-        <div className="flex flex-col" style={cardStyle}>
+        <div className="flex flex-col" style={{ ...cardStyle, width: "100%" }}>
           <div style={{ padding: `${CARD_PADDING}px ${CARD_PADDING}px 8px` }}>
             <span className="tp-heading-03 text-text-primary">{topLabel}</span>
           </div>
@@ -189,13 +201,13 @@ export default function SwapScansModal26A({
         </div>
 
         {/* Bottom scan card */}
-        <div className="flex flex-col" style={cardStyle}>
-          <div style={{ padding: `${CARD_PADDING}px ${CARD_PADDING}px 8px` }}>
+        <div className="flex flex-col items-center justify-center" style={{ ...cardStyle, width: "100%" }}>
+          <div className="w-full" style={{ padding: `${CARD_PADDING}px ${CARD_PADDING}px 8px` }}>
             <span className="tp-heading-03 text-text-primary">{bottomLabel}</span>
           </div>
           <div
             className="flex w-full cursor-pointer items-center justify-center"
-            style={previewStyle}
+            style={lowerPreviewStyle}
             role="button"
             tabIndex={0}
             aria-label="Swap upper and lower scans (lower preview)"
@@ -212,6 +224,7 @@ export default function SwapScansModal26A({
               src={bottomImg}
               alt=""
               className="pointer-events-none h-full w-full max-h-full rotate-180 object-contain object-center"
+              style={lowerPreviewImageStyle}
               draggable={false}
             />
           </div>

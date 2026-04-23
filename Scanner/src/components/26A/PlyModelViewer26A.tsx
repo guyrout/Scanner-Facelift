@@ -1,5 +1,5 @@
 import { Suspense, useState, useEffect, useRef, useMemo, type MutableRefObject } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { Canvas, useThree, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { PLYLoader } from "three/examples/jsm/loaders/PLYLoader.js";
 import * as THREE from "three";
 import {
@@ -21,6 +21,97 @@ export interface CameraState {
 export type ViewMode = "color" | "stone";
 
 const STONE_COLOR = "#e5d5c0";
+const EDIT_SELECTION_RADIUS = 0.145;
+const SELECTION_TINT = new THREE.Color("#009ACE");
+
+function ensureVertexColors(geometry: THREE.BufferGeometry): THREE.BufferAttribute {
+  let colorAttr = geometry.getAttribute("color") as THREE.BufferAttribute | undefined;
+  if (colorAttr) return colorAttr;
+  const [sr, sg, sb] = stoneColorRGB();
+  const position = geometry.getAttribute("position") as THREE.BufferAttribute;
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    const base = i * 3;
+    colors[base] = sr;
+    colors[base + 1] = sg;
+    colors[base + 2] = sb;
+  }
+  colorAttr = new THREE.BufferAttribute(colors, 3);
+  geometry.setAttribute("color", colorAttr);
+  return colorAttr;
+}
+
+function applySelectionTint(
+  geometry: THREE.BufferGeometry,
+  selectedMask: Uint8Array,
+  baseColors: Float32Array,
+) {
+  const colorAttr = ensureVertexColors(geometry);
+  const colors = colorAttr.array as Float32Array;
+  const vertexCount = colorAttr.count;
+  for (let i = 0; i < vertexCount; i++) {
+    const base = i * 3;
+    const r = baseColors[base];
+    const g = baseColors[base + 1];
+    const b = baseColors[base + 2];
+    if (selectedMask[i]) {
+      colors[base] = r * 0.45 + SELECTION_TINT.r * 0.55;
+      colors[base + 1] = g * 0.45 + SELECTION_TINT.g * 0.55;
+      colors[base + 2] = b * 0.45 + SELECTION_TINT.b * 0.55;
+    } else {
+      colors[base] = r;
+      colors[base + 1] = g;
+      colors[base + 2] = b;
+    }
+  }
+  colorAttr.needsUpdate = true;
+}
+
+function eraseSelectedFaces(geometry: THREE.BufferGeometry, selectedMask: Uint8Array): THREE.BufferGeometry {
+  const position = geometry.getAttribute("position") as THREE.BufferAttribute;
+  const color = geometry.getAttribute("color") as THREE.BufferAttribute | undefined;
+  const normal = geometry.getAttribute("normal") as THREE.BufferAttribute | undefined;
+  const indexAttr = geometry.getIndex();
+
+  if (indexAttr) {
+    const src = indexAttr.array;
+    const nextIndex: number[] = [];
+    for (let i = 0; i < src.length; i += 3) {
+      const a = Number(src[i]);
+      const b = Number(src[i + 1]);
+      const c = Number(src[i + 2]);
+      if (selectedMask[a] || selectedMask[b] || selectedMask[c]) continue;
+      nextIndex.push(a, b, c);
+    }
+    const next = geometry.clone();
+    next.setIndex(nextIndex);
+    next.computeVertexNormals();
+    return next;
+  }
+
+  const posArray = position.array as Float32Array;
+  const colorArray = color ? (color.array as Float32Array) : null;
+  const normalArray = normal ? (normal.array as Float32Array) : null;
+  const nextPos: number[] = [];
+  const nextColor: number[] = [];
+  const nextNormal: number[] = [];
+  for (let v = 0; v < position.count; v += 3) {
+    if (selectedMask[v] || selectedMask[v + 1] || selectedMask[v + 2]) continue;
+    for (let i = 0; i < 3; i++) {
+      const srcVertex = v + i;
+      const srcBase = srcVertex * 3;
+      nextPos.push(posArray[srcBase], posArray[srcBase + 1], posArray[srcBase + 2]);
+      if (colorArray) nextColor.push(colorArray[srcBase], colorArray[srcBase + 1], colorArray[srcBase + 2]);
+      if (normalArray) nextNormal.push(normalArray[srcBase], normalArray[srcBase + 1], normalArray[srcBase + 2]);
+    }
+  }
+  const next = new THREE.BufferGeometry();
+  next.setAttribute("position", new THREE.Float32BufferAttribute(nextPos, 3));
+  if (nextColor.length > 0) next.setAttribute("color", new THREE.Float32BufferAttribute(nextColor, 3));
+  if (nextNormal.length > 0) next.setAttribute("normal", new THREE.Float32BufferAttribute(nextNormal, 3));
+  next.computeVertexNormals();
+  return next;
+}
 
 // --- Step 1: Identify teeth (vs gingiva and palate) ---
 // Only mark as gingiva when color is clearly pink/red. Teeth can be cream, yellow, or dark.
@@ -239,14 +330,24 @@ function PlyMesh({
   url,
   viewMode,
   showOcclusgramHeatmap,
+  editSelectionMode = false,
+  eraseSelectionNonce = 0,
   opacity = 1,
 }: {
   url: string;
   viewMode: ViewMode;
   showOcclusgramHeatmap?: boolean;
+  editSelectionMode?: boolean;
+  eraseSelectionNonce?: number;
   opacity?: number;
 }) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
+  const [selectedCount, setSelectedCount] = useState(0);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const baseColorsRef = useRef<Float32Array | null>(null);
+  const selectedMaskRef = useRef<Uint8Array>(new Uint8Array(0));
+  const lastEraseNonceRef = useRef(0);
+  const selectingGestureRef = useRef(false);
 
   useEffect(() => {
     const loader = new PLYLoader();
@@ -260,9 +361,72 @@ function PlyMesh({
       bbox.getSize(size);
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) geo.scale(2 / maxDim, 2 / maxDim, 2 / maxDim);
+      const colorAttr = ensureVertexColors(geo);
+      baseColorsRef.current = new Float32Array((colorAttr.array as Float32Array).slice());
+      selectedMaskRef.current = new Uint8Array((geo.getAttribute("position") as THREE.BufferAttribute).count);
+      setSelectedCount(0);
       setGeometry(geo);
     });
   }, [url]);
+
+  useEffect(() => {
+    if (!geometry || eraseSelectionNonce <= lastEraseNonceRef.current) return;
+    lastEraseNonceRef.current = eraseSelectionNonce;
+    if (selectedCount <= 0) return;
+    const next = eraseSelectedFaces(geometry, selectedMaskRef.current);
+    const colorAttr = ensureVertexColors(next);
+    baseColorsRef.current = new Float32Array((colorAttr.array as Float32Array).slice());
+    selectedMaskRef.current = new Uint8Array((next.getAttribute("position") as THREE.BufferAttribute).count);
+    setSelectedCount(0);
+    setGeometry(next);
+  }, [eraseSelectionNonce, geometry, selectedCount]);
+
+  function paintSelectionAtPoint(localPoint: THREE.Vector3) {
+    if (!geometry || !baseColorsRef.current) return;
+    const position = geometry.getAttribute("position") as THREE.BufferAttribute;
+    const selectedMask = selectedMaskRef.current;
+    let changed = false;
+    const radiusSq = EDIT_SELECTION_RADIUS * EDIT_SELECTION_RADIUS;
+    for (let i = 0; i < position.count; i++) {
+      const dx = position.getX(i) - localPoint.x;
+      const dy = position.getY(i) - localPoint.y;
+      const dz = position.getZ(i) - localPoint.z;
+      const distSq = dx * dx + dy * dy + dz * dz;
+      if (distSq > radiusSq || selectedMask[i]) continue;
+      selectedMask[i] = 1;
+      changed = true;
+    }
+    if (!changed) return;
+    applySelectionTint(geometry, selectedMask, baseColorsRef.current);
+    let nextCount = 0;
+    for (let i = 0; i < selectedMask.length; i++) {
+      if (selectedMask[i]) nextCount += 1;
+    }
+    setSelectedCount(nextCount);
+  }
+
+  function handleSelectArea(event: ThreeEvent<PointerEvent>) {
+    if (!editSelectionMode || !geometry || showOcclusgramHeatmap) return;
+    event.stopPropagation();
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const localPoint = mesh.worldToLocal(event.point.clone());
+    selectingGestureRef.current = true;
+    paintSelectionAtPoint(localPoint);
+  }
+
+  function handleSelectAreaMove(event: ThreeEvent<PointerEvent>) {
+    if (!editSelectionMode || !selectingGestureRef.current || !geometry || showOcclusgramHeatmap) return;
+    event.stopPropagation();
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const localPoint = mesh.worldToLocal(event.point.clone());
+    paintSelectionAtPoint(localPoint);
+  }
+
+  function stopSelectionGesture() {
+    selectingGestureRef.current = false;
+  }
 
   const showHeat = showOcclusgramHeatmap === true;
   const displayGeometry = useMemo(() => {
@@ -284,12 +448,26 @@ function PlyMesh({
 
   return (
     <mesh
+      ref={meshRef}
       key={`${viewMode}-${showHeat ? "heat" : "base"}`}
       geometry={displayGeometry ?? geometry}
       rotation={[-Math.PI / 2, 0, 0]}
+      onPointerDown={handleSelectArea}
+      onPointerMove={handleSelectAreaMove}
+      onPointerUp={stopSelectionGesture}
+      onPointerLeave={stopSelectionGesture}
     >
       {showHeat ? (
         <primitive object={heatmapMaterial} attach="material" />
+      ) : editSelectionMode || selectedCount > 0 ? (
+        <meshStandardMaterial
+          vertexColors
+          roughness={0.5}
+          metalness={0.0}
+          side={THREE.DoubleSide}
+          transparent={useTransparency}
+          opacity={opacity}
+        />
       ) : isStone ? (
         <meshStandardMaterial
           color={STONE_COLOR}
@@ -323,7 +501,13 @@ function PlyMesh({
 }
 
 
-function CameraRig({ sharedCameraRef }: { sharedCameraRef?: MutableRefObject<CameraState> }) {
+function CameraRig({
+  sharedCameraRef,
+  cameraEnabled = true,
+}: {
+  sharedCameraRef?: MutableRefObject<CameraState>;
+  cameraEnabled?: boolean;
+}) {
   const { camera, gl } = useThree();
   const isDragging = useRef(false);
   const prevMouse = useRef({ x: 0, y: 0 });
@@ -348,12 +532,14 @@ function CameraRig({ sharedCameraRef }: { sharedCameraRef?: MutableRefObject<Cam
     const el = gl.domElement;
 
     function onPointerDown(e: PointerEvent) {
+      if (!cameraEnabled) return;
       isDragging.current = true;
       prevMouse.current = { x: e.clientX, y: e.clientY };
       el.setPointerCapture(e.pointerId);
     }
 
     function onPointerMove(e: PointerEvent) {
+      if (!cameraEnabled) return;
       if (!isDragging.current) return;
       const dx = e.clientX - prevMouse.current.x;
       const dy = e.clientY - prevMouse.current.y;
@@ -367,10 +553,13 @@ function CameraRig({ sharedCameraRef }: { sharedCameraRef?: MutableRefObject<Cam
 
     function onPointerUp(e: PointerEvent) {
       isDragging.current = false;
-      el.releasePointerCapture(e.pointerId);
+      if (el.hasPointerCapture(e.pointerId)) {
+        el.releasePointerCapture(e.pointerId);
+      }
     }
 
     function onWheel(e: WheelEvent) {
+      if (!cameraEnabled) return;
       e.preventDefault();
       spherical.current.radius = Math.max(
         1.5,
@@ -389,7 +578,7 @@ function CameraRig({ sharedCameraRef }: { sharedCameraRef?: MutableRefObject<Cam
       el.removeEventListener("pointerup", onPointerUp);
       el.removeEventListener("wheel", onWheel);
     };
-  }, [gl]);
+  }, [cameraEnabled, gl]);
 
   useFrame(() => {
     const pos = new THREE.Vector3().setFromSpherical(spherical.current);
@@ -430,6 +619,10 @@ interface PlyModelViewerProps {
   showOcclusgramHeatmap?: boolean;
   /** Opacity for the 3D model (0–1). Default 1. */
   opacity?: number;
+  /** Enables click-to-select area editing on the mesh. */
+  editSelectionMode?: boolean;
+  /** Increment to erase currently selected area from mesh faces. */
+  eraseSelectionNonce?: number;
 }
 
 export default function PlyModelViewer26A({
@@ -440,6 +633,8 @@ export default function PlyModelViewer26A({
   cameraStateRef,
   showOcclusgramHeatmap = false,
   opacity = 1,
+  editSelectionMode = false,
+  eraseSelectionNonce = 0,
 }: PlyModelViewerProps) {
   const upperAsset = url;
   const lowerAsset = lowerUrl ?? url;
@@ -461,13 +656,15 @@ export default function PlyModelViewer26A({
       <directionalLight position={[-5, 3, -2]} intensity={0.5} />
       <directionalLight position={[0, -2, 5]} intensity={0.3} />
       <hemisphereLight args={["#ffffff", "#c0c0c0", 0.4]} />
-      <CameraRig sharedCameraRef={cameraStateRef} />
+      <CameraRig sharedCameraRef={cameraStateRef} cameraEnabled={!editSelectionMode} />
       <Suspense fallback={<LoadingIndicator />}>
         {!usesJawView && (
           <PlyMesh
             url={url}
             viewMode={viewMode}
             showOcclusgramHeatmap={showOcclusgramHeatmap}
+            editSelectionMode={editSelectionMode}
+            eraseSelectionNonce={eraseSelectionNonce}
             opacity={opacity}
           />
         )}
@@ -476,6 +673,8 @@ export default function PlyModelViewer26A({
             url={upperAsset}
             viewMode={viewMode}
             showOcclusgramHeatmap={showOcclusgramHeatmap}
+            editSelectionMode={editSelectionMode}
+            eraseSelectionNonce={eraseSelectionNonce}
             opacity={opacity}
           />
         )}
@@ -485,6 +684,8 @@ export default function PlyModelViewer26A({
               url={lowerAsset}
               viewMode={viewMode}
               showOcclusgramHeatmap={showOcclusgramHeatmap}
+              editSelectionMode={editSelectionMode}
+              eraseSelectionNonce={eraseSelectionNonce}
               opacity={opacity}
             />
           </group>
