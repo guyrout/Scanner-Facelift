@@ -14,6 +14,7 @@ import {
   isRegularRestoredSelection,
   type RegularRestoredVisualState,
 } from "./toothMapRegularRestoredAssets";
+import { getMissingSvgByFigmaTooth } from "./toothMapMissingAssets";
 
 interface ToothMap26AProps {
   className?: string;
@@ -55,9 +56,27 @@ const UPPER_ARCH_ACTIVE_LAYERED_HTML = upperArchActiveLayeredSvg.replace(/^\s*<\
 /** Same pattern as upper: exposes `<g id="lower-arch-tooth-{FDI}">` for lower slot measurement. */
 const LOWER_ARCH_ACTIVE_LAYERED_HTML = lowerArchActiveLayeredSvg.replace(/^\s*<\?xml[^>]*>\s*/i, "");
 
+/** Per-tooth jaw art overlay (regular restored or Missing) when an asset exists for that FDI. */
+function archOverlayHref(
+  selection: string,
+  fdi: number,
+  visual: RegularRestoredVisualState,
+): string | undefined {
+  const figmaToothN = fdiToFigmaTooth(fdi);
+  if (figmaToothN == null) return undefined;
+  if (selection === "Missing") return getMissingSvgByFigmaTooth(figmaToothN, visual);
+  if (isRegularRestoredSelection(selection)) return getRegularRestoredSvgByFigmaTooth(figmaToothN, visual);
+  return undefined;
+}
+
+function hasArchSlotOverlayAsset(selection: string | undefined, fdi: number): boolean {
+  if (!selection) return false;
+  return Boolean(archOverlayHref(selection, fdi, "active"));
+}
+
 /**
- * When a tooth uses a “regular restored” per-tooth SVG overlay, hide the matching `<g>` in the
- * layered upper arch so the Figma tooth replaces the default arch art (e.g. Crown on FDI 13).
+ * When a tooth uses a per-tooth SVG overlay (regular restored or Missing), hide the matching `<g>`
+ * in the layered arch so the asset replaces the default arch art.
  * Uses `visibility:hidden` (not `display:none`) so `getBoundingClientRect()` still matches the
  * arch slot for overlay placement.
  */
@@ -65,10 +84,7 @@ function buildUpperArchActiveHtmlWithReplacedTeeth(toothSelections: Record<numbe
   let html = UPPER_ARCH_ACTIVE_LAYERED_HTML;
   UPPER_TEETH.forEach((fdi) => {
     const selection = toothSelections[fdi];
-    if (!selection || !isRegularRestoredSelection(selection)) return;
-    const figmaToothN = fdiToFigmaTooth(fdi);
-    if (figmaToothN == null) return;
-    if (!getRegularRestoredSvgByFigmaTooth(figmaToothN, "active")) return;
+    if (!hasArchSlotOverlayAsset(selection, fdi)) return;
     html = html.replace(
       new RegExp(`<g\\s+id="upper-arch-tooth-${fdi}"`, "g"),
       `<g id="upper-arch-tooth-${fdi}" style="visibility:hidden;pointer-events:none"`,
@@ -81,10 +97,7 @@ function buildLowerArchActiveHtmlWithReplacedTeeth(toothSelections: Record<numbe
   let html = LOWER_ARCH_ACTIVE_LAYERED_HTML;
   LOWER_TEETH.forEach((fdi) => {
     const selection = toothSelections[fdi];
-    if (!selection || !isRegularRestoredSelection(selection)) return;
-    const figmaToothN = fdiToFigmaTooth(fdi);
-    if (figmaToothN == null) return;
-    if (!getRegularRestoredSvgByFigmaTooth(figmaToothN, "active")) return;
+    if (!hasArchSlotOverlayAsset(selection, fdi)) return;
     html = html.replace(
       new RegExp(`<g\\s+id="lower-arch-tooth-${fdi}"`, "g"),
       `<g id="lower-arch-tooth-${fdi}" style="visibility:hidden;pointer-events:none"`,
@@ -151,10 +164,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
       const targetFdis = new Set<number>();
       UPPER_TEETH.forEach((fdi) => {
         const selection = toothSelections[fdi];
-        if (!selection || !isRegularRestoredSelection(selection)) return;
-        const figmaToothN = fdiToFigmaTooth(fdi);
-        if (figmaToothN == null) return;
-        if (!getRegularRestoredSvgByFigmaTooth(figmaToothN, "active")) return;
+        if (!hasArchSlotOverlayAsset(selection, fdi)) return;
         targetFdis.add(fdi);
         const g = layerEl.querySelector(`#upper-arch-tooth-${fdi}`);
         if (!g) return;
@@ -215,10 +225,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
       const targetFdis = new Set<number>();
       LOWER_TEETH.forEach((fdi) => {
         const selection = toothSelections[fdi];
-        if (!selection || !isRegularRestoredSelection(selection)) return;
-        const figmaToothN = fdiToFigmaTooth(fdi);
-        if (figmaToothN == null) return;
-        if (!getRegularRestoredSvgByFigmaTooth(figmaToothN, "active")) return;
+        if (!hasArchSlotOverlayAsset(selection, fdi)) return;
         targetFdis.add(fdi);
         const g = layerEl.querySelector(`#lower-arch-tooth-${fdi}`);
         if (!g) return;
@@ -301,81 +308,77 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
     const markerY = Math.round(getToothMarkerY(index, arch));
     const rotation = getToothMarkerRotation(index, arch);
 
-    if (isRegularRestoredSelection(selection)) {
-      const figmaToothN = fdiToFigmaTooth(tooth);
-      if (figmaToothN == null) return null;
-      const href = getRegularRestoredSvgByFigmaTooth(figmaToothN, visualFor(tooth));
-      if (href) {
-        const slot =
-          arch === "upper" ? upperSlotRectsByFdi[tooth] : lowerSlotRectsByFdi[tooth];
-        const useSlot = slot != null && slot.width > 0 && slot.height > 0;
-        /** Keep regular-restored assets in a controlled box while slot rects are unavailable. */
-        const fallbackBox = !useSlot ? Math.max(TOOTH_SLOT_MAX_W, 28) * 1.35 : null;
-        return (
-          <span
-            key={tooth}
-            role="presentation"
-            className="select-none"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onMouseEnter={() => setHoveredFdi(tooth)}
-            onMouseLeave={() => {
-              setHoveredFdi((h) => (h === tooth ? null : h));
-            }}
-            onMouseDown={() => setPressedFdi(tooth)}
-            style={
-              useSlot
+    const overlayHref = archOverlayHref(selection, tooth, visualFor(tooth));
+    if (overlayHref) {
+      const slot =
+        arch === "upper" ? upperSlotRectsByFdi[tooth] : lowerSlotRectsByFdi[tooth];
+      const useSlot = slot != null && slot.width > 0 && slot.height > 0;
+      /** Keep per-tooth overlay assets in a controlled box while slot rects are unavailable. */
+      const fallbackBox = !useSlot ? Math.max(TOOTH_SLOT_MAX_W, 28) * 1.35 : null;
+      return (
+        <span
+          key={tooth}
+          role="presentation"
+          className="select-none"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          onMouseEnter={() => setHoveredFdi(tooth)}
+          onMouseLeave={() => {
+            setHoveredFdi((h) => (h === tooth ? null : h));
+          }}
+          onMouseDown={() => setPressedFdi(tooth)}
+          style={
+            useSlot
+              ? {
+                  position: "absolute",
+                  left: slot.left,
+                  top: slot.top,
+                  width: slot.width,
+                  height: slot.height,
+                  zIndex: 4 + index,
+                  pointerEvents: "auto",
+                  cursor: "default",
+                  boxSizing: "border-box",
+                  overflow: "hidden",
+                }
+              : fallbackBox != null
                 ? {
                     position: "absolute",
-                    left: slot.left,
-                    top: slot.top,
-                    width: slot.width,
-                    height: slot.height,
+                    left: markerX,
+                    top: markerY,
                     zIndex: 4 + index,
+                    width: fallbackBox,
+                    height: fallbackBox,
+                    transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                    transformOrigin: "center center",
                     pointerEvents: "auto",
                     cursor: "default",
                     boxSizing: "border-box",
-                    overflow: "hidden",
                   }
-                : fallbackBox != null
-                  ? {
-                      position: "absolute",
-                      left: markerX,
-                      top: markerY,
-                      zIndex: 4 + index,
-                      width: fallbackBox,
-                      height: fallbackBox,
-                      transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-                      transformOrigin: "center center",
-                      pointerEvents: "auto",
-                      cursor: "default",
-                      boxSizing: "border-box",
-                    }
-                  : {
-                      position: "absolute",
-                      left: markerX,
-                      top: markerY,
-                      zIndex: 4 + index,
-                      transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-                      transformOrigin: "center center",
-                      pointerEvents: "auto",
-                      cursor: "default",
-                    }
+                : {
+                    position: "absolute",
+                    left: markerX,
+                    top: markerY,
+                    zIndex: 4 + index,
+                    transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                    transformOrigin: "center center",
+                    pointerEvents: "auto",
+                    cursor: "default",
+                  }
+          }
+        >
+          <img
+            src={overlayHref}
+            alt=""
+            draggable={false}
+            className={
+              useSlot || fallbackBox != null
+                ? `block h-full w-full max-h-none max-w-none ${useSlot ? "object-fill" : "object-contain"}`
+                : "block h-fit w-fit max-h-none max-w-none shrink-0 object-contain"
             }
-          >
-            <img
-              src={href}
-              alt=""
-              draggable={false}
-              className={
-                useSlot || fallbackBox != null
-                  ? `block h-full w-full max-h-none max-w-none ${useSlot ? "object-fill" : "object-contain"}`
-                  : "block h-fit w-fit max-h-none max-w-none shrink-0 object-contain"
-              }
-            />
-          </span>
-        );
-      }
+          />
+        </span>
+      );
     }
 
     const spriteKey = getSpriteKey(selection);
