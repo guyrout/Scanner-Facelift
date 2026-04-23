@@ -50,13 +50,14 @@ const TOOTH_SLOT_MIN_W = 14;
 const TOOTH_SLOT_MAX_W = 20;
 const TOOTH_MASK_PADDING = 2;
 const TOOTH_MASK_FILL = "#FFF9F9";
-
 /**
- * `lower-arch-active-layered.svg` draws a single pink interior path under the per-tooth `<g>`s.
- * When we `visibility:hidden` a tooth group for Missing, that base path still shows in the slot;
- * the overlay box uses this to mask it (same fill as the SVG’s interior).
+ * Same fill as the jaw interior in layered SVGs. When a tooth `<g>` is hidden for Missing, a
+ * monolithic base path can still show through; this masks it. Needed for both arches when
+ * the inactive image is shown or layered art is dimmed (unselected).
  */
-const LOWER_ARCH_INTERIOR_MASK = "#FFF0F3";
+const JAW_INTERIOR_MASK_FILL = "#FFF0F3";
+/** Opacity for layered arch when this jaw is not selected but must show per-tooth overlays (replaces flat inactive art). */
+const UNSELECTED_ARCH_LAYERED_OPACITY = 0.5;
 
 /** Inline SVG markup (per-tooth `<g id="upper-arch-tooth-{FDI}">`) for devtools / future styling. */
 const UPPER_ARCH_ACTIVE_LAYERED_HTML = upperArchActiveLayeredSvg.replace(/^\s*<\?xml[^>]*>\s*/i, "");
@@ -157,6 +158,16 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
   );
   const lowerArchActiveHtml = useMemo(
     () => buildLowerArchActiveHtmlWithReplacedTeeth(toothSelections),
+    [toothSelections],
+  );
+
+  /** When any slot uses a per-tooth overlay, the flat inactive jaw image still shows default teeth; use layered art dimmed instead. */
+  const upperUseLayeredWhenUnselected = useMemo(
+    () => UPPER_TEETH.some((fdi) => hasArchSlotOverlayAsset(toothSelections[fdi], fdi)),
+    [toothSelections],
+  );
+  const lowerUseLayeredWhenUnselected = useMemo(
+    () => LOWER_TEETH.some((fdi) => hasArchSlotOverlayAsset(toothSelections[fdi], fdi)),
     [toothSelections],
   );
 
@@ -328,10 +339,8 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
       const useSlot = slot != null && slot.width > 0 && slot.height > 0;
       /** Keep per-tooth overlay assets in a controlled box while slot rects are unavailable. */
       const fallbackBox = !useSlot ? Math.max(TOOTH_SLOT_MAX_W, 28) * 1.35 : null;
-      const lowerMissingMask =
-        arch === "lower" && selection === "Missing"
-          ? { backgroundColor: LOWER_ARCH_INTERIOR_MASK }
-          : {};
+      const missingJawBaseMask: CSSProperties =
+        selection === "Missing" ? { backgroundColor: JAW_INTERIOR_MASK_FILL } : {};
       return (
         <span
           key={tooth}
@@ -357,7 +366,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
                   cursor: "default",
                   boxSizing: "border-box",
                   overflow: "hidden",
-                  ...lowerMissingMask,
+                  ...missingJawBaseMask,
                 }
               : fallbackBox != null
                 ? {
@@ -372,7 +381,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
                     pointerEvents: "auto",
                     cursor: "default",
                     boxSizing: "border-box",
-                    ...lowerMissingMask,
+                    ...missingJawBaseMask,
                   }
                 : {
                     position: "absolute",
@@ -383,7 +392,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
                     transformOrigin: "center center",
                     pointerEvents: "auto",
                     cursor: "default",
-                    ...lowerMissingMask,
+                    ...missingJawBaseMask,
                   }
           }
         >
@@ -514,7 +523,14 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
             <span
               aria-hidden
               className="pointer-events-none absolute left-0 top-0 z-0 block h-full w-full [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
-              style={{ opacity: selectedJaw === "upper" ? 1 : 0 }}
+              style={{
+                opacity:
+                  selectedJaw === "upper"
+                    ? 1
+                    : upperUseLayeredWhenUnselected
+                      ? UNSELECTED_ARCH_LAYERED_OPACITY
+                      : 0,
+              }}
               // eslint-disable-next-line react/no-danger -- static layered asset; exposes per-tooth <g> in DOM
               dangerouslySetInnerHTML={{ __html: upperArchActiveHtml }}
             />
@@ -522,7 +538,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
               aria-hidden
               className="pointer-events-none absolute left-0 top-0 z-[1] block h-full w-full"
               style={{
-                opacity: selectedJaw === "upper" ? 0 : 1,
+                opacity: selectedJaw === "upper" || upperUseLayeredWhenUnselected ? 0 : 1,
                 backgroundImage: `url(${upperArchInactiveSvg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "100% 100%",
@@ -589,7 +605,14 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
             <span
               aria-hidden
               className="pointer-events-none absolute left-0 top-0 z-0 block h-full w-full [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
-              style={{ opacity: selectedJaw === "lower" ? 1 : 0 }}
+              style={{
+                opacity:
+                  selectedJaw === "lower"
+                    ? 1
+                    : lowerUseLayeredWhenUnselected
+                      ? UNSELECTED_ARCH_LAYERED_OPACITY
+                      : 0,
+              }}
               // eslint-disable-next-line react/no-danger -- static layered asset; exposes per-tooth <g> in DOM
               dangerouslySetInnerHTML={{ __html: lowerArchActiveHtml }}
             />
@@ -597,7 +620,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
               aria-hidden
               className="pointer-events-none absolute left-0 top-0 z-[1] block h-full w-full"
               style={{
-                opacity: selectedJaw === "lower" ? 0 : 1,
+                opacity: selectedJaw === "lower" || lowerUseLayeredWhenUnselected ? 0 : 1,
                 backgroundImage: `url(${lowerArchInactiveSvg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "100% 100%",
