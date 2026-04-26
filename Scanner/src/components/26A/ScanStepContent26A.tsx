@@ -37,6 +37,15 @@ interface ScanStepContentProps {
   toothSelections: Record<number, string>;
   selectedJaw: JawSelection;
   onSelectedJawChange: (jaw: JawSelection) => void;
+  /** Increments when the sleeve confirmation modal closes — opens upper-jaw guidance in the tooth map. */
+  postSleeveUpperGuidanceNonce?: number;
+  /** While false, upper-jaw guidance may auto-open or open from the upper arch control (once per scan-flow visit). */
+  upperJawGuidanceDismissedThisFlow?: boolean;
+  onUpperJawGuidanceDismissed?: () => void;
+  lowerJawGuidanceDismissedThisFlow?: boolean;
+  onLowerJawGuidanceDismissed?: () => void;
+  biteGuidanceDismissedThisFlow?: boolean;
+  onBiteGuidanceDismissed?: () => void;
 }
 
 export default function ScanStepContent26A({
@@ -47,6 +56,13 @@ export default function ScanStepContent26A({
   toothSelections,
   selectedJaw,
   onSelectedJawChange,
+  postSleeveUpperGuidanceNonce = 0,
+  upperJawGuidanceDismissedThisFlow = false,
+  onUpperJawGuidanceDismissed,
+  lowerJawGuidanceDismissedThisFlow = false,
+  onLowerJawGuidanceDismissed,
+  biteGuidanceDismissedThisFlow = false,
+  onBiteGuidanceDismissed,
 }: ScanStepContentProps) {
   const { upperUrl, lowerUrl } = getTreatmentPlyPair(treatmentId);
   const [viewMode, setViewMode] = useState<ViewMode>("color");
@@ -106,6 +122,13 @@ export default function ScanStepContent26A({
             selectedJaw={selectedJaw}
             onJawChange={onSelectedJawChange}
             toothSelections={toothSelections}
+            postSleeveUpperGuidanceNonce={postSleeveUpperGuidanceNonce}
+            upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
+            onUpperJawGuidanceDismissed={onUpperJawGuidanceDismissed}
+            lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}
+            onLowerJawGuidanceDismissed={onLowerJawGuidanceDismissed}
+            biteGuidanceDismissedThisFlow={biteGuidanceDismissedThisFlow}
+            onBiteGuidanceDismissed={onBiteGuidanceDismissed}
           />
         </div>
 

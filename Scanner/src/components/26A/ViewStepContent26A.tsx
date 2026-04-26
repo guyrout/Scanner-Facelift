@@ -593,6 +593,13 @@ interface ViewStepContentProps {
   toothSelections?: Record<number, string>;
   selectedJaw: JawSelection;
   onSelectedJawChange: (jaw: JawSelection) => void;
+  /** Shared with Scan step — upper-jaw guidance at most once per scan-flow visit. */
+  upperJawGuidanceDismissedThisFlow?: boolean;
+  onUpperJawGuidanceDismissed?: () => void;
+  lowerJawGuidanceDismissedThisFlow?: boolean;
+  onLowerJawGuidanceDismissed?: () => void;
+  biteGuidanceDismissedThisFlow?: boolean;
+  onBiteGuidanceDismissed?: () => void;
 }
 
 export default function ViewStepContent26A({
@@ -604,6 +611,12 @@ export default function ViewStepContent26A({
   toothSelections = {},
   selectedJaw,
   onSelectedJawChange,
+  upperJawGuidanceDismissedThisFlow = false,
+  onUpperJawGuidanceDismissed,
+  lowerJawGuidanceDismissedThisFlow = false,
+  onLowerJawGuidanceDismissed,
+  biteGuidanceDismissedThisFlow = false,
+  onBiteGuidanceDismissed,
 }: ViewStepContentProps) {
   const isScanFlow26A = getScanFlowVersion() === "26A";
   const { upperUrl, lowerUrl } = getTreatmentPlyPair(treatmentId);
@@ -748,6 +761,12 @@ export default function ViewStepContent26A({
             selectedJaw={selectedJaw}
             onJawChange={onSelectedJawChange}
             toothSelections={toothSelections}
+            upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
+            onUpperJawGuidanceDismissed={onUpperJawGuidanceDismissed}
+            lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}
+            onLowerJawGuidanceDismissed={onLowerJawGuidanceDismissed}
+            biteGuidanceDismissedThisFlow={biteGuidanceDismissedThisFlow}
+            onBiteGuidanceDismissed={onBiteGuidanceDismissed}
           />
         ) : (
           <MultiLayerPanel26A

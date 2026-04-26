@@ -12,8 +12,9 @@
  *   Study model or Invisalign: same Order + Scan Options (2 toggles); Attachments + Note only — FixedRestorativeForm26A attachmentsNoteOnly.
  */
 
-import { useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useRef, useState, type Dispatch, type SetStateAction, type FocusEvent } from "react";
 import { SearchIcon } from "../Icons";
+import VirtualKeyboard from "../VirtualKeyboard";
 import {
   DropdownField,
   DatePickerField,
@@ -43,6 +44,11 @@ const CARD_STYLE: React.CSSProperties = {
   borderRadius: 16,
   backgroundColor: "var(--color-surface, white)",
 };
+
+/** Reserves space when the in-app virtual keyboard is open (matches Orders / Patient list). */
+const VIRTUAL_KEYBOARD_HEIGHT = 340;
+
+type ActiveInfoTextField = "firstName" | "lastName" | "chartNumber" | "studyCurrentAligner";
 
 const GENDER_OPTIONS = [
   { id: "", label: "Select an option" },
@@ -183,6 +189,12 @@ export default function InfoStepContent26A({
   const [dobPickerOpen, setDobPickerOpen] = useState(false);
   const dobPickerRef = useRef<HTMLDivElement>(null);
   const [chartNumber, setChartNumber] = useState(patient.patientId ?? "");
+  /** Which patient/order text field drives the on-screen keyboard (kiosk / touch parity with Orders search). */
+  const [activeInfoTextField, setActiveInfoTextField] = useState<ActiveInfoTextField | null>(null);
+  const firstNameInputRef = useRef<HTMLInputElement>(null);
+  const lastNameInputRef = useRef<HTMLInputElement>(null);
+  const chartNumberInputRef = useRef<HTMLInputElement>(null);
+  const studyCurrentAlignerInputRef = useRef<HTMLInputElement>(null);
 
   /* ---- Order dropdowns ---- */
   const [treatmentDropdownOpen, setTreatmentDropdownOpen] = useState(false);
@@ -246,10 +258,94 @@ export default function InfoStepContent26A({
     setToggles((prev) => ({ ...prev, [key]: value }));
   }
 
+  function handleInfoTextFieldBlur(e: FocusEvent<HTMLInputElement>) {
+    const next = e.relatedTarget;
+    const kb = document.getElementById("scanner-virtual-keyboard");
+    if (next instanceof Node && kb?.contains(next)) {
+      return;
+    }
+    if (next === firstNameInputRef.current) {
+      setActiveInfoTextField("firstName");
+      return;
+    }
+    if (next === lastNameInputRef.current) {
+      setActiveInfoTextField("lastName");
+      return;
+    }
+    if (next === chartNumberInputRef.current) {
+      setActiveInfoTextField("chartNumber");
+      return;
+    }
+    if (next === studyCurrentAlignerInputRef.current) {
+      setActiveInfoTextField("studyCurrentAligner");
+      return;
+    }
+    setActiveInfoTextField(null);
+  }
+
+  function closeInfoVirtualKeyboard() {
+    if (activeInfoTextField === "firstName") firstNameInputRef.current?.blur();
+    else if (activeInfoTextField === "lastName") lastNameInputRef.current?.blur();
+    else if (activeInfoTextField === "chartNumber") chartNumberInputRef.current?.blur();
+    else if (activeInfoTextField === "studyCurrentAligner") studyCurrentAlignerInputRef.current?.blur();
+    setActiveInfoTextField(null);
+  }
+
+  function applyVirtualKey(key: string) {
+    if (activeInfoTextField === "firstName") {
+      setFirstName((f) => {
+        const n = f + key;
+        commitPatient(n, lastName, gender, dobDate, chartNumber);
+        return n;
+      });
+    } else if (activeInfoTextField === "lastName") {
+      setLastName((l) => {
+        const n = l + key;
+        commitPatient(firstName, n, gender, dobDate, chartNumber);
+        return n;
+      });
+    } else if (activeInfoTextField === "chartNumber") {
+      setChartNumber((c) => {
+        const n = c + key;
+        commitPatient(firstName, lastName, gender, dobDate, n);
+        return n;
+      });
+    } else if (activeInfoTextField === "studyCurrentAligner") {
+      setStudyCurrentAligner((a) => a + key);
+    }
+  }
+
+  function applyVirtualBackspace() {
+    if (activeInfoTextField === "firstName") {
+      setFirstName((f) => {
+        const n = f.slice(0, -1);
+        commitPatient(n, lastName, gender, dobDate, chartNumber);
+        return n;
+      });
+    } else if (activeInfoTextField === "lastName") {
+      setLastName((l) => {
+        const n = l.slice(0, -1);
+        commitPatient(firstName, n, gender, dobDate, chartNumber);
+        return n;
+      });
+    } else if (activeInfoTextField === "chartNumber") {
+      setChartNumber((c) => {
+        const n = c.slice(0, -1);
+        commitPatient(firstName, lastName, gender, dobDate, n);
+        return n;
+      });
+    } else if (activeInfoTextField === "studyCurrentAligner") {
+      setStudyCurrentAligner((a) => a.slice(0, -1));
+    }
+  }
+
   return (
     <div
       className="flex-1 min-h-0 min-w-0 overflow-auto scrollbar-hidden bg-[var(--color-page-background)]"
-      style={{ paddingBottom: 16 }}
+      style={{
+        paddingBottom: activeInfoTextField ? 16 + VIRTUAL_KEYBOARD_HEIGHT : 16,
+        transition: "padding-bottom 360ms var(--motion-ease-out-soft)",
+      }}
     >
       <div className="flex flex-col mx-auto" style={{ padding: "16px 24px", gap: 16, maxWidth: 1400 }}>
 
@@ -295,9 +391,13 @@ export default function InfoStepContent26A({
                   Name <span className="text-[var(--color-text-error,#d43f58)]">*</span>
                 </span>
                 <input
+                  ref={firstNameInputRef}
                   type="text"
                   value={firstName}
+                  readOnly
                   onChange={(e) => { setFirstName(e.target.value); commitPatient(e.target.value, lastName, gender, dobDate, chartNumber); }}
+                  onFocus={() => { setDobPickerOpen(false); setGenderDropdownOpen(false); setActiveInfoTextField("firstName"); }}
+                  onBlur={handleInfoTextFieldBlur}
                   placeholder="First name"
                   className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
                   autoComplete="given-name"
@@ -308,9 +408,13 @@ export default function InfoStepContent26A({
                   Last Name <span className="text-[var(--color-text-error,#d43f58)]">*</span>
                 </span>
                 <input
+                  ref={lastNameInputRef}
                   type="text"
                   value={lastName}
+                  readOnly
                   onChange={(e) => { setLastName(e.target.value); commitPatient(firstName, e.target.value, gender, dobDate, chartNumber); }}
+                  onFocus={() => { setDobPickerOpen(false); setGenderDropdownOpen(false); setActiveInfoTextField("lastName"); }}
+                  onBlur={handleInfoTextFieldBlur}
                   placeholder="Last name"
                   className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
                   autoComplete="family-name"
@@ -367,9 +471,13 @@ export default function InfoStepContent26A({
               <label className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
                 <span className="tp-body-01 text-text-secondary">Chart Number</span>
                 <input
+                  ref={chartNumberInputRef}
                   type="text"
                   value={chartNumber}
+                  readOnly
                   onChange={(e) => { setChartNumber(e.target.value); commitPatient(firstName, lastName, gender, dobDate, e.target.value); }}
+                  onFocus={() => { setDobPickerOpen(false); setGenderDropdownOpen(false); setActiveInfoTextField("chartNumber"); }}
+                  onBlur={handleInfoTextFieldBlur}
                   placeholder="Chart number"
                   className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
                   autoComplete="off"
@@ -450,9 +558,21 @@ export default function InfoStepContent26A({
                 <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
                   <OrderFieldLabelFigma />
                   <input
+                    ref={studyCurrentAlignerInputRef}
                     type="text"
                     value={studyCurrentAligner}
+                    readOnly
                     onChange={(e) => setStudyCurrentAligner(e.target.value)}
+                    onFocus={() => {
+                      setTreatmentDropdownOpen(false);
+                      setSendToDropdownOpen(false);
+                      setStudyAlignerDropdownOpen(false);
+                      setStudyStageDropdownOpen(false);
+                      setDobPickerOpen(false);
+                      setGenderDropdownOpen(false);
+                      setActiveInfoTextField("studyCurrentAligner");
+                    }}
+                    onBlur={handleInfoTextFieldBlur}
                     placeholder="Current Aligner #:"
                     className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
                     autoComplete="off"
@@ -611,6 +731,15 @@ export default function InfoStepContent26A({
           attachmentsNoteOnly={attachmentsNoteOnly}
         />
       </div>
+
+      {activeInfoTextField && (
+        <VirtualKeyboard
+          position="fixed"
+          onKeyPress={applyVirtualKey}
+          onBackspace={applyVirtualBackspace}
+          onClose={closeInfoVirtualKeyboard}
+        />
+      )}
 
       <PatientSearchModal26A
         open={patientSearchModalOpen}

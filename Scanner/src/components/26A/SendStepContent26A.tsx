@@ -34,6 +34,12 @@ export interface SendStepContentProps {
   onSelectedJawChange: (jaw: JawSelection) => void;
   /** Close control on the sign modal — e.g. return to View step */
   onExitSend?: () => void;
+  upperJawGuidanceDismissedThisFlow?: boolean;
+  onUpperJawGuidanceDismissed?: () => void;
+  lowerJawGuidanceDismissedThisFlow?: boolean;
+  onLowerJawGuidanceDismissed?: () => void;
+  biteGuidanceDismissedThisFlow?: boolean;
+  onBiteGuidanceDismissed?: () => void;
 }
 
 export default function SendStepContent26A(props: SendStepContentProps) {
@@ -48,6 +54,12 @@ export default function SendStepContent26A(props: SendStepContentProps) {
     selectedJaw,
     onSelectedJawChange,
     onExitSend,
+    upperJawGuidanceDismissedThisFlow,
+    onUpperJawGuidanceDismissed,
+    lowerJawGuidanceDismissedThisFlow,
+    onLowerJawGuidanceDismissed,
+    biteGuidanceDismissedThisFlow,
+    onBiteGuidanceDismissed,
   } = props;
 
   const handleConfirmSend = () => {
@@ -66,6 +78,12 @@ export default function SendStepContent26A(props: SendStepContentProps) {
           toothSelections={toothSelections}
           selectedJaw={selectedJaw}
           onSelectedJawChange={onSelectedJawChange}
+          upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
+          onUpperJawGuidanceDismissed={onUpperJawGuidanceDismissed}
+          lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}
+          onLowerJawGuidanceDismissed={onLowerJawGuidanceDismissed}
+          biteGuidanceDismissedThisFlow={biteGuidanceDismissedThisFlow}
+          onBiteGuidanceDismissed={onBiteGuidanceDismissed}
         />
       </div>
       <SignCaseModal26A sendToId={sendToId} onConfirmSend={handleConfirmSend} onRequestClose={onExitSend} />

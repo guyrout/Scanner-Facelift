@@ -13,6 +13,8 @@ import { type ToothDetail, type ToggleState, UPPER_TEETH, LOWER_TEETH } from "./
 import ScanStepContent26A from "./ScanStepContent26A";
 import ViewStepContent26A from "./ViewStepContent26A";
 import SendStepContent26A from "./SendStepContent26A";
+import SleeveConfirmationModal26A from "./SleeveConfirmationModal26A";
+import { scanUpperJawGuidanceIsPermanentlySkipped } from "./ScanUpperJawGuidanceModal26A";
 import type { CameraState } from "./PlyModelViewer26A";
 import type { JawSelection } from "./JawSelector26A";
 
@@ -43,6 +45,16 @@ const DEFAULT_PATIENT: ScanFlowPatientSnapshot = {
 
 export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient }: ScanFlowPageProps) {
   const [currentStep, setCurrentStep] = useState<ScanWizardStep>("info");
+  const [sleeveModalOpen, setSleeveModalOpen] = useState(false);
+  /** User acknowledged sleeve this visit to Scan — resets when the scan flow page unmounts (e.g. Home). */
+  const [sleeveAcknowledgedThisFlow, setSleeveAcknowledgedThisFlow] = useState(false);
+  /** User closed upper-jaw guidance this visit — same lifetime as `sleeveAcknowledgedThisFlow`. */
+  const [upperJawGuidanceDismissedThisFlow, setUpperJawGuidanceDismissedThisFlow] = useState(false);
+  /** User closed lower-jaw guidance this visit. */
+  const [lowerJawGuidanceDismissedThisFlow, setLowerJawGuidanceDismissedThisFlow] = useState(false);
+  const [biteGuidanceDismissedThisFlow, setBiteGuidanceDismissedThisFlow] = useState(false);
+  /** Bumped when the sleeve modal closes (or sleeve skipped) so scan-step can open upper-jaw guidance once. */
+  const [postSleeveUpperGuidanceNonce, setPostSleeveUpperGuidanceNonce] = useState(0);
   const previousStepRef = useRef<ScanWizardStep>("info");
   const [toolbarExpanded, setToolbarExpanded] = useState(false);
   const [patient, setPatient] = useState<ScanFlowPatientSnapshot>(() => initialPatient ?? DEFAULT_PATIENT);
@@ -53,9 +65,34 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
   });
   const [selectedJaw, setSelectedJaw] = useState<JawSelection>("upper");
 
-  const handleStepChange = useCallback((step: ScanWizardStep) => {
-    previousStepRef.current = currentStep;
-    setCurrentStep(step);
+  const handleStepChange = useCallback(
+    (step: ScanWizardStep) => {
+      if (step === "scan" && currentStep !== "scan") {
+        previousStepRef.current = currentStep;
+        setCurrentStep("scan");
+        if (!sleeveAcknowledgedThisFlow) {
+          setSleeveModalOpen(true);
+        } else if (!upperJawGuidanceDismissedThisFlow && !scanUpperJawGuidanceIsPermanentlySkipped()) {
+          setPostSleeveUpperGuidanceNonce((n) => n + 1);
+        }
+        return;
+      }
+      previousStepRef.current = currentStep;
+      setCurrentStep(step);
+    },
+    [currentStep, sleeveAcknowledgedThisFlow, upperJawGuidanceDismissedThisFlow],
+  );
+
+  const closeSleeveModal = useCallback(() => {
+    setSleeveAcknowledgedThisFlow(true);
+    setSleeveModalOpen(false);
+    if (!upperJawGuidanceDismissedThisFlow && !scanUpperJawGuidanceIsPermanentlySkipped()) {
+      setPostSleeveUpperGuidanceNonce((n) => n + 1);
+    }
+  }, [upperJawGuidanceDismissedThisFlow]);
+
+  useEffect(() => {
+    if (currentStep !== "scan") setSleeveModalOpen(false);
   }, [currentStep]);
 
   const [treatmentId, setTreatmentId] = useState("fixed-restorative");
@@ -133,6 +170,13 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             toothSelections={toothSelections}
             selectedJaw={selectedJaw}
             onSelectedJawChange={setSelectedJaw}
+            postSleeveUpperGuidanceNonce={postSleeveUpperGuidanceNonce}
+            upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
+            onUpperJawGuidanceDismissed={() => setUpperJawGuidanceDismissedThisFlow(true)}
+            lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}
+            onLowerJawGuidanceDismissed={() => setLowerJawGuidanceDismissedThisFlow(true)}
+            biteGuidanceDismissedThisFlow={biteGuidanceDismissedThisFlow}
+            onBiteGuidanceDismissed={() => setBiteGuidanceDismissedThisFlow(true)}
           />
         )}
         {currentStep === "view" && (
@@ -145,6 +189,12 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             toothSelections={toothSelections}
             selectedJaw={selectedJaw}
             onSelectedJawChange={setSelectedJaw}
+            upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
+            onUpperJawGuidanceDismissed={() => setUpperJawGuidanceDismissedThisFlow(true)}
+            lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}
+            onLowerJawGuidanceDismissed={() => setLowerJawGuidanceDismissedThisFlow(true)}
+            biteGuidanceDismissedThisFlow={biteGuidanceDismissedThisFlow}
+            onBiteGuidanceDismissed={() => setBiteGuidanceDismissedThisFlow(true)}
           />
         )}
         {currentStep === "send" && (
@@ -168,10 +218,21 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             selectedJaw={selectedJaw}
             onSelectedJawChange={setSelectedJaw}
             onExitSend={() => handleStepChange("view")}
+            upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
+            onUpperJawGuidanceDismissed={() => setUpperJawGuidanceDismissedThisFlow(true)}
+            lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}
+            onLowerJawGuidanceDismissed={() => setLowerJawGuidanceDismissedThisFlow(true)}
+            biteGuidanceDismissedThisFlow={biteGuidanceDismissedThisFlow}
+            onBiteGuidanceDismissed={() => setBiteGuidanceDismissedThisFlow(true)}
           />
         )}
       </div>
 
+      <SleeveConfirmationModal26A
+        open={sleeveModalOpen}
+        onConfirm={closeSleeveModal}
+        onRequestClose={closeSleeveModal}
+      />
     </div>
   );
 }

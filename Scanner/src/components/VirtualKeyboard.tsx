@@ -13,6 +13,8 @@ interface VirtualKeyboardProps {
   onKeyPress: (key: string) => void;
   onBackspace: () => void;
   onClose: () => void;
+  /** `fixed` pins the keyboard to the viewport bottom (for scrollable pages); default `absolute` (bottom of positioned parent). */
+  position?: "absolute" | "fixed";
 }
 
 const ROW1 = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"];
@@ -55,9 +57,14 @@ export default function VirtualKeyboard({
   onKeyPress,
   onBackspace,
   onClose,
+  position = "absolute",
 }: VirtualKeyboardProps) {
+  const posClass = position === "fixed" ? "fixed bottom-0 z-[10050]" : "absolute bottom-0 z-50";
   return (
-    <div className="absolute bottom-0 left-0 right-0 flex justify-center bg-keyboard-bg z-50 animate-keyboard-enter">
+    <div
+      id="scanner-virtual-keyboard"
+      className={`left-0 right-0 flex justify-center bg-keyboard-bg animate-keyboard-enter ${posClass}`}
+    >
       <div className="w-full max-w-[904px] flex flex-col">
         {/* Toolbar: keyboard dock + close aligned right */}
         <div className="flex items-center justify-end h-[44px] shrink-0">

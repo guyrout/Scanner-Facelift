@@ -34,7 +34,7 @@ export const RESTORATION_TYPES = [
 export const TREATMENT_OPTIONS: { id: string; label: string }[] = [
   { id: "fixed-restorative", label: "Fixed restorative" },
   { id: "study-model", label: "Study model" },
-  { id: "invisalign", label: "Invisalign" },
+  { id: "invisalign", label: "Invisalign/Vivera" },
   { id: "appliance", label: "Appliance" },
   { id: "dentures-removable", label: "Dentures / Removable" },
   { id: "surgical-guide", label: "Scan for surgical guide" },
@@ -741,7 +741,7 @@ export default function FixedRestorativeForm26A({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
   const toothChartSvgRef = useRef<SVGSVGElement>(null);
-  const toothContextMenuRef = useRef<HTMLDivElement>(null);
+  const toothContextMenuRef = useRef<HTMLUListElement>(null);
 
   function handleToothClick(toothNum: number, svgEl: SVGSVGElement, x: number, y: number) {
     // Open the contextual restoration-type menu for this tooth.
@@ -1478,88 +1478,82 @@ export default function FixedRestorativeForm26A({
 
     {/* Contextual tooth-treatment popover */}
     {toothContextMenu && typeof document !== "undefined" && createPortal(
-      <div
+      <ul
         ref={toothContextMenuRef}
+        role="listbox"
+        aria-label={`Tooth ${toothContextMenu.tooth} restoration`}
+        className="flex min-w-[280px] max-h-[420px] flex-col overflow-auto rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table"
         style={{
           position: "fixed",
           left: toothContextMenu.x,
-          top: toothContextMenu.y + 8,
+          top: toothContextMenu.y + 4,
           zIndex: 20000,
-          background: "var(--color-surface, white)",
-          border: "1px solid var(--color-border-subtle)",
-          borderRadius: 12,
-          boxShadow: "0px 8px 24px rgba(0,0,0,0.15)",
-          padding: "8px 0",
-          minWidth: 220,
+          boxShadow: "var(--shadow-card)",
           transform: "translateX(-50%)",
         }}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Tooth label */}
-        <div
-          className="tp-body-02 font-medium text-text-secondary"
-          style={{ padding: "6px 16px 8px", borderBottom: "1px solid var(--color-border-subtle)", marginBottom: 4 }}
-        >
-          Tooth #{toothContextMenu.tooth}
-        </div>
+        <li role="presentation" className="shrink-0">
+          <div className="tp-body-02 flex h-[60px] items-center text-text-secondary" style={{ padding: "16px 16px" }}>
+            Tooth #{toothContextMenu.tooth}
+          </div>
+        </li>
 
-        {/* Current assignment — remove option */}
         {toothSelections[toothContextMenu.tooth] && (
-          <button
-            type="button"
-            className="flex items-center w-full cursor-pointer bg-transparent border-0 appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-02)] text-left"
-            style={{ padding: "8px 16px", gap: 10, color: "var(--color-text-danger, #d32f2f)" }}
-            onClick={() => {
-              handleRemoveTooth(toothContextMenu.tooth);
-              setToothContextMenu(null);
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>
-            </svg>
-            <span className="tp-body-02">Remove selection</span>
-          </button>
+          <li role="presentation" className="shrink-0">
+            <button
+              type="button"
+              className="flex h-[60px] w-full cursor-pointer items-center gap-3 border-0 bg-transparent text-left text-[var(--color-text-danger,#d32f2f)] outline-none transition-ui appearance-none hover:bg-[var(--color-background-layer-hovered)] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-border-focus)]"
+              style={{ padding: "16px 16px" }}
+              onClick={() => {
+                handleRemoveTooth(toothContextMenu.tooth);
+                setToothContextMenu(null);
+              }}
+            >
+              <svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor" />
+              </svg>
+              <span className="tp-body-02 truncate">Remove selection</span>
+            </button>
+          </li>
         )}
 
-        {/* Restoration types */}
         {RESTORATION_TYPES.map((rt) => {
           const isCurrent = toothSelections[toothContextMenu.tooth] === rt.label;
           const isImplantBased = rt.label === "Implant based";
           return (
-            <button
-              key={rt.label}
-              type="button"
-              className="flex items-center w-full cursor-pointer bg-transparent border-0 appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-02)] text-left"
-              style={{
-                padding: "9px 16px",
-                gap: 10,
-                background: isCurrent ? "var(--color-background-layer-02, #f5f5f5)" : undefined,
-              }}
-              onClick={() => {
-                if (isImplantBased) {
-                  setImplantBaseModalTeeth([toothContextMenu.tooth]);
-                  resetImplantModalForm();
-                  setImplantBaseModalOpen(true);
-                } else if (rt.label === "Crown") {
-                  setToothSelections((prev) => ({ ...prev, [toothContextMenu.tooth]: "Crown" }));
-                  setCrownModalTooth(toothContextMenu.tooth);
-                } else {
-                  setToothSelections((prev) => ({ ...prev, [toothContextMenu.tooth]: rt.label }));
-                }
-                setToothContextMenu(null);
-              }}
-            >
-              <div style={{ width: 14, height: 14, borderRadius: "50%", backgroundColor: rt.color, flexShrink: 0 }} />
-              <span className="tp-body-02 text-text-primary">{rt.label}</span>
-              {isCurrent && (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden style={{ marginLeft: "auto" }}>
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="var(--color-icon-primary)" />
-                </svg>
-              )}
-            </button>
+            <li key={rt.label} role="option" aria-selected={isCurrent}>
+              <button
+                type="button"
+                className={`flex h-[60px] w-full cursor-pointer items-center gap-3 border-0 bg-transparent text-left outline-none transition-ui appearance-none focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-border-focus)] text-text-primary ${
+                  isCurrent ? "bg-[var(--color-background-layer-02)]" : "hover:bg-[var(--color-background-layer-hovered)]"
+                }`}
+                style={{ padding: "16px 16px" }}
+                onClick={() => {
+                  if (isImplantBased) {
+                    setImplantBaseModalTeeth([toothContextMenu.tooth]);
+                    resetImplantModalForm();
+                    setImplantBaseModalOpen(true);
+                  } else if (rt.label === "Crown") {
+                    setToothSelections((prev) => ({ ...prev, [toothContextMenu.tooth]: "Crown" }));
+                    setCrownModalTooth(toothContextMenu.tooth);
+                  } else {
+                    setToothSelections((prev) => ({ ...prev, [toothContextMenu.tooth]: rt.label }));
+                  }
+                  setToothContextMenu(null);
+                }}
+              >
+                <span
+                  className="shrink-0 rounded-full"
+                  style={{ width: 14, height: 14, backgroundColor: rt.color }}
+                  aria-hidden
+                />
+                <span className="tp-body-02 min-w-0 flex-1 truncate">{rt.label}</span>
+              </button>
+            </li>
           );
         })}
-      </div>,
+      </ul>,
       document.body
     )}
     </>

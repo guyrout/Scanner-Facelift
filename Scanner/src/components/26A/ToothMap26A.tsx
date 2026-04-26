@@ -15,12 +15,27 @@ import {
   type RegularRestoredVisualState,
 } from "./toothMapRegularRestoredAssets";
 import { getMissingSvgByFigmaTooth } from "./toothMapMissingAssets";
+import ScanUpperJawGuidanceModal26A, { scanUpperJawGuidanceIsPermanentlySkipped } from "./ScanUpperJawGuidanceModal26A";
+import ScanLowerJawGuidanceModal26A, { scanLowerJawGuidanceIsPermanentlySkipped } from "./ScanLowerJawGuidanceModal26A";
+import ScanBiteGuidanceModal26A, { scanBiteGuidanceIsPermanentlySkipped } from "./ScanBiteGuidanceModal26A";
 
 interface ToothMap26AProps {
   className?: string;
   selectedJaw: JawSelection;
   onJawChange: (jaw: JawSelection) => void;
   toothSelections?: Record<number, string>;
+  /** When this increments (after sleeve confirmation), open upper-jaw guidance if the user has not dismissed it. */
+  postSleeveUpperGuidanceNonce?: number;
+  /** When true, upper-jaw guidance will not auto-open or open from the upper arch (for this scan-flow visit). */
+  upperJawGuidanceDismissedThisFlow?: boolean;
+  /** Called when upper-jaw guidance is closed so the parent can mark it dismissed for this visit. */
+  onUpperJawGuidanceDismissed?: () => void;
+  /** When true, lower-jaw guidance will not open from the lower arch control (for this scan-flow visit). */
+  lowerJawGuidanceDismissedThisFlow?: boolean;
+  onLowerJawGuidanceDismissed?: () => void;
+  /** When true, bite guidance will not open from the bite control (for this scan-flow visit). */
+  biteGuidanceDismissedThisFlow?: boolean;
+  onBiteGuidanceDismissed?: () => void;
 }
 
 const PANEL_W = 249;
@@ -52,12 +67,9 @@ const TOOTH_MASK_PADDING = 2;
 const TOOTH_MASK_FILL = "#FFF9F9";
 /**
  * Same fill as the jaw interior in layered SVGs. When a tooth `<g>` is hidden for Missing, a
- * monolithic base path can still show through; this masks it. Needed for both arches when
- * the inactive image is shown or layered art is dimmed (unselected).
+ * monolithic base path can still show through; this masks it.
  */
 const JAW_INTERIOR_MASK_FILL = "#FFF0F3";
-/** Opacity for layered arch when this jaw is not selected but must show per-tooth overlays (replaces flat inactive art). */
-const UNSELECTED_ARCH_LAYERED_OPACITY = 0.5;
 
 /** Inline SVG markup (per-tooth `<g id="upper-arch-tooth-{FDI}">`) for devtools / future styling. */
 const UPPER_ARCH_ACTIVE_LAYERED_HTML = upperArchActiveLayeredSvg.replace(/^\s*<\?xml[^>]*>\s*/i, "");
@@ -143,9 +155,33 @@ function getSpriteKey(selection: string): "Crown" | "Missing" | "Implant based" 
   return "Crown";
 }
 
-export default function ToothMap26A({ className, selectedJaw, onJawChange, toothSelections = {} }: ToothMap26AProps) {
+export default function ToothMap26A({
+  className,
+  selectedJaw,
+  onJawChange,
+  toothSelections = {},
+  postSleeveUpperGuidanceNonce = 0,
+  upperJawGuidanceDismissedThisFlow = false,
+  onUpperJawGuidanceDismissed,
+  lowerJawGuidanceDismissedThisFlow = false,
+  onLowerJawGuidanceDismissed,
+  biteGuidanceDismissedThisFlow = false,
+  onBiteGuidanceDismissed,
+}: ToothMap26AProps) {
   const [hoveredFdi, setHoveredFdi] = useState<number | null>(null);
   const [pressedFdi, setPressedFdi] = useState<number | null>(null);
+  const [scanUpperGuidanceOpen, setScanUpperGuidanceOpen] = useState(false);
+  const [scanLowerGuidanceOpen, setScanLowerGuidanceOpen] = useState(false);
+  const [scanBiteGuidanceOpen, setScanBiteGuidanceOpen] = useState(false);
+
+  useEffect(() => {
+    if (postSleeveUpperGuidanceNonce === 0) return;
+    if (!upperJawGuidanceDismissedThisFlow && !scanUpperJawGuidanceIsPermanentlySkipped()) {
+      setScanBiteGuidanceOpen(false);
+      setScanLowerGuidanceOpen(false);
+      setScanUpperGuidanceOpen(true);
+    }
+  }, [postSleeveUpperGuidanceNonce, upperJawGuidanceDismissedThisFlow]);
   const [upperSlotRectsByFdi, setUpperSlotRectsByFdi] = useState<Record<number, ArchSlotRect>>({});
   const [lowerSlotRectsByFdi, setLowerSlotRectsByFdi] = useState<Record<number, ArchSlotRect>>({});
   /** Arch stacking context: inline SVG + overlays share this box for measured slot alignment. */
@@ -158,16 +194,6 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
   );
   const lowerArchActiveHtml = useMemo(
     () => buildLowerArchActiveHtmlWithReplacedTeeth(toothSelections),
-    [toothSelections],
-  );
-
-  /** When any slot uses a per-tooth overlay, the flat inactive jaw image still shows default teeth; use layered art dimmed instead. */
-  const upperUseLayeredWhenUnselected = useMemo(
-    () => UPPER_TEETH.some((fdi) => hasArchSlotOverlayAsset(toothSelections[fdi], fdi)),
-    [toothSelections],
-  );
-  const lowerUseLayeredWhenUnselected = useMemo(
-    () => LOWER_TEETH.some((fdi) => hasArchSlotOverlayAsset(toothSelections[fdi], fdi)),
     [toothSelections],
   );
 
@@ -322,6 +348,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
     display: "block",
     boxSizing: "content-box",
     cursor: "pointer",
+    touchAction: "manipulation",
   });
 
   function renderToothIndicator(tooth: number, index: number, selection: string, arch: "upper" | "lower") {
@@ -346,8 +373,6 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
           key={tooth}
           role="presentation"
           className="select-none"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
           onMouseEnter={() => setHoveredFdi(tooth)}
           onMouseLeave={() => {
             setHoveredFdi((h) => (h === tooth ? null : h));
@@ -515,7 +540,14 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
           type="button"
           aria-label="Upper arch"
           aria-pressed={selectedJaw === "upper"}
-          onClick={() => onJawChange("upper")}
+          onClick={() => {
+            onJawChange("upper");
+            setScanLowerGuidanceOpen(false);
+            setScanBiteGuidanceOpen(false);
+            if (!upperJawGuidanceDismissedThisFlow && !scanUpperJawGuidanceIsPermanentlySkipped()) {
+              setScanUpperGuidanceOpen(true);
+            }
+          }}
           className="absolute top-0 z-[1] outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
           style={archButtonStyle("top")}
         >
@@ -523,14 +555,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
             <span
               aria-hidden
               className="pointer-events-none absolute left-0 top-0 z-0 block h-full w-full [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
-              style={{
-                opacity:
-                  selectedJaw === "upper"
-                    ? 1
-                    : upperUseLayeredWhenUnselected
-                      ? UNSELECTED_ARCH_LAYERED_OPACITY
-                      : 0,
-              }}
+              style={{ opacity: selectedJaw === "upper" ? 1 : 0 }}
               // eslint-disable-next-line react/no-danger -- static layered asset; exposes per-tooth <g> in DOM
               dangerouslySetInnerHTML={{ __html: upperArchActiveHtml }}
             />
@@ -538,7 +563,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
               aria-hidden
               className="pointer-events-none absolute left-0 top-0 z-[1] block h-full w-full"
               style={{
-                opacity: selectedJaw === "upper" || upperUseLayeredWhenUnselected ? 0 : 1,
+                opacity: selectedJaw === "upper" ? 0 : 1,
                 backgroundImage: `url(${upperArchInactiveSvg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "100% 100%",
@@ -552,12 +577,20 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
             })}
           </div>
         </button>
+        {/* Bite z-3, arches z-1: the arch hit areas are full 249×186; they overlap the bite rect. Bite must stay above or it cannot be clicked. Narrow arch taps under the icon may register as bite—use the lateral arch area for upper/lower there. */}
         <button
           type="button"
           aria-label="Bite registration"
           aria-pressed={selectedJaw === "bite"}
-          onClick={() => onJawChange("bite")}
-          className="absolute z-[2] outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+          onClick={() => {
+            onJawChange("bite");
+            setScanUpperGuidanceOpen(false);
+            setScanLowerGuidanceOpen(false);
+            if (!biteGuidanceDismissedThisFlow && !scanBiteGuidanceIsPermanentlySkipped()) {
+              setScanBiteGuidanceOpen(true);
+            }
+          }}
+          className="absolute z-[3] outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
           style={{
             left: 95,
             top: 150,
@@ -597,7 +630,14 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
           type="button"
           aria-label="Lower arch"
           aria-pressed={selectedJaw === "lower"}
-          onClick={() => onJawChange("lower")}
+          onClick={() => {
+            onJawChange("lower");
+            setScanUpperGuidanceOpen(false);
+            setScanBiteGuidanceOpen(false);
+            if (!lowerJawGuidanceDismissedThisFlow && !scanLowerJawGuidanceIsPermanentlySkipped()) {
+              setScanLowerGuidanceOpen(true);
+            }
+          }}
           className="absolute bottom-0 z-[1] outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
           style={archButtonStyle("bottom")}
         >
@@ -605,14 +645,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
             <span
               aria-hidden
               className="pointer-events-none absolute left-0 top-0 z-0 block h-full w-full [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
-              style={{
-                opacity:
-                  selectedJaw === "lower"
-                    ? 1
-                    : lowerUseLayeredWhenUnselected
-                      ? UNSELECTED_ARCH_LAYERED_OPACITY
-                      : 0,
-              }}
+              style={{ opacity: selectedJaw === "lower" ? 1 : 0 }}
               // eslint-disable-next-line react/no-danger -- static layered asset; exposes per-tooth <g> in DOM
               dangerouslySetInnerHTML={{ __html: lowerArchActiveHtml }}
             />
@@ -620,7 +653,7 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
               aria-hidden
               className="pointer-events-none absolute left-0 top-0 z-[1] block h-full w-full"
               style={{
-                opacity: selectedJaw === "lower" || lowerUseLayeredWhenUnselected ? 0 : 1,
+                opacity: selectedJaw === "lower" ? 0 : 1,
                 backgroundImage: `url(${lowerArchInactiveSvg})`,
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "100% 100%",
@@ -635,6 +668,27 @@ export default function ToothMap26A({ className, selectedJaw, onJawChange, tooth
           </div>
         </button>
       </div>
+      <ScanUpperJawGuidanceModal26A
+        open={scanUpperGuidanceOpen}
+        onRequestClose={() => {
+          setScanUpperGuidanceOpen(false);
+          onUpperJawGuidanceDismissed?.();
+        }}
+      />
+      <ScanLowerJawGuidanceModal26A
+        open={scanLowerGuidanceOpen}
+        onRequestClose={() => {
+          setScanLowerGuidanceOpen(false);
+          onLowerJawGuidanceDismissed?.();
+        }}
+      />
+      <ScanBiteGuidanceModal26A
+        open={scanBiteGuidanceOpen}
+        onRequestClose={() => {
+          setScanBiteGuidanceOpen(false);
+          onBiteGuidanceDismissed?.();
+        }}
+      />
     </div>
   );
 }
