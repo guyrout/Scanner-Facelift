@@ -140,7 +140,7 @@ export function BiteOcclusionScene26A({ biteUrl, jawView, viewMode }: BiteOcclus
   const materialProps = {
     roughness: 0.45,
     metalness: 0.06,
-    side: THREE.DoubleSide as const,
+    side: THREE.DoubleSide,
   };
 
   return (

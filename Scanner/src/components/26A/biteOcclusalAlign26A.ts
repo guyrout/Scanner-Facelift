@@ -104,7 +104,11 @@ function kabschWeighted(P: number[][], Q: number[][], w: number[]): { R: THREE.M
   const U = svd.leftSingularVectors;
   const V = svd.rightSingularVectors;
   let Rm = V.mmul(U.transpose());
-  if (Rm.determinant() < 0) {
+  const detRm =
+    Rm.get(0, 0) * (Rm.get(1, 1) * Rm.get(2, 2) - Rm.get(1, 2) * Rm.get(2, 1)) -
+    Rm.get(0, 1) * (Rm.get(1, 0) * Rm.get(2, 2) - Rm.get(1, 2) * Rm.get(2, 0)) +
+    Rm.get(0, 2) * (Rm.get(1, 0) * Rm.get(2, 1) - Rm.get(1, 1) * Rm.get(2, 0));
+  if (detRm < 0) {
     const Vcopy = V.clone();
     const col2 = Vcopy.getColumn(2).map((x: number) => -x);
     Vcopy.setColumn(2, col2);
