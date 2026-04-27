@@ -1,6 +1,7 @@
 import { Suspense, useState, useEffect, useRef, useMemo, type MutableRefObject } from "react";
 import { Canvas, useThree, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { PLYLoader } from "three/examples/jsm/loaders/PLYLoader.js";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import * as THREE from "three";
 import {
   generateHeatPoints,
@@ -8,6 +9,13 @@ import {
   createHeatmapMaterial,
 } from "../../shaders/occlusalHeatmap";
 import type { JawSelection } from "./JawSelector26A";
+import {
+  STONE_COLOR,
+  stoneColorRGB,
+  normalizeScanMeshGeometry,
+  ensureVertexColors,
+} from "./scanMeshUtils26A";
+import { BiteOcclusionScene26A } from "./BiteOcclusionScene26A";
 
 export interface CameraState {
   radius: number;
@@ -20,26 +28,8 @@ export interface CameraState {
 
 export type ViewMode = "color" | "stone";
 
-const STONE_COLOR = "#e5d5c0";
 const EDIT_SELECTION_RADIUS = 0.145;
 const SELECTION_TINT = new THREE.Color("#009ACE");
-
-function ensureVertexColors(geometry: THREE.BufferGeometry): THREE.BufferAttribute {
-  let colorAttr = geometry.getAttribute("color") as THREE.BufferAttribute | undefined;
-  if (colorAttr) return colorAttr;
-  const [sr, sg, sb] = stoneColorRGB();
-  const position = geometry.getAttribute("position") as THREE.BufferAttribute;
-  const colors = new Float32Array(position.count * 3);
-  for (let i = 0; i < position.count; i++) {
-    const base = i * 3;
-    colors[base] = sr;
-    colors[base + 1] = sg;
-    colors[base + 2] = sb;
-  }
-  colorAttr = new THREE.BufferAttribute(colors, 3);
-  geometry.setAttribute("color", colorAttr);
-  return colorAttr;
-}
 
 function applySelectionTint(
   geometry: THREE.BufferGeometry,
@@ -235,12 +225,6 @@ function segmentOcclusal(
   return isOcclusal;
 }
 
-/** Stone color as RGB 0–1 for vertex color attribute. */
-function stoneColorRGB(): [number, number, number] {
-  const c = new THREE.Color(STONE_COLOR);
-  return [c.r, c.g, c.b];
-}
-
 /**
  * Step 3: Apply pressure-point heat map only to occlusal tooth vertices.
  * - Occlusal tooth → heat map from radial influence of pressure points (blue→cyan→green→yellow→red).
@@ -350,23 +334,52 @@ function PlyMesh({
   const selectingGestureRef = useRef(false);
 
   useEffect(() => {
-    const loader = new PLYLoader();
-    loader.load(url, (geo) => {
-      geo.computeVertexNormals();
-      geo.center();
-      const bbox = new THREE.Box3().setFromBufferAttribute(
-        geo.getAttribute("position") as THREE.BufferAttribute,
-      );
-      const size = new THREE.Vector3();
-      bbox.getSize(size);
-      const maxDim = Math.max(size.x, size.y, size.z);
-      if (maxDim > 0) geo.scale(2 / maxDim, 2 / maxDim, 2 / maxDim);
+    let cancelled = false;
+    const isStl = url.toLowerCase().endsWith(".stl");
+
+    const applyLoaded = (geo: THREE.BufferGeometry) => {
+      if (cancelled) return;
+      normalizeScanMeshGeometry(geo);
       const colorAttr = ensureVertexColors(geo);
       baseColorsRef.current = new Float32Array((colorAttr.array as Float32Array).slice());
-      selectedMaskRef.current = new Uint8Array((geo.getAttribute("position") as THREE.BufferAttribute).count);
+      selectedMaskRef.current = new Uint8Array(
+        (geo.getAttribute("position") as THREE.BufferAttribute).count,
+      );
       setSelectedCount(0);
       setGeometry(geo);
-    });
+    };
+
+    if (isStl) {
+      const loader = new STLLoader();
+      loader.load(
+        url,
+        (geo) => {
+          if (cancelled) return;
+          applyLoaded(geo);
+        },
+        undefined,
+        (err) => {
+          console.error("[PlyModelViewer26A] Failed to load STL", url, err);
+        },
+      );
+    } else {
+      const loader = new PLYLoader();
+      loader.load(
+        url,
+        (geo) => {
+          if (cancelled) return;
+          applyLoaded(geo);
+        },
+        undefined,
+        (err) => {
+          console.error("[PlyModelViewer26A] Failed to load PLY/OBJ mesh", url, err);
+        },
+      );
+    }
+
+    return () => {
+      cancelled = true;
+    };
   }, [url]);
 
   useEffect(() => {
@@ -614,6 +627,7 @@ interface PlyModelViewerProps {
   url: string;
   jawView?: JawSelection;
   lowerUrl?: string;
+  biteUrl?: string;
   viewMode?: ViewMode;
   cameraStateRef?: MutableRefObject<CameraState>;
   showOcclusgramHeatmap?: boolean;
@@ -629,6 +643,7 @@ export default function PlyModelViewer26A({
   url,
   jawView,
   lowerUrl,
+  biteUrl,
   viewMode = "color",
   cameraStateRef,
   showOcclusgramHeatmap = false,
@@ -639,47 +654,53 @@ export default function PlyModelViewer26A({
   const upperAsset = url;
   const lowerAsset = lowerUrl ?? url;
   const usesJawView = jawView != null;
+  const usesBiteStlScene = usesJawView && jawView === "bite" && Boolean(biteUrl);
+  const bitePairOcclusion = usesJawView && jawView === "bite" && upperAsset !== lowerAsset;
 
   return (
-    <Canvas
-      camera={{
-        position: [0, 0, cameraStateRef?.current.radius ?? 4],
-        fov: 45,
-        near: 0.1,
-        far: 100,
-      }}
-      style={{ width: "100%", height: "100%" }}
-      gl={{ antialias: true, alpha: true }}
-    >
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[3, 10, 5]} intensity={1.5} />
-      <directionalLight position={[-5, 3, -2]} intensity={0.5} />
-      <directionalLight position={[0, -2, 5]} intensity={0.3} />
-      <hemisphereLight args={["#ffffff", "#c0c0c0", 0.4]} />
-      <CameraRig sharedCameraRef={cameraStateRef} cameraEnabled={!editSelectionMode} />
-      <Suspense fallback={<LoadingIndicator />}>
-        {!usesJawView && (
-          <PlyMesh
-            url={url}
-            viewMode={viewMode}
-            showOcclusgramHeatmap={showOcclusgramHeatmap}
-            editSelectionMode={editSelectionMode}
-            eraseSelectionNonce={eraseSelectionNonce}
-            opacity={opacity}
-          />
-        )}
-        {usesJawView && (jawView === "upper" || jawView === "bite") && (
-          <PlyMesh
-            url={upperAsset}
-            viewMode={viewMode}
-            showOcclusgramHeatmap={showOcclusgramHeatmap}
-            editSelectionMode={editSelectionMode}
-            eraseSelectionNonce={eraseSelectionNonce}
-            opacity={opacity}
-          />
-        )}
-        {usesJawView && (jawView === "lower" || jawView === "bite") && (
-          <group position={[0, jawView === "bite" && upperAsset === lowerAsset ? 0.004 : 0, 0]}>
+    <div className="relative h-full w-full">
+      <Canvas
+        camera={{
+          position: [0, 0, cameraStateRef?.current.radius ?? 4],
+          fov: 45,
+          near: 0.1,
+          far: 100,
+        }}
+        style={{ width: "100%", height: "100%" }}
+        gl={{ antialias: true, alpha: true }}
+      >
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[3, 10, 5]} intensity={1.5} />
+        <directionalLight position={[-5, 3, -2]} intensity={0.5} />
+        <directionalLight position={[0, -2, 5]} intensity={0.3} />
+        <hemisphereLight args={["#ffffff", "#c0c0c0", 0.4]} />
+        <CameraRig sharedCameraRef={cameraStateRef} cameraEnabled={!editSelectionMode} />
+        <Suspense fallback={<LoadingIndicator />}>
+          {!usesJawView && (
+            <PlyMesh
+              url={url}
+              viewMode={viewMode}
+              showOcclusgramHeatmap={showOcclusgramHeatmap}
+              editSelectionMode={editSelectionMode}
+              eraseSelectionNonce={eraseSelectionNonce}
+              opacity={opacity}
+            />
+          )}
+          {usesBiteStlScene && <BiteOcclusionScene26A biteUrl={biteUrl!} jawView="bite" viewMode={viewMode} />}
+          {!usesBiteStlScene && bitePairOcclusion && (
+            <BiteOcclusionScene26A biteUrl={upperAsset} jawView="bite" viewMode={viewMode} />
+          )}
+          {usesJawView && jawView === "upper" && (
+            <PlyMesh
+              url={upperAsset}
+              viewMode={viewMode}
+              showOcclusgramHeatmap={showOcclusgramHeatmap}
+              editSelectionMode={editSelectionMode}
+              eraseSelectionNonce={eraseSelectionNonce}
+              opacity={opacity}
+            />
+          )}
+          {usesJawView && jawView === "lower" && (
             <PlyMesh
               url={lowerAsset}
               viewMode={viewMode}
@@ -688,9 +709,31 @@ export default function PlyModelViewer26A({
               eraseSelectionNonce={eraseSelectionNonce}
               opacity={opacity}
             />
-          </group>
-        )}
-      </Suspense>
-    </Canvas>
+          )}
+          {!usesBiteStlScene && usesJawView && jawView === "bite" && upperAsset === lowerAsset && (
+            <>
+              <PlyMesh
+                url={upperAsset}
+                viewMode={viewMode}
+                showOcclusgramHeatmap={showOcclusgramHeatmap}
+                editSelectionMode={editSelectionMode}
+                eraseSelectionNonce={eraseSelectionNonce}
+                opacity={opacity}
+              />
+              <group position={[0, 0.004, 0]}>
+                <PlyMesh
+                  url={lowerAsset}
+                  viewMode={viewMode}
+                  showOcclusgramHeatmap={showOcclusgramHeatmap}
+                  editSelectionMode={editSelectionMode}
+                  eraseSelectionNonce={eraseSelectionNonce}
+                  opacity={opacity}
+                />
+              </group>
+            </>
+          )}
+        </Suspense>
+      </Canvas>
+    </div>
   );
 }

@@ -619,7 +619,7 @@ export default function ViewStepContent26A({
   onBiteGuidanceDismissed,
 }: ViewStepContentProps) {
   const isScanFlow26A = getScanFlowVersion() === "26A";
-  const { upperUrl, lowerUrl } = getTreatmentPlyPair(treatmentId);
+  const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
   const [viewMode, setViewMode] = useState<ViewMode>("color");
   const [showTrimMenu, setShowTrimMenu] = useState(false);
   const [showPrepQc, setShowPrepQc] = useState(false);
@@ -743,7 +743,7 @@ export default function ViewStepContent26A({
             key={isScanFlow26A ? treatmentId : "view-ply"}
             url={isScanFlow26A ? upperUrl : "/models/upper-jaw.ply"}
             {...(isScanFlow26A
-              ? { lowerUrl, jawView: selectedJaw }
+              ? { lowerUrl, biteUrl, jawView: selectedJaw }
               : {})}
             viewMode={viewMode}
             cameraStateRef={cameraStateRef}

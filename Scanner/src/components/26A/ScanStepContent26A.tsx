@@ -46,6 +46,11 @@ interface ScanStepContentProps {
   onLowerJawGuidanceDismissed?: () => void;
   biteGuidanceDismissedThisFlow?: boolean;
   onBiteGuidanceDismissed?: () => void;
+  /**
+   * When false, the 3D viewport is hidden until the sleeve step is confirmed (26A scan step).
+   * Guidance modals still appear on top of the viewer when `true`.
+   */
+  showScanViewport3d?: boolean;
 }
 
 export default function ScanStepContent26A({
@@ -63,8 +68,9 @@ export default function ScanStepContent26A({
   onLowerJawGuidanceDismissed,
   biteGuidanceDismissedThisFlow = false,
   onBiteGuidanceDismissed,
+  showScanViewport3d = true,
 }: ScanStepContentProps) {
-  const { upperUrl, lowerUrl } = getTreatmentPlyPair(treatmentId);
+  const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
   const [viewMode, setViewMode] = useState<ViewMode>("color");
   const [prepEditOpen, setPrepEditOpen] = useState(false);
   const [prepSelectionMode, setPrepSelectionMode] = useState(false);
@@ -84,24 +90,33 @@ export default function ScanStepContent26A({
       <div className="relative flex-1 min-h-0 min-w-0" style={{ backgroundColor: "var(--color-page-background)" }}>
         {/* 3D model viewport — fills entire area */}
         <div className="absolute inset-0 overflow-hidden">
-          <Suspense
-            fallback={
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="tp-body-02 text-text-secondary">Loading 3D model…</span>
-              </div>
-            }
-          >
-            <PlyModelViewer
-              key={treatmentId}
-              url={upperUrl}
-              lowerUrl={lowerUrl}
-              jawView={selectedJaw}
-              viewMode={viewMode}
-              cameraStateRef={cameraStateRef}
-              editSelectionMode={prepSelectionMode}
-              eraseSelectionNonce={eraseSelectionNonce}
-            />
-          </Suspense>
+          {showScanViewport3d ? (
+            <Suspense
+              fallback={
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="tp-body-02 text-text-secondary">Loading 3D model…</span>
+                </div>
+              }
+            >
+              <PlyModelViewer
+                key={treatmentId}
+                url={upperUrl}
+                lowerUrl={lowerUrl}
+                biteUrl={biteUrl}
+                jawView={selectedJaw}
+                viewMode={viewMode}
+                cameraStateRef={cameraStateRef}
+                editSelectionMode={prepSelectionMode}
+                eraseSelectionNonce={eraseSelectionNonce}
+              />
+            </Suspense>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "var(--color-page-background)" }}>
+              <p className="tp-body-02 text-text-secondary text-center max-w-sm px-6">
+                The 3D scan view appears after you confirm the sleeve step.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Top-left: tooth map — same chart also shown on View (26A replaces multi-layer panel there) */}

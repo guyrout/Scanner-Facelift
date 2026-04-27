@@ -1,50 +1,45 @@
 /**
  * 26A — treatment-based scan experience.
  *
- * Each order treatment is mapped to its own upper/lower PLY pair so Scan / View / Send
- * can show the correct 3D assets when the user’s treatment selection changes.
+ * Model paths are URLs under `public/` (served from site root).
  *
- * Place model files under `public/` (served as absolute paths below). If an entry is
- * missing at runtime, the PLY loader will error until the asset is added.
+ * The repo currently ships one iTero STL pair (`invisalign-study-stl/`). Per-treatment PLY/STL
+ * files under `/models/treatments/<id>/` are optional; until those exist, every treatment falls
+ * back to the same pair so Scan / View always load geometry (default UI uses `fixed-restorative`).
  */
 
-/** Default pair used when an unknown `treatmentId` is present (e.g. legacy data). */
-export const DEFAULT_TREATMENT_PLY = {
-  upperUrl: "/models/upper-jaw.ply",
-  lowerUrl: "/models/lower-jaw.ply",
+/** Shipped STL pair — upper + lower jaws. */
+export const INVISALIGN_STUDY_STL_PAIR = {
+  upperUrl: "/models/treatments/invisalign-study-stl/upper_arch_view.stl",
+  lowerUrl: "/models/treatments/invisalign-study-stl/lower_arch_view.stl",
+  biteUrl: "/models/treatments/invisalign-study-stl/bite_view.stl",
 } as const;
+
+/** Default when `treatmentId` is unknown — must resolve to existing files under `public/`. */
+export const DEFAULT_TREATMENT_PLY = INVISALIGN_STUDY_STL_PAIR;
 
 /**
  * One row per `TREATMENT_OPTIONS` id in `FixedRestorativeForm26A`.
- * Swap paths when per-treatment assets are available.
+ * Swap URLs when dedicated assets exist; until then all rows use the shipped STL pair.
  */
-export const TREATMENT_3D_PLY: Record<string, { upperUrl: string; lowerUrl: string }> = {
-  "fixed-restorative": {
-    upperUrl: "/models/treatments/fixed-restorative/upper.ply",
-    lowerUrl: "/models/treatments/fixed-restorative/lower.ply",
-  },
-  "study-model": {
-    upperUrl: "/models/treatments/study-model/upper.ply",
-    lowerUrl: "/models/treatments/study-model/lower.ply",
-  },
-  invisalign: {
-    upperUrl: "/models/treatments/invisalign/upper.ply",
-    lowerUrl: "/models/treatments/invisalign/lower.ply",
-  },
-  appliance: {
-    upperUrl: "/models/treatments/appliance/upper.ply",
-    lowerUrl: "/models/treatments/appliance/lower.ply",
-  },
-  "dentures-removable": {
-    upperUrl: "/models/treatments/dentures-removable/upper.ply",
-    lowerUrl: "/models/treatments/dentures-removable/lower.ply",
-  },
-  "surgical-guide": {
-    upperUrl: "/models/treatments/surgical-guide/upper.ply",
-    lowerUrl: "/models/treatments/surgical-guide/lower.ply",
-  },
+export const TREATMENT_3D_PLY: Record<string, { upperUrl: string; lowerUrl: string; biteUrl: string }> = {
+  "fixed-restorative": INVISALIGN_STUDY_STL_PAIR,
+  "study-model": INVISALIGN_STUDY_STL_PAIR,
+  invisalign: INVISALIGN_STUDY_STL_PAIR,
+  appliance: INVISALIGN_STUDY_STL_PAIR,
+  "dentures-removable": INVISALIGN_STUDY_STL_PAIR,
+  "surgical-guide": INVISALIGN_STUDY_STL_PAIR,
 };
 
-export function getTreatmentPlyPair(treatmentId: string): { upperUrl: string; lowerUrl: string } {
+export function getTreatmentPlyPair(treatmentId: string): {
+  upperUrl: string;
+  lowerUrl: string;
+  biteUrl: string;
+} {
   return TREATMENT_3D_PLY[treatmentId] ?? DEFAULT_TREATMENT_PLY;
+}
+
+/** Study model & Invisalign/Vivera labels use this pair by design (same URLs as fallback). */
+export function treatmentUsesInvisalignStudyStl(treatmentId: string): boolean {
+  return treatmentId === "study-model" || treatmentId === "invisalign";
 }

@@ -130,6 +130,13 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
     }
   }, [toothSelections]);
 
+  /**
+   * Scan step: show 3D once the sleeve step is confirmed. Guidance modals (upper/lower/bite)
+   * render above the viewport (high z-index); we no longer wait for upper-jaw hint dismiss,
+   * which left the main area blank if that flow didn’t complete as expected.
+   */
+  const scanViewport3dReady = sleeveAcknowledgedThisFlow;
+
   return (
     <div className="scan-flow flex flex-col w-full h-full min-h-0 overflow-hidden bg-[var(--color-background-layer-01)]">
       <ScanFlowHeader26A
@@ -177,6 +184,7 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             onLowerJawGuidanceDismissed={() => setLowerJawGuidanceDismissedThisFlow(true)}
             biteGuidanceDismissedThisFlow={biteGuidanceDismissedThisFlow}
             onBiteGuidanceDismissed={() => setBiteGuidanceDismissedThisFlow(true)}
+            showScanViewport3d={scanViewport3dReady}
           />
         )}
         {currentStep === "view" && (
