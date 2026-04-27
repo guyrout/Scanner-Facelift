@@ -136,6 +136,15 @@ function App() {
                 }
               }}
               onOpenSettings={() => openSettings()}
+              onLockClick={() => {
+                setShowLogin(true);
+                setShowHome(true);
+                setShowOrdersPage(false);
+                setShowScanPatientDetails(false);
+                setShowScanFlow(false);
+                setSelectedPatient(null);
+                setScanEntryPatient(null);
+              }}
             />
           </div>
         ) : showScanPatientDetails ? (

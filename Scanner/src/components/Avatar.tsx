@@ -19,7 +19,7 @@ const AVATAR_SURFACE: CSSProperties = {
 export default function Avatar({ firstName, lastName, imageUrl, size = 36, initialsFontSize }: AvatarProps) {
   const initials = `${firstName[0]}${lastName[0]}`.toUpperCase();
   const useHeaderStyle = initialsFontSize != null;
-  const initialsSize = useHeaderStyle ? initialsFontSize : size * 0.42;
+  const initialsSize = useHeaderStyle ? initialsFontSize : size === 36 ? 16 : size * 0.42;
   const initialsClassName = useHeaderStyle
     ? "tp-heading-05 text-[var(--color-text-on-highlight-blue)]"
     : "tp-body-03 font-medium text-[var(--color-text-on-highlight-blue)]";
@@ -66,6 +66,7 @@ export default function Avatar({ firstName, lastName, imageUrl, size = 36, initi
         minHeight: size,
         ...AVATAR_SURFACE,
         fontSize: initialsSize,
+        ...(useHeaderStyle ? {} : { fontWeight: 500 }),
       }}
     >
       {initials}

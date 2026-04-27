@@ -4,15 +4,16 @@
  * Header with iTero logo (left) and icon buttons (right).
  */
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import scanIllustration from "../assets/scan-illustration.png";
-import { getScanFlowVersion, setScanFlowVersion, type ScanFlowVersion } from "../utils/scanFlowVersionManager";
+import { setScanFlowVersion } from "../utils/scanFlowVersionManager";
 
 export interface HomePageProps {
   onPatientListClick: () => void;
   onOrdersClick?: () => void;
   onScanClick?: () => void;
   onOpenSettings?: () => void;
+  onLockClick?: () => void;
 }
 
 function PatientsIllustration() {
@@ -105,21 +106,16 @@ const CARDS = [
   { id: "orders", label: "Orders", color: "#005780" },
 ] as const;
 
-export default function HomePage({ onPatientListClick, onOrdersClick, onScanClick, onOpenSettings }: HomePageProps) {
-  const [scanFlowVersion, setScanFlowVersionState] = useState<ScanFlowVersion>(() => getScanFlowVersion());
-
+export default function HomePage({ onPatientListClick, onOrdersClick, onScanClick, onOpenSettings, onLockClick }: HomePageProps) {
   useEffect(() => {
-    setScanFlowVersion(scanFlowVersion);
-  }, [scanFlowVersion]);
+    // Keep scanner flow pinned to 26A while the toggle is hidden.
+    setScanFlowVersion("26A");
+  }, []);
 
   const handleCardClick = (id: string) => {
     if (id === "scan") onScanClick?.();
     else if (id === "patients") onPatientListClick();
     else if (id === "orders") (onOrdersClick ?? onPatientListClick)();
-  };
-
-  const toggleVersion = (version: ScanFlowVersion) => {
-    setScanFlowVersionState(version);
   };
 
   return (
@@ -144,41 +140,7 @@ export default function HomePage({ onPatientListClick, onOrdersClick, onScanClic
             <path d="M67.2317 11.8664H67.9573L68.4414 13.2707C68.5565 13.6152 68.6992 14.2613 68.6992 14.2613H68.7114C68.7114 14.2613 68.8541 13.6192 68.9652 13.2707L69.4401 11.8664H70.182V14.8167H69.6704V13.2778C69.6704 12.9568 69.7061 12.3586 69.7061 12.3586H69.6979C69.6979 12.3586 69.5756 12.9018 69.4798 13.1953L68.9214 14.8167H68.477L67.9145 13.1953C67.8187 12.9018 67.6964 12.3586 67.6964 12.3586H67.6882C67.6882 12.3586 67.7239 12.9568 67.7239 13.2778V14.8167H67.2317V11.8664Z" fill="black" fillOpacity="0.93" />
           </svg>
 
-          {/* Scan Flow Version Switcher */}
-          <div
-            className="flex items-center overflow-hidden"
-            style={{
-              borderRadius: 8,
-              backgroundColor: "var(--color-background-layer-02)",
-              border: "1px solid var(--color-border-subtle)",
-              padding: 2,
-            }}
-            role="group"
-            aria-label="Scan flow version selector"
-          >
-            {(["26A", "26B"] as const).map((version) => (
-              <button
-                key={version}
-                type="button"
-                onClick={() => toggleVersion(version)}
-                className="flex items-center justify-center cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
-                style={{
-                  width: 60,
-                  height: 36,
-                  borderRadius: 6,
-                  backgroundColor: scanFlowVersion === version ? "var(--color-background-brand)" : "transparent",
-                  color: scanFlowVersion === version ? "var(--color-text-on-color-primary)" : "var(--color-text-primary)",
-                  fontWeight: 500,
-                  fontSize: 14,
-                  lineHeight: "20px",
-                }}
-                aria-label={`Switch to Scan flow version ${version}`}
-                aria-pressed={scanFlowVersion === version}
-              >
-                {version}
-              </button>
-            ))}
-          </div>
+          {/* Version toggle hidden by request; app defaults to 26A. */}
         </div>
 
         {/* Right icon buttons */}
@@ -187,7 +149,7 @@ export default function HomePage({ onPatientListClick, onOrdersClick, onScanClic
             { label: "Profile", Icon: IconProfile },
             { label: "Library", Icon: IconBook },
             { label: "Help", Icon: IconHelp },
-            { label: "Lock", Icon: IconLock },
+            { label: "Lock", Icon: IconLock, onClick: onLockClick },
             { label: "Camera", Icon: IconCamera },
             { label: "Notifications", Icon: IconBell },
             { label: "Settings", Icon: IconSettings, onClick: onOpenSettings },

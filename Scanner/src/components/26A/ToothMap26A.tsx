@@ -69,7 +69,7 @@ const TOOTH_MASK_FILL = "#FFF9F9";
  * Same fill as the jaw interior in layered SVGs. When a tooth `<g>` is hidden for Missing, a
  * monolithic base path can still show through; this masks it.
  */
-const JAW_INTERIOR_MASK_FILL = "#FFF0F3";
+const JAW_INTERIOR_MASK_FILL = "#FFE0E7";
 
 /** Inline SVG markup (per-tooth `<g id="upper-arch-tooth-{FDI}">`) for devtools / future styling. */
 const UPPER_ARCH_ACTIVE_LAYERED_HTML = upperArchActiveLayeredSvg.replace(/^\s*<\?xml[^>]*>\s*/i, "");
