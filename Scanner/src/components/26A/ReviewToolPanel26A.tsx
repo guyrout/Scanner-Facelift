@@ -1,8 +1,6 @@
 import { useState, type ReactNode } from "react";
 
 const IMAGE_W = 392;
-const IMAGE_H = 416;
-const STACK_H = IMAGE_H * 2 + 8;
 const CHEVRON_COL_W = 32;
 const ZOOM_BTN = 60;
 const SLIDER_COL_W = 60;
@@ -12,7 +10,6 @@ const SLIDER_THUMB = 32;
 const COMPACT_ROW_W = CHEVRON_COL_W + IMAGE_W;
 const EXPANDED_ROW_W = CHEVRON_COL_W + SLIDER_COL_W + IMAGE_W;
 const ZOOMED_W = 602;
-const ZOOMED_H = 706;
 
 const NIRI_SRC = "/review-tool/niri.png";
 const IOC_SRC = "/review-tool/ioc.png";
