@@ -37,12 +37,11 @@ export interface SignCaseModal26AProps {
   onRequestClose?: () => void;
 }
 
-export default function SignCaseModal26A({ sendToId, onConfirmSend, onRequestClose }: SignCaseModal26AProps) {
+export default function SignCaseModal26A({ sendToId: _sendToId, onConfirmSend, onRequestClose }: SignCaseModal26AProps) {
   const [saveSignature, setSaveSignature] = useState(true);
   const [createSimulation, setCreateSimulation] = useState(false);
   const [consentChecked, setConsentChecked] = useState(true);
   const [hasSignature, setHasSignature] = useState(false);
-  const [sendToError, setSendToError] = useState(false);
 
   const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -126,13 +125,8 @@ export default function SignCaseModal26A({ sendToId, onConfirmSend, onRequestClo
   }, []);
 
   const handleConfirmClick = useCallback(() => {
-    if (!sendToId) {
-      setSendToError(true);
-      return;
-    }
-    setSendToError(false);
     onConfirmSend();
-  }, [sendToId, onConfirmSend]);
+  }, [onConfirmSend]);
 
   return (
     <div
@@ -155,9 +149,6 @@ export default function SignCaseModal26A({ sendToId, onConfirmSend, onRequestClo
                   Sign case
                 </h2>
                 <p className="tp-body-02 text-text-secondary w-full">Please sign to authorize case</p>
-                {sendToError && (
-                  <p className="tp-body-02 text-[var(--color-text-error,#d43f58)] mt-2">Select a &quot;Send to&quot; recipient before sending.</p>
-                )}
               </div>
               {onRequestClose && (
                 <div className="flex items-center justify-center shrink-0 py-0.5 w-[60px] self-stretch">

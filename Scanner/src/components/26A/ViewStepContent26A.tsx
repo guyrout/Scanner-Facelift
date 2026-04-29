@@ -741,7 +741,7 @@ export default function ViewStepContent26A({
         >
           <PlyModelViewer
             key={isScanFlow26A ? treatmentId : "view-ply"}
-            url={isScanFlow26A ? upperUrl : "/models/upper-jaw.ply"}
+            url={isScanFlow26A ? upperUrl : "/models/301538675_shell_occlusion_u.ply"}
             {...(isScanFlow26A
               ? { lowerUrl, biteUrl, jawView: selectedJaw }
               : {})}

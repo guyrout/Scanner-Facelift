@@ -34,6 +34,8 @@ export interface SendStepContentProps {
   onSelectedJawChange: (jaw: JawSelection) => void;
   /** Close control on the sign modal — e.g. return to View step */
   onExitSend?: () => void;
+  /** Confirm action on sign modal — e.g. return to Home page */
+  onConfirmSend?: () => void;
   upperJawGuidanceDismissedThisFlow?: boolean;
   onUpperJawGuidanceDismissed?: () => void;
   lowerJawGuidanceDismissedThisFlow?: boolean;
@@ -54,6 +56,7 @@ export default function SendStepContent26A(props: SendStepContentProps) {
     selectedJaw,
     onSelectedJawChange,
     onExitSend,
+    onConfirmSend,
     upperJawGuidanceDismissedThisFlow,
     onUpperJawGuidanceDismissed,
     lowerJawGuidanceDismissedThisFlow,
@@ -63,7 +66,7 @@ export default function SendStepContent26A(props: SendStepContentProps) {
   } = props;
 
   const handleConfirmSend = () => {
-    // Wire to submission / navigation when backend flow exists
+    onConfirmSend?.();
   };
 
   return (

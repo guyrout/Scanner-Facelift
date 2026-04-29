@@ -1,20 +1,18 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 
 const IMAGE_W = 392;
 const CHEVRON_COL_W = 32;
 const ZOOM_BTN = 60;
 const SLIDER_COL_W = 60;
-const SLIDER_SECTION_PAD_Y = 4;
-const SLIDER_TRACK_H = 138;
+const EXPANDED_SLIDER_TRACK_H = 313;
+const COMPACT_SLIDER_TRACK_H = 138;
 const SLIDER_THUMB = 32;
 const COMPACT_ROW_W = CHEVRON_COL_W + IMAGE_W;
-const EXPANDED_ROW_W = CHEVRON_COL_W + SLIDER_COL_W + IMAGE_W;
-const ZOOMED_W = 602;
 
 const NIRI_SRC = "/review-tool/niri.png";
 const IOC_SRC = "/review-tool/ioc.png";
 
-type ReviewViewMode = "compact" | "expanded" | "zoomed";
+type ReviewViewMode = "compact" | "expanded";
 type ZoomTarget = "niri" | "ioc";
 
 export interface ReviewToolPanelProps {
@@ -74,46 +72,43 @@ function NiriIcon() {
   );
 }
 
-function SliderUnit({ icon, value, onChange }: { icon: ReactNode; value: number; onChange: (value: number) => void }) {
-  const thumbTravel = SLIDER_TRACK_H - SLIDER_THUMB;
+function SliderUnit({ value, onChange, trackHeight }: { value: number; onChange: (value: number) => void; trackHeight: number }) {
+  const thumbTravel = trackHeight - SLIDER_THUMB;
   const thumbTopPx = Math.round(((100 - value) / 100) * thumbTravel);
 
   return (
-    <div className="flex w-full flex-1 flex-col items-center justify-center" style={{ gap: 8, minHeight: 0 }}>
-      <div className="flex h-6 w-6 items-center justify-center">{icon}</div>
-      <div className="relative flex w-8 flex-1 items-center justify-center" style={{ minHeight: SLIDER_TRACK_H }}>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="absolute z-20 cursor-pointer opacity-0"
-          style={{ width: SLIDER_TRACK_H, transform: "rotate(-90deg)" }}
-          aria-label="Review slider"
-        />
-        <div
-          className="absolute rounded-sm"
-          style={{ left: 17, top: 0, bottom: 0, width: 4, backgroundColor: "var(--color-background-accent)" }}
-        />
-        <div
-          className="absolute rounded-sm"
-          style={{ left: 17, bottom: 0, height: `${value}%`, width: 4, backgroundColor: "var(--color-background-brand)" }}
-        />
-        <div
-          className="absolute rounded-full"
-          style={{
-            left: 17,
-            top: thumbTopPx,
-            width: SLIDER_THUMB,
-            height: SLIDER_THUMB,
-            transform: "translateX(-50%)",
-            border: "2px solid var(--color-border-subtle)",
-            backgroundColor: "var(--color-background-layer-01)",
-            boxShadow: "var(--shadow-card)",
-          }}
-        />
-      </div>
+    <div className="relative flex w-[60px] items-center justify-center" style={{ height: trackHeight }}>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="absolute z-20 cursor-pointer opacity-0"
+        style={{ width: trackHeight, transform: "rotate(-90deg)" }}
+        aria-label="Review slider"
+      />
+      <div
+        className="absolute rounded-sm"
+        style={{ left: 28, top: 0, bottom: 0, width: 4, backgroundColor: "var(--color-border-subtle)" }}
+      />
+      <div
+        className="absolute rounded-sm"
+        style={{ left: 28, bottom: 0, height: `${value}%`, width: 4, backgroundColor: "var(--color-border-interactive)" }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          left: 30,
+          top: thumbTopPx,
+          width: SLIDER_THUMB,
+          height: SLIDER_THUMB,
+          transform: "translateX(-50%)",
+          border: "2px solid var(--color-border-subtle)",
+          backgroundColor: "var(--color-background-layer-01)",
+          boxShadow: "var(--shadow-card)",
+        }}
+      />
     </div>
   );
 }
@@ -156,6 +151,7 @@ function ImageCard({ src, onZoom, filter }: { src: string; onZoom: () => void; f
 
 export default function ReviewToolPanel26A({ onClose: _onClose }: ReviewToolPanelProps) {
   const [mode, setMode] = useState<ReviewViewMode>("compact");
+  const [showSliders, setShowSliders] = useState(false);
   const [zoomTarget, setZoomTarget] = useState<ZoomTarget>("ioc");
   const [upperLight, setUpperLight] = useState(57);
   const [upperNiri, setUpperNiri] = useState(57);
@@ -163,16 +159,13 @@ export default function ReviewToolPanel26A({ onClose: _onClose }: ReviewToolPane
   const [lowerNiri, setLowerNiri] = useState(57);
 
   const handleChevron = () => {
-    if (mode === "zoomed") {
-      setMode("expanded");
-      return;
-    }
-    setMode((prev) => (prev === "compact" ? "expanded" : "compact"));
+    setShowSliders((prev) => !prev);
   };
 
   const openZoom = (target: ZoomTarget) => {
     setZoomTarget(target);
-    setMode("zoomed");
+    setMode("expanded");
+    setShowSliders(false);
   };
 
   const imageFilter = (light: number, niri: number) => {
@@ -184,11 +177,31 @@ export default function ReviewToolPanel26A({ onClose: _onClose }: ReviewToolPane
   const upperFilter = imageFilter(upperLight, upperNiri);
   const lowerFilter = imageFilter(lowerLight, lowerNiri);
 
-  const stackHeight = "min(840px, calc(100vh - 220px))";
+  const stackHeight = "min(714px, calc(100vh - 220px))";
   const compactImageWidth = "min(392px, calc(100vw - 240px))";
-  const expandedImageWidth = "min(392px, calc(100vw - 300px))";
-  const zoomedWidth = "min(602px, calc(100vw - 180px))";
-  const zoomedHeight = "min(706px, calc(100vh - 220px))";
+  const expandedImageWidth = "min(602px, calc(100vw - 160px))";
+  const selectedLight = zoomTarget === "niri" ? upperLight : lowerLight;
+  const selectedNiri = zoomTarget === "niri" ? upperNiri : lowerNiri;
+  const selectedFilter = zoomTarget === "niri" ? upperFilter : lowerFilter;
+  const setSelectedLight = (value: number) => {
+    if (zoomTarget === "niri") {
+      setUpperLight(value);
+      return;
+    }
+    setLowerLight(value);
+  };
+  const setSelectedNiri = (value: number) => {
+    if (zoomTarget === "niri") {
+      setUpperNiri(value);
+      return;
+    }
+    setLowerNiri(value);
+  };
+
+  const collapsedSingleWidth = CHEVRON_COL_W + 602 + 10;
+  const expandedSingleWidth = CHEVRON_COL_W + SLIDER_COL_W + 602 + 10;
+  const collapsedStackWidth = COMPACT_ROW_W + 10;
+  const expandedStackWidth = CHEVRON_COL_W + SLIDER_COL_W + IMAGE_W + 10;
 
   return (
     <aside
@@ -203,12 +216,14 @@ export default function ReviewToolPanel26A({ onClose: _onClose }: ReviewToolPane
         boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.13)",
         width:
           mode === "compact"
-            ? COMPACT_ROW_W + 10
-            : mode === "expanded"
-              ? EXPANDED_ROW_W + 10
-              : CHEVRON_COL_W + ZOOMED_W + 10,
+            ? showSliders
+              ? expandedStackWidth
+              : collapsedStackWidth
+            : showSliders
+              ? expandedSingleWidth
+              : collapsedSingleWidth,
         maxWidth: "calc(100vw - 24px)",
-        maxHeight: mode === "zoomed" ? `calc(${zoomedHeight} + 8px)` : `calc(${stackHeight} + 16px)`,
+        maxHeight: `calc(${stackHeight} + 16px)`,
       }}
       aria-label="Review tool"
     >
@@ -219,60 +234,93 @@ export default function ReviewToolPanel26A({ onClose: _onClose }: ReviewToolPane
             onClick={handleChevron}
             className="flex cursor-pointer items-center justify-center overflow-hidden border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
             style={{ width: CHEVRON_COL_W, height: 32 }}
-            aria-label={mode === "expanded" ? "Close review tool" : "Open review tool"}
+            aria-label={showSliders ? "Hide sliders" : "Show sliders"}
           >
-            <ChevronIcon direction={mode === "expanded" ? "right" : "left"} />
+            <ChevronIcon direction={showSliders ? "right" : "left"} />
           </button>
         </div>
 
         {mode === "compact" && (
-          <div className="flex shrink-0 flex-col items-start" style={{ width: compactImageWidth, height: stackHeight, gap: 8 }}>
-            <ImageCard src={NIRI_SRC} onZoom={() => openZoom("niri")} filter={upperFilter} />
-            <ImageCard src={IOC_SRC} onZoom={() => openZoom("ioc")} filter={lowerFilter} />
-          </div>
-        )}
-
-        {mode === "expanded" && (
           <>
-            <div className="flex shrink-0 flex-col items-start" style={{ width: SLIDER_COL_W, height: stackHeight, gap: 8 }}>
-              <div
-                className="flex w-full flex-1 flex-col items-start"
-                style={{ gap: 16, paddingTop: SLIDER_SECTION_PAD_Y, paddingBottom: SLIDER_SECTION_PAD_Y }}
-              >
-                <SliderUnit icon={<LightFillIcon />} value={upperLight} onChange={setUpperLight} />
-                <SliderUnit icon={<NiriIcon />} value={upperNiri} onChange={setUpperNiri} />
+            {showSliders && (
+              <div className="flex shrink-0 flex-col items-center justify-center" style={{ width: SLIDER_COL_W, height: stackHeight, gap: 16 }}>
+                <div
+                  className="flex w-full flex-1 flex-col items-center justify-center"
+                  style={{ gap: 8 }}
+                >
+                  <div className="flex h-6 w-6 items-center justify-center">
+                    <LightFillIcon />
+                  </div>
+                  <SliderUnit value={upperLight} onChange={setUpperLight} trackHeight={COMPACT_SLIDER_TRACK_H} />
+                  <div className="flex h-6 w-6 items-center justify-center">
+                    <NiriIcon />
+                  </div>
+                  <SliderUnit value={upperNiri} onChange={setUpperNiri} trackHeight={COMPACT_SLIDER_TRACK_H} />
+                </div>
+                <div
+                  className="flex w-full flex-1 flex-col items-center justify-center"
+                  style={{ gap: 8 }}
+                >
+                  <div className="flex h-6 w-6 items-center justify-center">
+                    <LightFillIcon />
+                  </div>
+                  <SliderUnit value={lowerLight} onChange={setLowerLight} trackHeight={COMPACT_SLIDER_TRACK_H} />
+                  <div className="flex h-6 w-6 items-center justify-center">
+                    <NiriIcon />
+                  </div>
+                  <SliderUnit value={lowerNiri} onChange={setLowerNiri} trackHeight={COMPACT_SLIDER_TRACK_H} />
+                </div>
               </div>
-              <div
-                className="flex w-full flex-1 flex-col items-start"
-                style={{ gap: 16, paddingTop: SLIDER_SECTION_PAD_Y, paddingBottom: SLIDER_SECTION_PAD_Y }}
-              >
-                <SliderUnit icon={<LightFillIcon />} value={lowerLight} onChange={setLowerLight} />
-                <SliderUnit icon={<NiriIcon />} value={lowerNiri} onChange={setLowerNiri} />
-              </div>
-            </div>
-            <div className="flex shrink-0 flex-col items-start" style={{ width: expandedImageWidth, height: stackHeight, gap: 8 }}>
+            )}
+            <div className="flex shrink-0 flex-col items-start" style={{ width: compactImageWidth, height: stackHeight, gap: 8 }}>
               <ImageCard src={NIRI_SRC} onZoom={() => openZoom("niri")} filter={upperFilter} />
               <ImageCard src={IOC_SRC} onZoom={() => openZoom("ioc")} filter={lowerFilter} />
             </div>
           </>
         )}
 
-        {mode === "zoomed" && (
-          <div
-            className="relative shrink-0 overflow-hidden rounded-lg p-1"
-            style={{ width: zoomedWidth, height: zoomedHeight, boxSizing: "border-box" }}
-          >
-            <img
-              src={zoomTarget === "niri" ? NIRI_SRC : IOC_SRC}
-              alt=""
-              className="h-full w-full rounded object-cover"
-              style={{ filter: zoomTarget === "niri" ? upperFilter : lowerFilter }}
-              draggable={false}
-            />
-            <div className="pointer-events-auto absolute right-1 top-1">
-              <ZoomButton zoomed onClick={() => setMode("expanded")} />
+        {mode === "expanded" && (
+          <>
+            {showSliders && (
+            <div className="flex shrink-0 flex-col items-center justify-center" style={{ width: SLIDER_COL_W, height: stackHeight, gap: 16 }}>
+              <div
+                className="flex w-full flex-1 flex-col items-center justify-center"
+                style={{ gap: 8 }}
+              >
+                <div className="flex h-6 w-6 items-center justify-center">
+                  <LightFillIcon />
+                </div>
+                <SliderUnit value={selectedLight} onChange={setSelectedLight} trackHeight={EXPANDED_SLIDER_TRACK_H} />
+              </div>
+              <div className="flex h-6 w-6 items-center justify-center">
+                <NiriIcon />
+              </div>
+              <div className="flex w-full flex-1 flex-col items-center justify-center">
+                <SliderUnit value={selectedNiri} onChange={setSelectedNiri} trackHeight={EXPANDED_SLIDER_TRACK_H} />
+              </div>
             </div>
-          </div>
+            )}
+            <div className="flex shrink-0 flex-col items-start" style={{ width: expandedImageWidth, height: stackHeight, gap: 8 }}>
+              <div className="relative shrink-0 overflow-hidden rounded-lg p-1" style={{ width: "100%", height: "100%", boxSizing: "border-box" }}>
+                <img
+                  src={zoomTarget === "niri" ? NIRI_SRC : IOC_SRC}
+                  alt=""
+                  className="h-full w-full rounded object-cover"
+                  style={{ filter: selectedFilter }}
+                  draggable={false}
+                />
+                <div className="pointer-events-auto absolute right-1 top-1">
+                  <ZoomButton
+                    zoomed
+                    onClick={() => {
+                      setMode("compact");
+                      setShowSliders(false);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </aside>

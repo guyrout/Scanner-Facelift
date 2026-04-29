@@ -711,7 +711,7 @@ export default function ViewStepContent({
           }
         >
           <PlyModelViewer
-            url="/models/upper-jaw.ply"
+            url="/models/301538675_shell_occlusion_u.ply"
             viewMode={viewMode}
             cameraStateRef={cameraStateRef}
             showOcclusgramHeatmap={activeTools.has("occlusgram")}

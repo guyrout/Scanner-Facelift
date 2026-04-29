@@ -147,7 +147,8 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
       />
 
       {/* Keyed wrapper: React unmounts/remounts on step change → triggers fade-in */}
-      <div key={currentStep} className="animate-step-enter flex flex-col flex-1 min-h-0 min-w-0">
+      {/* overflow-hidden: required so flex child (info scroll area) gets a bounded height; otherwise it grows with content and touch/overflow scroll never activates */}
+      <div key={currentStep} className="animate-step-enter flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {currentStep === "info" && (
           <InfoStepContent26A
             patient={patient}
@@ -226,6 +227,7 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
             selectedJaw={selectedJaw}
             onSelectedJawChange={setSelectedJaw}
             onExitSend={() => handleStepChange("view")}
+            onConfirmSend={onBack}
             upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
             onUpperJawGuidanceDismissed={() => setUpperJawGuidanceDismissedThisFlow(true)}
             lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}
