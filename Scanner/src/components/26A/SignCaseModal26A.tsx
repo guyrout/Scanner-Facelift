@@ -130,12 +130,12 @@ export default function SignCaseModal26A({ sendToId: _sendToId, onConfirmSend, o
 
   return (
     <div
-      className="absolute inset-0 z-[100] flex items-center justify-center p-6"
+      className="absolute inset-0 z-[100] flex overscroll-contain scrollbar-overlay-y px-6 py-6"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.63)" }}
       role="presentation"
     >
       <div
-        className="flex flex-col bg-[var(--color-background-layer-01)] w-full max-w-[656px] rounded-2xl p-6 gap-6 shrink-0 max-h-[min(900px,calc(100vh-48px))] overflow-y-auto"
+        className="m-auto flex w-full max-w-[656px] shrink-0 flex-col gap-6 rounded-2xl bg-[var(--color-background-layer-01)] p-6"
         role="dialog"
         aria-modal="true"
         aria-labelledby="sign-case-title"

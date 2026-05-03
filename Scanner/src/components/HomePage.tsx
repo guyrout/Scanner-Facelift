@@ -12,6 +12,7 @@ export interface HomePageProps {
   onPatientListClick: () => void;
   onOrdersClick?: () => void;
   onScanClick?: () => void;
+  onMessagesClick?: () => void;
   onOpenSettings?: () => void;
   onLockClick?: () => void;
 }
@@ -106,7 +107,14 @@ const CARDS = [
   { id: "orders", label: "Orders", color: "#005780" },
 ] as const;
 
-export default function HomePage({ onPatientListClick, onOrdersClick, onScanClick, onOpenSettings, onLockClick }: HomePageProps) {
+export default function HomePage({
+  onPatientListClick,
+  onOrdersClick,
+  onScanClick,
+  onMessagesClick,
+  onOpenSettings,
+  onLockClick,
+}: HomePageProps) {
   useEffect(() => {
     // Keep scanner flow pinned to 26A while the toggle is hidden.
     setScanFlowVersion("26A");
@@ -151,7 +159,7 @@ export default function HomePage({ onPatientListClick, onOrdersClick, onScanClic
             { label: "Help", Icon: IconHelp },
             { label: "Lock", Icon: IconLock, onClick: onLockClick },
             { label: "Camera", Icon: IconCamera },
-            { label: "Notifications", Icon: IconBell },
+            { label: "Messages", Icon: IconBell, onClick: onMessagesClick },
             { label: "Settings", Icon: IconSettings, onClick: onOpenSettings },
           ].map((btn) => (
             <button

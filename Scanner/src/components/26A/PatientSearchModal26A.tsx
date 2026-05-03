@@ -12,6 +12,32 @@ import { patients } from "../../data/patients";
 
 const KEYBOARD_HEIGHT = 340;
 
+/**
+ * Figma 06.-Scanner-core — Component01 / Checkbox indicator (node 1223:1396):
+ * 24×24, 4px radius, dark stroke + white fill when off; brand fill + white check when on;
+ * light focus halo on row keyboard focus (`group-focus-visible`).
+ */
+function ScannerCoreCheckboxIndicator({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className="pointer-events-none flex size-6 shrink-0 items-center justify-center rounded-[4px] shadow-none transition-shadow duration-200 ease-out group-focus-visible:shadow-[0_0_0_2px_var(--color-border-focus)]"
+      aria-hidden
+    >
+      <span
+        className="flex size-6 items-center justify-center rounded-[4px] border border-solid transition-[background-color,border-color] duration-200 ease-in-out"
+        style={{
+          borderColor: checked ? "var(--color-background-brand, #009ace)" : "var(--color-border-strong, #121212)",
+          backgroundColor: checked
+            ? "var(--color-background-brand, #009ace)"
+            : "var(--color-surface, #ffffff)",
+        }}
+      >
+        {checked ? <CheckIcon size={16} color="#fff" /> : null}
+      </span>
+    </span>
+  );
+}
+
 export interface PatientSearchModal26AProps {
   open: boolean;
   onClose: () => void;
@@ -78,11 +104,6 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
   const selectedPatient = selectedId ? patients.find((p) => p.id === selectedId) : undefined;
   const canConfirm = Boolean(selectedPatient);
 
-  /** Keep 686px fixed when viewport allows; shrink when keyboard is open or viewport is short. */
-  const modalMaxHeight = searchFocused
-    ? `min(686px, calc(100vh - 48px - ${KEYBOARD_HEIGHT}px))`
-    : "min(686px, calc(100vh - 48px))";
-
   if (!open || typeof document === "undefined") return null;
 
   function handleBackdropPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
@@ -98,7 +119,7 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[20050] flex flex-col items-center justify-center px-6 pt-6"
+      className="fixed inset-0 z-[20050] flex flex-col items-center justify-start overscroll-contain scrollbar-overlay-y px-6 pt-6 sm:justify-center sm:py-6"
       style={{
         backgroundColor: "rgba(0, 0, 0, 0.63)",
         paddingBottom: searchFocused ? 24 + KEYBOARD_HEIGHT : 24,
@@ -109,10 +130,10 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
       onClick={handleBackdropClick}
     >
       <div
-        className="mx-auto flex w-full max-w-[880px] shrink-0 flex-col overflow-hidden rounded-2xl bg-[var(--color-background-layer-01)] shadow-[0px_2px_12px_rgba(0,0,0,0.13)]"
+        className="mx-auto my-auto flex w-full max-w-[880px] shrink-0 flex-col rounded-2xl bg-[var(--color-background-layer-01)]"
         style={{
-          height: 686,
-          maxHeight: modalMaxHeight,
+          height: "auto",
+          minHeight: 320,
           paddingTop: 8,
           paddingBottom: 24,
           paddingLeft: 24,
@@ -124,7 +145,7 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
         aria-labelledby="patient-search-modal-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+        <div className="flex flex-col gap-2">
           <div className="flex h-[60px] w-full shrink-0 items-center gap-4">
             <h2 id="patient-search-modal-title" className="tp-heading-03 min-w-0 flex-1 truncate text-text-primary" style={{ fontSize: 20, lineHeight: "28px" }}>
               Search Patient
@@ -140,7 +161,7 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
             </button>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+          <div className="flex flex-col gap-4">
             <div className="flex w-full shrink-0 items-start justify-between gap-2">
               <div
                 role="search"
@@ -177,16 +198,15 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
               </div>
             </div>
 
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-solid border-border-subtle">
-              <div className="min-h-0 flex-1 overflow-auto scrollbar-table">
-                <div className="min-w-[640px]">
+            <div className="relative flex min-w-0 flex-col rounded-lg border border-solid border-[var(--color-border-subtle)]">
+              <div className="min-w-0 w-full">
                   <div
-                    className="grid items-center border-b border-solid border-border-subtle bg-[var(--color-background-layer-01)] sticky top-0 z-[1] tp-body-02 font-medium text-text-secondary"
+                    className="grid items-center border-b-2 border-solid border-[var(--color-border-subtle)] bg-[var(--color-background-layer-01)] sticky top-0 z-[1] tp-body-02 font-medium text-text-secondary"
                     style={{
                       minHeight: 52,
                       paddingLeft: 16,
                       paddingRight: 16,
-                      gridTemplateColumns: "24px minmax(200px,2fr) 1fr 1fr 1fr",
+                      gridTemplateColumns: "24px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
                       gap: 16,
                     }}
                   >
@@ -203,7 +223,7 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
                         key={p.id}
                         type="button"
                         onClick={() => setSelectedId(p.id)}
-                        className={`grid items-center w-full text-left border-0 border-b border-solid border-border-subtle last:border-b-0 cursor-pointer transition-ui ${
+                        className={`group grid w-full cursor-pointer items-center border-0 border-b border-solid border-[var(--color-border-subtle)] text-left transition-ui last:border-b-0 outline-none focus-visible:outline-none ${
                           isSel ? "bg-[var(--color-background-layer-02)]" : "bg-[var(--color-background-layer-01)] hover:bg-[var(--color-background-layer-hovered)]"
                         }`}
                         style={{
@@ -212,38 +232,28 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
                           paddingRight: 16,
                           paddingTop: 12,
                           paddingBottom: 12,
-                          gridTemplateColumns: "24px minmax(200px,2fr) 1fr 1fr 1fr",
+                          gridTemplateColumns: "24px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
                           gap: 16,
                         }}
                       >
-                        <span
-                          className="flex shrink-0 items-center justify-center rounded border border-solid border-border-subtle"
-                          style={{
-                            width: 24,
-                            height: 24,
-                            backgroundColor: isSel ? "var(--color-background-brand, #009ace)" : "transparent",
-                          }}
-                          aria-hidden
-                        >
-                          {isSel ? <CheckIcon size={16} color="#fff" /> : null}
-                        </span>
+                        <ScannerCoreCheckboxIndicator checked={isSel} />
                         <div className="flex min-w-0 gap-3 items-center">
                           <Avatar firstName={p.firstName} lastName={p.lastName} size={36} initialsFontSize={14} imageUrl={p.avatarUrl} />
-                          <div className="flex flex-col min-w-0 gap-1">
-                            <span className="tp-body-02 text-text-primary truncate">
+                          <div className="flex min-w-0 flex-col gap-1">
+                            <span className="tp-body-02 text-text-primary break-words">
                               {p.firstName} {p.lastName}
                             </span>
-                            <span className="tp-body-02 text-text-secondary truncate">{p.doctor}</span>
+                            <span className="tp-body-02 text-text-secondary break-words">{p.doctor}</span>
                           </div>
+
                         </div>
-                        <span className="tp-body-02 text-text-primary truncate min-w-0">{p.gender}</span>
-                        <span className="tp-body-02 text-text-primary truncate min-w-0">{p.dateOfBirth}</span>
-                        <span className="tp-body-02 text-text-primary truncate min-w-0">{p.patientId}</span>
+                        <span className="tp-body-02 text-text-primary min-w-0 break-words">{p.gender}</span>
+                        <span className="tp-body-02 text-text-primary min-w-0 break-words">{p.dateOfBirth}</span>
+                        <span className="tp-body-02 text-text-primary min-w-0 break-words">{p.patientId}</span>
                       </button>
                     );
                   })}
                 </div>
-              </div>
             </div>
           </div>
         </div>
@@ -252,7 +262,7 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
           <button
             type="button"
             onClick={onClose}
-            className="tp-body-02 cursor-pointer appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-lg flex items-center justify-center shrink-0 border-2 border-solid border-border-subtle bg-[var(--color-background-layer-01)] text-text-primary"
+            className="tp-body-02 cursor-pointer appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-lg flex items-center justify-center shrink-0 border-2 border-solid border-[var(--color-border-subtle)] bg-[var(--color-background-layer-01)] text-text-primary"
             style={{ width: 120, minWidth: 100, height: 60, padding: "12px 16px" }}
           >
             Cancel

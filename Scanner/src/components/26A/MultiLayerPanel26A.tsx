@@ -233,7 +233,7 @@ export default function MultiLayerPanel26A({
 
       {expanded && (
         <div
-          className="flex flex-col overflow-y-auto overflow-x-hidden"
+          className="flex flex-col scrollbar-overlay-y"
           style={{
             paddingTop: 16,
             paddingBottom: 16,

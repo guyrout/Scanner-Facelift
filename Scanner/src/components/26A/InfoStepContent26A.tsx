@@ -347,7 +347,7 @@ export default function InfoStepContent26A({
 
   return (
     <div
-      className="flex-1 min-h-0 min-w-0 overflow-auto scrollbar-hidden bg-[var(--color-page-background)]"
+      className="flex-1 min-h-0 min-w-0 scrollbar-overlay-y bg-[var(--color-page-background)]"
       style={{
         paddingBottom: activeInfoTextField ? 16 + VIRTUAL_KEYBOARD_HEIGHT : 16,
         transition: "padding-bottom 360ms var(--motion-ease-out-soft)",

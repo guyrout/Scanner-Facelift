@@ -1,24 +1,61 @@
 import { useState, useMemo, useRef } from "react";
 import OrdersHeader from "./OrdersHeader";
 import Avatar from "./Avatar";
-import DoctorSiteLoginModal from "./DoctorSiteLoginModal";
 import SearchInput from "./SearchInput";
 import type { SearchInputRef } from "./SearchInput";
 import VirtualKeyboard from "./VirtualKeyboard";
+import DoctorSiteLoginModal from "./DoctorSiteLoginModal";
 import { InvisalignLogoIcon } from "./Icons";
 import { getAllOrdersForOrdersPage } from "../data/orders";
 import type { OrderStatus, OrderWithPatient } from "../data/orders";
 
-/** Figma: expanded row actions — same as Patient Orders */
+/** Figma: expanded row actions — full set (In Progress + Past Orders) */
 const EXPANDED_ACTIONS = [
   { id: "view-rx", label: "View RX" },
   { id: "open-viewer", label: "Open Viewer" },
   { id: "align-oral", label: "Align Oral Health Suite" },
   { id: "itero-report", label: "iTero Scan Report" },
-  { id: "simulator-pro", label: "Invisalign Outcome Simulator Pro", withLogo: true },
+  { id: "simulator-pro", label: "Invisalign Outcome Simulator Pro", withLogo: true as const },
   { id: "simulator", label: "Invisalign Outcome Simulator" },
   { id: "progress", label: "Invisalign Progress Assessment" },
 ] as const;
+
+const EXPANDED_ROW_ACTION_CLASS =
+  "tp-body-04 h-[var(--height-row)] rounded-lg bg-surface text-text-primary hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press cursor-pointer whitespace-nowrap border border-solid border-border-accent px-4 flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-highlight-blue)] hover:border-[var(--color-border-accent-hovered)]";
+
+/** Figma 06.-Scanner-core 36403:7127 — secondary danger (In Progress expanded row only) */
+const IN_PROGRESS_DANGER_ACTION_CLASS =
+  "tp-body-04 h-[var(--height-row)] rounded-lg border border-solid border-border-subtle bg-surface text-text-error hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press cursor-pointer whitespace-nowrap px-4 flex items-center justify-center min-w-[72px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-highlight-blue)]";
+
+type InProgressActionVariant = "primary" | "danger";
+
+interface InProgressRowAction {
+  id: string;
+  label: string;
+  variant: InProgressActionVariant;
+}
+
+/** In Progress table only — Past Orders keeps full EXPANDED_ACTIONS */
+function getInProgressExpandedActions(status: OrderStatus): InProgressRowAction[] {
+  switch (status) {
+    case "rx_created":
+      return [
+        { id: "view-rx", label: "View RX", variant: "primary" },
+        { id: "delete-rx", label: "Delete RX", variant: "danger" },
+      ];
+    case "sent_to_lab":
+      return [
+        { id: "view-rx", label: "View RX", variant: "primary" },
+        { id: "open-viewer", label: "Open Viewer", variant: "primary" },
+        { id: "delete-rx", label: "Delete RX", variant: "danger" },
+      ];
+    case "completed":
+      return [
+        { id: "view-rx", label: "View RX", variant: "primary" },
+        { id: "open-viewer", label: "Open Viewer", variant: "primary" },
+      ];
+  }
+}
 
 const ROW_PADDING_X = "pl-4 pr-4";
 const HEADER_LABEL = "tp-body-04 text-text-secondary truncate";
@@ -193,6 +230,7 @@ export default function OrdersPage({
               <div className="h-full min-h-0 overflow-y-auto overflow-x-auto scrollbar-table table-no-select">
                 <OrdersTable
                   rows={inProgress}
+                  expandedMode="in-progress"
                   selectedRowKey={selectedRowKey}
                   onRowSelect={(key) => setSelectedRowKey(selectedRowKey === key ? null : key)}
                   onExpandedActionClick={(id) => {
@@ -239,6 +277,7 @@ export default function OrdersPage({
               ) : (
                 <OrdersTable
                   rows={pastFiltered}
+                  expandedMode="past"
                   selectedRowKey={selectedRowKey}
                   onRowSelect={(key) => setSelectedRowKey(selectedRowKey === key ? null : key)}
                   onExpandedActionClick={(id) => {
@@ -271,11 +310,13 @@ export default function OrdersPage({
 
 function OrdersTable({
   rows,
+  expandedMode,
   selectedRowKey,
   onRowSelect,
   onExpandedActionClick,
 }: {
   rows: OrderWithPatient[];
+  expandedMode: "in-progress" | "past";
   selectedRowKey: string | null;
   onRowSelect: (key: string) => void;
   onExpandedActionClick?: (actionId: string) => void;
@@ -307,6 +348,7 @@ function OrdersTable({
           <OrderRow
             key={getRowKey(row)}
             row={row}
+            expandedMode={expandedMode}
             isSelected={selectedRowKey === getRowKey(row)}
             onRowClick={() => onRowSelect(getRowKey(row))}
             onExpandedActionClick={onExpandedActionClick}
@@ -319,15 +361,21 @@ function OrdersTable({
 
 function OrderRow({
   row,
+  expandedMode,
   isSelected,
   onRowClick,
   onExpandedActionClick,
 }: {
   row: OrderWithPatient;
+  expandedMode: "in-progress" | "past";
   isSelected: boolean;
   onRowClick: () => void;
   onExpandedActionClick?: (actionId: string) => void;
 }) {
+  const inProgressActions = expandedMode === "in-progress" ? getInProgressExpandedActions(row.status) : [];
+  const inProgressPrimary = inProgressActions.filter((a) => a.variant === "primary");
+  const inProgressDanger = inProgressActions.filter((a) => a.variant === "danger");
+
   return (
     <div
       className={`flex flex-col w-full cursor-pointer transition-ui border-b border-border-subtle hover:bg-surface-alt/50 focus-within:bg-surface-alt/30 ${ROW_PADDING_X}`}
@@ -371,7 +419,7 @@ function OrderRow({
         </div>
       </div>
 
-      {isSelected && (
+      {isSelected && expandedMode === "past" && (
         <div
           className="flex flex-wrap items-center gap-3 pb-4 pt-2"
           style={{ paddingLeft: 0, paddingRight: 0 }}
@@ -382,12 +430,47 @@ function OrderRow({
               key={action.id}
               type="button"
               onClick={() => onExpandedActionClick?.(action.id)}
-              className="tp-body-04 h-[var(--height-row)] rounded-lg bg-surface text-text-primary hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press cursor-pointer whitespace-nowrap border border-border-accent px-4 flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface hover:border-[var(--color-border-accent-hovered)]"
+              className={EXPANDED_ROW_ACTION_CLASS}
             >
               {"withLogo" in action && action.withLogo && <InvisalignLogoIcon className="shrink-0 text-text-primary" />}
               {action.label}
             </button>
           ))}
+        </div>
+      )}
+
+      {isSelected && expandedMode === "in-progress" && (
+        <div
+          className={`flex flex-wrap items-center gap-3 pb-4 pt-2 ${inProgressDanger.length > 0 ? "justify-between" : "justify-start"}`}
+          style={{ paddingLeft: 0, paddingRight: 0 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex flex-wrap items-center gap-3 min-w-0">
+            {inProgressPrimary.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                onClick={() => onExpandedActionClick?.(action.id)}
+                className={EXPANDED_ROW_ACTION_CLASS}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+          {inProgressDanger.length > 0 ? (
+            <div className="flex shrink-0 items-center">
+              {inProgressDanger.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => onExpandedActionClick?.(action.id)}
+                  className={IN_PROGRESS_DANGER_ACTION_CLASS}
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       )}
     </div>

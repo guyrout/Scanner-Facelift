@@ -3,6 +3,7 @@ import SplashScreen from "./components/SplashScreen";
 import LoginPage from "./components/LoginPage";
 import HomePage from "./components/HomePage";
 import OrdersPage from "./components/OrdersPage";
+import MessagesPage from "./components/MessagesPage";
 import PatientList from "./components/PatientList";
 import PatientOrders from "./components/PatientOrders";
 import ScanFlowPage, { type ScanFlowPatientSnapshot } from "./components/ScanFlowPage";
@@ -48,6 +49,7 @@ function App() {
   const [showLogin, setShowLogin] = useState(true);
   const [showHome, setShowHome] = useState(true);
   const [showOrdersPage, setShowOrdersPage] = useState(false);
+  const [showMessagesPage, setShowMessagesPage] = useState(false);
   const [showScanPatientDetails, setShowScanPatientDetails] = useState(false);
   const [showScanFlow, setShowScanFlow] = useState(false);
   const [scanEntryPatient, setScanEntryPatient] = useState<ScanFlowPatientSnapshot | null>(null);
@@ -110,12 +112,21 @@ function App() {
               onPatientListClick={() => {
                 setShowHome(false);
                 setShowOrdersPage(false);
+                setShowMessagesPage(false);
                 setShowScanFlow(false);
                 setShowScanPatientDetails(false);
               }}
               onOrdersClick={() => {
                 setShowHome(false);
                 setShowOrdersPage(true);
+                setShowMessagesPage(false);
+                setShowScanFlow(false);
+                setShowScanPatientDetails(false);
+              }}
+              onMessagesClick={() => {
+                setShowHome(false);
+                setShowMessagesPage(true);
+                setShowOrdersPage(false);
                 setShowScanFlow(false);
                 setShowScanPatientDetails(false);
               }}
@@ -123,6 +134,7 @@ function App() {
                 const version = getCurrentVersion();
                 setShowHome(false);
                 setShowOrdersPage(false);
+                setShowMessagesPage(false);
                 if (version === "26A") {
                   // 26A: skip the patient-details pre-screen; go directly to the
                   // consolidated info step inside ScanFlowPage26A.
@@ -140,11 +152,24 @@ function App() {
                 setShowLogin(true);
                 setShowHome(true);
                 setShowOrdersPage(false);
+                setShowMessagesPage(false);
                 setShowScanPatientDetails(false);
                 setShowScanFlow(false);
                 setSelectedPatient(null);
                 setScanEntryPatient(null);
               }}
+            />
+          </div>
+        ) : showMessagesPage ? (
+          <div key="messages" className="animate-page-enter flex flex-col w-full h-full min-h-0">
+            <MessagesPage
+              selectedDentistId={selectedDentistId}
+              onDentistChange={setSelectedDentistId}
+              onBack={() => {
+                setShowMessagesPage(false);
+                setShowHome(true);
+              }}
+              onOpenSettings={() => openSettings()}
             />
           </div>
         ) : showScanPatientDetails ? (

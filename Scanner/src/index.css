@@ -744,12 +744,36 @@ select,
   scroll-behavior: auto;
 }
 
+[class*="scrollbar-table-y"] {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: auto;
+  scroll-behavior: auto;
+}
+
+[class*="scrollbar-overlay-y"] {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: auto;
+  scroll-behavior: auto;
+}
+
 /* Let touch scroll work inside scroll containers: interactive children must allow pan (not only manipulation) */
 .scrollbar-table [role="button"],
 .scrollbar-table .cursor-pointer,
 .scrollbar-table [role="option"],
 .scrollbar-table [role="listbox"],
 .scrollbar-table [tabindex]:not([tabindex="-1"]),
+.scrollbar-table-y [role="button"],
+.scrollbar-table-y .cursor-pointer,
+.scrollbar-table-y [role="option"],
+.scrollbar-table-y [role="listbox"],
+.scrollbar-table-y [tabindex]:not([tabindex="-1"]),
+.scrollbar-overlay-y [role="button"],
+.scrollbar-overlay-y .cursor-pointer,
+.scrollbar-overlay-y [role="option"],
+.scrollbar-overlay-y [role="listbox"],
+.scrollbar-overlay-y [tabindex]:not([tabindex="-1"]),
 .scrollbar-hidden [role="button"],
 .scrollbar-hidden .cursor-pointer,
 .scrollbar-hidden [tabindex]:not([tabindex="-1"]),
@@ -779,36 +803,77 @@ select,
   -webkit-user-drag: none;     /* prevent drag-to-select */
 }
 
-/* Table scrollbar — native scroll like phone/tablet feed: momentum, rubber-band */
+/* Scrollport: overflow auto (not scroll) so bars appear only when content exceeds bounds.
+   Thin scrollbars + touch momentum — avoids empty scroll tracks at many breakpoints. */
 .scrollbar-table {
-  overflow-x: scroll;
-  overflow-y: scroll;
-  scrollbar-gutter: stable;
+  overflow-x: auto;
+  overflow-y: auto;
+  scrollbar-gutter: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.25) rgba(0, 0, 0, 0.08);
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y pan-x;
   overscroll-behavior: auto;
   scroll-behavior: auto;
-  /* Ensure touch scroll works: explicit scroll, no accidental block */
   overflow-anchor: auto;
 }
-.scrollbar-table::-webkit-scrollbar {
+
+/* Single-axis scrollports (tables/lists): no forced horizontal gutter when only Y overflows */
+.scrollbar-table-y {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) rgba(0, 0, 0, 0.08);
+  -webkit-overflow-scrolling: touch;
+  /* Vertical-only scrollport — avoids phantom horizontal tracks */
+  touch-action: pan-y;
+  overscroll-behavior: auto;
+  scroll-behavior: auto;
+}
+
+/*
+ * Vertical-only scrollport for modals and main columns that must not show a horizontal track.
+ * Do not combine with .scrollbar-table — that utility sets overflow-x: auto and wins over Tailwind overflow-x-hidden.
+ */
+.scrollbar-overlay-y {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) rgba(0, 0, 0, 0.08);
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: auto;
+  scroll-behavior: auto;
+  overflow-anchor: auto;
+}
+.scrollbar-table::-webkit-scrollbar,
+.scrollbar-table-y::-webkit-scrollbar,
+.scrollbar-overlay-y::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-.scrollbar-table::-webkit-scrollbar-track {
+.scrollbar-table::-webkit-scrollbar-track,
+.scrollbar-table-y::-webkit-scrollbar-track,
+.scrollbar-overlay-y::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.08);
   border-radius: 4px;
 }
-.scrollbar-table::-webkit-scrollbar-thumb {
+.scrollbar-table::-webkit-scrollbar-thumb,
+.scrollbar-table-y::-webkit-scrollbar-thumb,
+.scrollbar-overlay-y::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.25);
   border-radius: 4px;
 }
-.scrollbar-table::-webkit-scrollbar-thumb:hover {
+.scrollbar-table::-webkit-scrollbar-thumb:hover,
+.scrollbar-table-y::-webkit-scrollbar-thumb:hover,
+.scrollbar-overlay-y::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.35);
 }
-.scrollbar-table::-webkit-scrollbar-corner {
+.scrollbar-table::-webkit-scrollbar-corner,
+.scrollbar-table-y::-webkit-scrollbar-corner,
+.scrollbar-overlay-y::-webkit-scrollbar-corner {
   background: rgba(0, 0, 0, 0.08);
   border-radius: 4px;
 }

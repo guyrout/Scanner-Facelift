@@ -215,7 +215,7 @@ const dropdownListContent = (
     role="listbox"
     aria-labelledby={`dropdown-${id}`}
     data-dropdown-portal=""
-    className="flex max-h-60 flex-col overflow-auto rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table"
+    className="flex max-h-[min(15rem,calc(100svh-8rem))] min-h-0 flex-col rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table-y"
     style={listStyle}
   >
     {options.map((opt) => (
@@ -350,7 +350,7 @@ export function DropdownField({
         <ul
           role="listbox"
           aria-labelledby={`dropdown-${id}`}
-          className="absolute left-0 right-0 top-full mt-1 flex max-h-60 flex-col overflow-auto rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table"
+          className="absolute left-0 right-0 top-full mt-1 flex max-h-[min(15rem,calc(100svh-8rem))] min-h-0 flex-col rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table-y"
           style={{ boxShadow: "var(--shadow-card)", zIndex: listZIndex ?? 20 }}
         >
           {options.map((opt) => (
@@ -1496,7 +1496,7 @@ export default function FixedRestorativeForm26A({
         ref={toothContextMenuRef}
         role="listbox"
         aria-label={`Tooth ${toothContextMenu.tooth} restoration`}
-        className="flex min-w-[280px] max-h-[420px] flex-col overflow-auto rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table"
+        className="flex min-h-0 w-max min-w-[min(280px,calc(100vw-2rem))] max-h-[min(26.25rem,calc(100svh-8rem))] max-w-[calc(100vw-2rem)] flex-col rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table-y"
         style={{
           position: "fixed",
           left: toothContextMenu.x,

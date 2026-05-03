@@ -212,7 +212,7 @@ function MainSettingsView({ onClose, onNavigate }: { onClose: () => void; onNavi
           <CloseIcon size={24} color="var(--color-icon-primary)" />
         </button>
       </div>
-      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto scrollbar-table" style={{ gap: "var(--spacing-08)", paddingTop: "var(--spacing-04)" }}>
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto scrollbar-table-y" style={{ gap: "var(--spacing-08)", paddingTop: "var(--spacing-04)" }}>
         {/* Device Settings */}
         <div className="flex flex-col">
           <SettingsSection
@@ -610,7 +610,7 @@ function ScanSettingsView({ onBack, onClose }: { onBack: () => void; onClose: ()
       </div>
 
       {/* Figma 928:20712–20713: content pl 76px (19×4), pt 16px, pr 60px (15×4), pb 24px — 4px grid */}
-      <div ref={contentRef} className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto scrollbar-hidden" style={{ marginLeft: 76, marginRight: 60, paddingTop: "var(--spacing-04)", paddingBottom: "var(--spacing-06)" }}>
+      <div ref={contentRef} className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto scrollbar-table-y" style={{ marginLeft: 76, marginRight: 60, paddingTop: "var(--spacing-04)", paddingBottom: "var(--spacing-06)" }}>
         {/* Figma 928-20715: content width 816, gap spacing-06 (24px) between sections */}
         <div className="flex flex-col" style={{ width: 816, maxWidth: "100%", gap: "var(--spacing-06)" }}>
           {/* 928:20716 — Section 1: dropdowns + Mirror/Show toggles, gap spacing-03. Inner 20718 gap spacing-04 (16px) between the two groups. */}
@@ -1409,7 +1409,7 @@ function LicensingInformationView({ onBack, onClose }: { onBack: () => void; onC
         </button>
       </div>
       <div
-        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto scrollbar-hidden"
+        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto scrollbar-table-y"
         style={{
           marginLeft: "60px",
           marginRight: "calc(-1 * var(--spacing-06))",
@@ -1509,7 +1509,7 @@ function DiagnosticsView({ onBack, onClose }: { onBack: () => void; onClose: () 
         </button>
       </div>
       <div
-        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-hidden"
+        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-table-y"
         style={{
           marginLeft: "60px",
           marginRight: "60px",
@@ -1673,7 +1673,7 @@ function SignatureSettingsView({ onBack, onClose }: { onBack: () => void; onClos
         </button>
       </div>
       <div
-        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-hidden"
+        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-table-y"
         style={{
           marginLeft: "60px",
           marginRight: "60px",
@@ -1814,7 +1814,7 @@ function LocalizationView({ onBack, onClose }: { onBack: () => void; onClose: ()
         </button>
       </div>
       <div
-        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-hidden"
+        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-table-y"
         style={{
           marginLeft: "60px",
           marginRight: "60px",
@@ -2027,7 +2027,7 @@ function ExportSettingsView({ onBack, onClose }: { onBack: () => void; onClose: 
         </button>
       </div>
       <div
-        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-hidden"
+        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-table-y"
         style={{
           marginLeft: "60px",
           marginRight: "60px",
@@ -2254,7 +2254,7 @@ function RXSettingsView({ onBack, onClose }: { onBack: () => void; onClose: () =
         </button>
       </div>
       <div
-        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-hidden"
+        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-table-y"
         style={{
           marginLeft: "60px",
           marginRight: "60px",
@@ -2464,7 +2464,7 @@ function SystemInformationView({ onBack, onClose }: { onBack: () => void; onClos
         </button>
       </div>
       <div
-        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-hidden"
+        className="flex flex-1 flex-col min-h-0 min-w-0 overflow-y-auto text-left items-start scrollbar-table-y"
         style={{
           marginLeft: "60px",
           marginRight: "60px",

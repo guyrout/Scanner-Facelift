@@ -254,7 +254,7 @@ export default function SendStepContent({
   return (
     <div className="flex flex-col flex-1 min-h-0 min-w-0">
       {/* Scrollable content */}
-      <div className="flex-1 min-h-0 min-w-0 overflow-auto scrollbar-hidden bg-[var(--color-page-background)]" style={{ paddingBottom: 92 }}>
+      <div className="flex-1 min-h-0 min-w-0 scrollbar-overlay-y bg-[var(--color-page-background)]" style={{ paddingBottom: 92 }}>
         <div className="flex flex-col w-full" style={{ padding: 16, gap: 16 }}>
 
           {/* Section 1: Dropdowns row — match FixedRestorativeForm: 16px 24px padding, layer-02 dropdowns */}
@@ -431,7 +431,7 @@ export default function SendStepContent({
               {/* Right: TP cards — same structure as FixedRestorativeForm right panel */}
               <div className="flex flex-col w-full max-w-[774px] xl:pt-0 xl:w-[480px] xl:max-w-none xl:shrink-0 min-w-0">
                 {selectedTeeth.length > 0 ? (
-                  <div className="flex flex-col overflow-auto scrollbar-table" style={{ gap: 8, maxHeight: 450 }}>
+                  <div className="flex flex-col" style={{ gap: 8 }}>
                     {selectedTeeth.map(([num, category]) => {
                       const rt = RESTORATION_TYPES.find((r) => r.label === category);
                       const detail = toothDetails[Number(num)];

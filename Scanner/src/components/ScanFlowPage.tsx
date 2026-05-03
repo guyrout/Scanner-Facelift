@@ -110,7 +110,7 @@ export default function ScanFlowPage({ onBack, onOpenSettings, initialPatient }:
               onCloseEdit={() => setEditPatientOpen(false)}
             />
             </div>
-            <div className="flex-1 min-h-0 min-w-0 overflow-auto scrollbar-hidden bg-[var(--color-page-background)]">
+            <div className="flex-1 min-h-0 min-w-0 scrollbar-overlay-y bg-[var(--color-page-background)]">
               <div className="flex flex-col" style={{ padding: 16, minHeight: "100%" }}>
                 {showProcedureForm && selectedProcedure === "fixed-restorative" ? (
                   <FixedRestorativeForm
