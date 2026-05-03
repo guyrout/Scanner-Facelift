@@ -1,5 +1,5 @@
 /**
- * Jaw view driven by a single "bite" STL:
+ * Jaw view driven by a single bite mesh (PLY or STL):
  * - Bite: full model
  * - Upper: only upper triangles
  * - Lower: only lower triangles
@@ -8,17 +8,29 @@
 
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
+import { PLYLoader } from "three/examples/jsm/loaders/PLYLoader.js";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import type { JawSelection } from "./JawSelector26A";
 import type { ViewMode } from "./PlyModelViewer26A";
+import { createHeatmapMaterial } from "../../shaders/occlusalHeatmap";
 import { ensureVertexColors, normalizeScanMeshGeometry } from "./scanMeshUtils26A";
+import { applyInterArchHeatToSurfaceGeometry } from "./occlusogramDistance26A";
 
 const MESH_ROT_X = -Math.PI / 2;
 const SPLIT_ROT = new THREE.Matrix4().makeRotationX(MESH_ROT_X);
 
-function loadStlGeometry(url: string): Promise<THREE.BufferGeometry> {
+function loadBiteMeshGeometry(url: string): Promise<THREE.BufferGeometry> {
+  const lower = url.toLowerCase();
   return new Promise((resolve, reject) => {
-    new STLLoader().load(url, resolve, undefined, reject);
+    if (lower.endsWith(".stl")) {
+      new STLLoader().load(url, resolve, undefined, reject);
+      return;
+    }
+    if (lower.endsWith(".ply")) {
+      new PLYLoader().load(url, resolve, undefined, reject);
+      return;
+    }
+    reject(new Error(`[BiteOcclusionScene26A] Unsupported bite mesh format: ${url}`));
   });
 }
 
@@ -105,19 +117,25 @@ interface BiteOcclusionScene26AProps {
   biteUrl: string;
   jawView: JawSelection;
   viewMode: ViewMode;
+  showOcclusgramHeatmap?: boolean;
 }
 
-export function BiteOcclusionScene26A({ biteUrl, jawView, viewMode }: BiteOcclusionScene26AProps) {
+export function BiteOcclusionScene26A({
+  biteUrl,
+  jawView,
+  viewMode,
+  showOcclusgramHeatmap = false,
+}: BiteOcclusionScene26AProps) {
   const [raw, setRaw] = useState<THREE.BufferGeometry | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const g = await loadStlGeometry(biteUrl);
+        const g = await loadBiteMeshGeometry(biteUrl);
         if (!cancelled) setRaw(g);
       } catch (e) {
-        console.error("[BiteOcclusionScene26A] Failed to load bite STL", biteUrl, e);
+        console.error("[BiteOcclusionScene26A] Failed to load bite mesh", biteUrl, e);
       }
     })();
     return () => {
@@ -134,6 +152,21 @@ export function BiteOcclusionScene26A({ biteUrl, jawView, viewMode }: BiteOcclus
     return { biteGeo, upperGeo, lowerGeo };
   }, [raw]);
 
+  const heatActive = showOcclusgramHeatmap === true;
+
+  const upperHeatGeo = useMemo(() => {
+    if (!heatActive || !prepared) return null;
+    return applyInterArchHeatToSurfaceGeometry(prepared.upperGeo, prepared.lowerGeo, viewMode, "upper");
+  }, [heatActive, prepared, viewMode]);
+
+  const lowerHeatGeo = useMemo(() => {
+    if (!heatActive || !prepared) return null;
+    return applyInterArchHeatToSurfaceGeometry(prepared.lowerGeo, prepared.upperGeo, viewMode, "lower");
+  }, [heatActive, prepared, viewMode]);
+
+  const heatmapMaterialUpper = useMemo(() => createHeatmapMaterial(1), []);
+  const heatmapMaterialLower = useMemo(() => createHeatmapMaterial(1), []);
+
   if (!prepared) return null;
 
   const isStone = viewMode === "stone";
@@ -145,25 +178,56 @@ export function BiteOcclusionScene26A({ biteUrl, jawView, viewMode }: BiteOcclus
 
   return (
     <group>
-      {(jawView === "bite" || jawView === "upper") && (
-        <mesh
-          geometry={jawView === "bite" ? prepared.biteGeo : prepared.upperGeo}
-          rotation={[MESH_ROT_X, 0, 0]}
-          castShadow
-          receiveShadow
-        >
+      {jawView === "bite" && !heatActive && (
+        <mesh geometry={prepared.biteGeo} rotation={[MESH_ROT_X, 0, 0]} castShadow receiveShadow>
           <meshStandardMaterial
             {...(isStone ? { color: "#dfd2bc" } : { vertexColors: true as const })}
             {...materialProps}
           />
         </mesh>
       )}
+      {jawView === "bite" && heatActive && upperHeatGeo && lowerHeatGeo && (
+        <>
+          <mesh geometry={upperHeatGeo} rotation={[MESH_ROT_X, 0, 0]} castShadow receiveShadow>
+            <primitive object={heatmapMaterialUpper} attach="material" />
+          </mesh>
+          <mesh geometry={lowerHeatGeo} rotation={[MESH_ROT_X, 0, 0]} castShadow receiveShadow>
+            <primitive object={heatmapMaterialLower} attach="material" />
+          </mesh>
+        </>
+      )}
+      {jawView === "upper" && (
+        <mesh
+          geometry={heatActive && upperHeatGeo ? upperHeatGeo : prepared.upperGeo}
+          rotation={[MESH_ROT_X, 0, 0]}
+          castShadow
+          receiveShadow
+        >
+          {heatActive && upperHeatGeo ? (
+            <primitive object={heatmapMaterialUpper} attach="material" />
+          ) : (
+            <meshStandardMaterial
+              {...(isStone ? { color: "#dfd2bc" } : { vertexColors: true as const })}
+              {...materialProps}
+            />
+          )}
+        </mesh>
+      )}
       {jawView === "lower" && (
-        <mesh geometry={prepared.lowerGeo} rotation={[MESH_ROT_X, 0, 0]} castShadow receiveShadow>
-          <meshStandardMaterial
-            {...(isStone ? { color: "#cfc0a8" } : { vertexColors: true as const })}
-            {...materialProps}
-          />
+        <mesh
+          geometry={heatActive && lowerHeatGeo ? lowerHeatGeo : prepared.lowerGeo}
+          rotation={[MESH_ROT_X, 0, 0]}
+          castShadow
+          receiveShadow
+        >
+          {heatActive && lowerHeatGeo ? (
+            <primitive object={heatmapMaterialLower} attach="material" />
+          ) : (
+            <meshStandardMaterial
+              {...(isStone ? { color: "#cfc0a8" } : { vertexColors: true as const })}
+              {...materialProps}
+            />
+          )}
         </mesh>
       )}
     </group>

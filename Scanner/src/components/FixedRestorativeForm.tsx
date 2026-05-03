@@ -59,7 +59,7 @@ export const RESTORATION_TYPES = [
 
 export const TREATMENT_OPTIONS: { id: string; label: string }[] = [
   { id: "fixed-restorative", label: "Fixed restorative" },
-  { id: "study-model", label: "Study model" },
+  { id: "study-model", label: "Study Model/iRecord" },
   { id: "invisalign", label: "Invisalign" },
   { id: "appliance", label: "Appliance" },
   { id: "dentures-removable", label: "Dentures / Removable" },

@@ -620,12 +620,12 @@ export default function ViewStepContent26A({
 }: ViewStepContentProps) {
   const isScanFlow26A = getScanFlowVersion() === "26A";
   const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
-  const [viewMode, setViewMode] = useState<ViewMode>("color");
   const [showTrimMenu, setShowTrimMenu] = useState(false);
   const [showPrepQc, setShowPrepQc] = useState(false);
   const [showPrepQcToast, setShowPrepQcToast] = useState(false);
   const [prepQcStep, setPrepQcStep] = useState(0.1);
   const [activeTools, setActiveTools] = useState<Set<ViewToolId>>(new Set());
+  const viewMode: ViewMode = activeTools.has("scan-color") ? "stone" : "color";
   const [marginLineTooth, setMarginLineTooth] = useState("17");
 
   const [isPostProcessing, setIsPostProcessing] = useState(comingFromScan);
@@ -874,9 +874,6 @@ export default function ViewStepContent26A({
           activeTools={activeTools}
           onActiveToolsChange={setActiveTools}
           onToolClick={(toolId, isActive) => {
-            if (toolId === "scan-color") {
-              setViewMode(isActive ? "stone" : "color");
-            }
             if (toolId === "trim") {
               setShowTrimMenu(isActive);
               if (!isActive) {

@@ -15,7 +15,7 @@
  */
 
 import { useState, lazy, Suspense, type MutableRefObject } from "react";
-import ScanToolbar26A from "./ScanToolbar26A";
+import ScanToolbar26A, { type ScanToolbarToolId } from "./ScanToolbar26A";
 import PrepEditPanel26A from "./PrepEditPanel26A";
 import SwapScansModal26A from "./SwapScansModal26A";
 import ToothMap26A from "./ToothMap26A";
@@ -71,7 +71,8 @@ export default function ScanStepContent26A({
   showScanViewport3d = true,
 }: ScanStepContentProps) {
   const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
-  const [viewMode, setViewMode] = useState<ViewMode>("color");
+  const [scanToolbarActiveTools, setScanToolbarActiveTools] = useState<Set<ScanToolbarToolId>>(() => new Set());
+  const viewMode: ViewMode = scanToolbarActiveTools.has("scan-color") ? "stone" : "color";
   const [prepEditOpen, setPrepEditOpen] = useState(false);
   const [prepSelectionMode, setPrepSelectionMode] = useState(false);
   const [eraseSelectionNonce, setEraseSelectionNonce] = useState(0);
@@ -164,12 +165,11 @@ export default function ScanStepContent26A({
           <ScanToolbar26A
             expanded={toolbarExpanded}
             onExpandedChange={onToolbarExpandedChange}
+            activeTools={scanToolbarActiveTools}
+            onActiveToolsChange={setScanToolbarActiveTools}
             deselectEditNonce={deselectEditNonce}
             deselectSwapNonce={deselectSwapNonce}
             onToolClick={(toolId, isActive) => {
-              if (toolId === "scan-color") {
-                setViewMode(isActive ? "stone" : "color");
-              }
               if (toolId === "edit") {
                 setPrepEditOpen(isActive);
                 if (!isActive) {

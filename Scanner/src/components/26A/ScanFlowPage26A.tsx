@@ -103,8 +103,10 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
   const [toggles, setToggles] = useState<ToggleState>({
     niri: true,
     sleeve: true,
+    palatalGingivalFeedback: true,
     multiBite: false,
     preTreatment: false,
+    orthoModelICast: false,
   });
   const [noteText, setNoteText] = useState("");
 

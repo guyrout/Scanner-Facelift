@@ -27,7 +27,7 @@ interface ProcedureOption {
 }
 
 const PROCEDURES: ProcedureOption[] = [
-  { id: "study-model", label: "Study model", illustration: studyModelSvg },
+  { id: "study-model", label: "Study Model/iRecord", illustration: studyModelSvg },
   { id: "invisalign", label: "Invisalign", illustration: invisalignSvg },
   { id: "fixed-restorative", label: "Fixed restorative", illustration: fixedRestorativeSvg },
   { id: "appliance", label: "Appliance", illustration: applianceSvg },

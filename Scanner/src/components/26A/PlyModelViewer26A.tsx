@@ -1,20 +1,16 @@
 import { Suspense, useState, useEffect, useRef, useMemo, type MutableRefObject } from "react";
 import { Canvas, useThree, useFrame, type ThreeEvent } from "@react-three/fiber";
-import { PLYLoader } from "three/examples/jsm/loaders/PLYLoader.js";
-import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import * as THREE from "three";
-import {
-  generateHeatPoints,
-  computeHeatIntensity,
-  createHeatmapMaterial,
-} from "../../shaders/occlusalHeatmap";
+import { createHeatmapMaterial } from "../../shaders/occlusalHeatmap";
 import type { JawSelection } from "./JawSelector26A";
 import {
   STONE_COLOR,
-  stoneColorRGB,
   normalizeScanMeshGeometry,
+  normalizeScanMeshGeometriesPair,
+  loadScanMeshGeometry,
   ensureVertexColors,
 } from "./scanMeshUtils26A";
+import { applyInterArchHeatToSurfaceGeometry } from "./occlusogramDistance26A";
 import { BiteOcclusionScene26A } from "./BiteOcclusionScene26A";
 
 export interface CameraState {
@@ -103,217 +99,89 @@ function eraseSelectedFaces(geometry: THREE.BufferGeometry, selectedMask: Uint8A
   return next;
 }
 
-// --- Step 1: Identify teeth (vs gingiva and palate) ---
-// Only mark as gingiva when color is clearly pink/red. Teeth can be cream, yellow, or dark.
+function PairedJawOcclusogramMeshes({
+  upperUrl,
+  lowerUrl,
+  viewMode,
+  opacity,
+}: {
+  upperUrl: string;
+  lowerUrl: string;
+  viewMode: ViewMode;
+  opacity: number;
+}) {
+  const [upperGeo, setUpperGeo] = useState<THREE.BufferGeometry | null>(null);
+  const [lowerGeo, setLowerGeo] = useState<THREE.BufferGeometry | null>(null);
 
-/** True only when vertex color is clearly gingiva (strong pink/red). */
-function isGingivaByColor(colorAttr: THREE.BufferAttribute, i: number): boolean {
-  const r = colorAttr.getX(i);
-  const g = colorAttr.getY(i);
-  const b = colorAttr.getZ(i);
-  const redDominance = r - Math.min(g, b);
-  const isClearlyPink = r > 0.5 && r > g && r > b && redDominance > 0.2;
-  return isClearlyPink;
-}
-
-/** True if vertex is in the upper (occlusal) half of the model by Y (used when no vertex colors). */
-function isToothByPosition(pos: THREE.BufferAttribute, i: number, yMid: number): boolean {
-  return pos.getY(i) > yMid;
-}
-
-/** Step 1 result: for each vertex, true = tooth, false = gingiva/palate. */
-function segmentTeeth(
-  pos: THREE.BufferAttribute,
-  origColor: THREE.BufferAttribute | undefined,
-): boolean[] {
-  const count = pos.count;
-  const isToothRaw: boolean[] = new Array(count);
-  let yMid = 0;
-  if (!origColor) {
-    let lo = Infinity, hi = -Infinity;
-    for (let i = 0; i < count; i++) {
-      const y = pos.getY(i);
-      if (y < lo) lo = y;
-      if (y > hi) hi = y;
-    }
-    yMid = lo === Infinity ? 0 : (lo + hi) * 0.5;
-  }
-  for (let i = 0; i < count; i++) {
-    isToothRaw[i] = origColor
-      ? !isGingivaByColor(origColor, i)
-      : isToothByPosition(pos, i, yMid);
-  }
-
-  let cx = 0, cz = 0;
-  let toothCount = 0;
-  for (let i = 0; i < count; i++) {
-    if (!isToothRaw[i]) continue;
-    cx += pos.getX(i);
-    cz += pos.getZ(i);
-    toothCount++;
-  }
-  if (toothCount > 0) {
-    cx /= toothCount;
-    cz /= toothCount;
-  }
-
-  let maxDist = 0;
-  for (let i = 0; i < count; i++) {
-    if (!isToothRaw[i]) continue;
-    const dx = pos.getX(i) - cx;
-    const dz = pos.getZ(i) - cz;
-    const d = Math.sqrt(dx * dx + dz * dz);
-    if (d > maxDist) maxDist = d;
-  }
-  const palateRadius = Math.max(maxDist * 0.5, 0.01);
-
-  const isToothNoCrown: boolean[] = new Array(count);
-  for (let i = 0; i < count; i++) {
-    if (!isToothRaw[i]) {
-      isToothNoCrown[i] = false;
-      continue;
-    }
-    const dx = pos.getX(i) - cx;
-    const dz = pos.getZ(i) - cz;
-    const distFromCenter = Math.sqrt(dx * dx + dz * dz);
-    isToothNoCrown[i] = distFromCenter >= palateRadius;
-  }
-
-  let crownYMin = Infinity, crownYMax = -Infinity;
-  let crownZMin = Infinity, crownZMax = -Infinity;
-  for (let i = 0; i < count; i++) {
-    if (!isToothNoCrown[i]) continue;
-    const y = pos.getY(i), z = pos.getZ(i);
-    crownYMin = Math.min(crownYMin, y); crownYMax = Math.max(crownYMax, y);
-    crownZMin = Math.min(crownZMin, z); crownZMax = Math.max(crownZMax, z);
-  }
-  const rangeY = crownYMax - crownYMin || 1;
-  const rangeZ = crownZMax - crownZMin || 1;
-  const heightAxis = rangeY >= rangeZ ? "y" : "z";
-  const CROWN_BOTTOM_FRAC = 0.22;
-
-  const isTooth: boolean[] = new Array(count);
-  for (let i = 0; i < count; i++) {
-    if (!isToothNoCrown[i]) {
-      isTooth[i] = false;
-      continue;
-    }
-    const h = heightAxis === "y"
-      ? (pos.getY(i) - crownYMin) / rangeY
-      : (pos.getZ(i) - crownZMin) / rangeZ;
-    isTooth[i] = h >= CROWN_BOTTOM_FRAC;
-  }
-  return isTooth;
-}
-
-// --- Step 2: Identify occlusal areas on teeth (biting surfaces) ---
-// Include ALL tooth surfaces - no exceptions.
-
-/** Step 2 result: ALL tooth vertices get heatmap. */
-function segmentOcclusal(
-  pos: THREE.BufferAttribute,
-  _normal: THREE.BufferAttribute | undefined,
-  isTooth: boolean[],
-): boolean[] {
-  const count = pos.count;
-  const isOcclusal: boolean[] = new Array(count);
-  
-  for (let i = 0; i < count; i++) {
-    isOcclusal[i] = isTooth[i];
-  }
-  
-  return isOcclusal;
-}
-
-/**
- * Step 3: Apply pressure-point heat map only to occlusal tooth vertices.
- * - Occlusal tooth → heat map from radial influence of pressure points (blue→cyan→green→yellow→red).
- * - Other tooth → base tooth color.
- * - Gingiva → base gingiva color.
- * Returns geometry with heatIntensity and baseColor attributes for ShaderMaterial.
- */
-function applyHeatMapToGeometry(
-  geometry: THREE.BufferGeometry,
-  viewMode: ViewMode,
-): THREE.BufferGeometry {
-  const clone = geometry.clone();
-  const pos = clone.getAttribute("position") as THREE.BufferAttribute;
-  const normal = clone.getAttribute("normal") as THREE.BufferAttribute | undefined;
-  const origColor = geometry.getAttribute("color") as THREE.BufferAttribute | undefined;
-  const count = pos.count;
-
-  const isTooth = segmentTeeth(pos, origColor);
-  const isOcclusal = segmentOcclusal(pos, normal, isTooth);
-
-  let toothCount = 0;
-  let occlusalCount = 0;
-  for (let i = 0; i < count; i++) {
-    if (isTooth[i]) toothCount++;
-    if (isOcclusal[i]) occlusalCount++;
-  }
-
-  const heatMask = occlusalCount > 0 ? isOcclusal : isTooth;
-  if (import.meta.env?.DEV) {
-    console.log("[Occlusgram] Step 1 – teeth:", toothCount, "/", count, "| Step 2 – occlusal (heat map):", occlusalCount, occlusalCount === 0 ? "(fallback: all teeth)" : "");
-  }
-
-  const heatPoints = generateHeatPoints(pos, heatMask, 80);
-  const rawIntensity = computeHeatIntensity(pos, heatPoints, 0.5);
-
-  const [sr, sg, sb] = stoneColorRGB();
-  const heatIntensity = new Float32Array(count);
-  const baseColor = new Float32Array(count * 3);
-
-  const MIN_VISIBLE_INTENSITY = 0.25;
-  for (let i = 0; i < count; i++) {
-    if (heatMask[i]) {
-      heatIntensity[i] = Math.max(rawIntensity[i], MIN_VISIBLE_INTENSITY);
-    } else {
-      heatIntensity[i] = 0;
-    }
-
-    if (isTooth[i] && !heatMask[i]) {
-      if (viewMode === "color" && origColor) {
-        baseColor[i * 3] = origColor.getX(i);
-        baseColor[i * 3 + 1] = origColor.getY(i);
-        baseColor[i * 3 + 2] = origColor.getZ(i);
-      } else {
-        baseColor[i * 3] = sr;
-        baseColor[i * 3 + 1] = sg;
-        baseColor[i * 3 + 2] = sb;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [u, l] = await Promise.all([loadScanMeshGeometry(upperUrl), loadScanMeshGeometry(lowerUrl)]);
+        if (cancelled) {
+          u.dispose();
+          l.dispose();
+          return;
+        }
+        normalizeScanMeshGeometriesPair(u, l);
+        ensureVertexColors(u);
+        ensureVertexColors(l);
+        setUpperGeo(u);
+        setLowerGeo(l);
+      } catch (e) {
+        console.error("[PlyModelViewer26A] Paired occlusogram load failed", upperUrl, lowerUrl, e);
+        if (!cancelled) {
+          setUpperGeo(null);
+          setLowerGeo(null);
+        }
       }
-    } else if (heatMask[i]) {
-      if (viewMode === "color" && origColor) {
-        baseColor[i * 3] = origColor.getX(i);
-        baseColor[i * 3 + 1] = origColor.getY(i);
-        baseColor[i * 3 + 2] = origColor.getZ(i);
-      } else {
-        baseColor[i * 3] = sr;
-        baseColor[i * 3 + 1] = sg;
-        baseColor[i * 3 + 2] = sb;
-      }
-    } else {
-      if (viewMode === "color" && origColor) {
-        baseColor[i * 3] = origColor.getX(i);
-        baseColor[i * 3 + 1] = origColor.getY(i);
-        baseColor[i * 3 + 2] = origColor.getZ(i);
-      } else {
-        baseColor[i * 3] = sr;
-        baseColor[i * 3 + 1] = sg;
-        baseColor[i * 3 + 2] = sb;
-      }
-    }
-  }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [upperUrl, lowerUrl]);
 
-  clone.setAttribute("heatIntensity", new THREE.BufferAttribute(heatIntensity, 1));
-  clone.setAttribute("baseColor", new THREE.BufferAttribute(baseColor, 3));
-  return clone;
+  const upperHeatGeo = useMemo(() => {
+    if (!upperGeo || !lowerGeo) return null;
+    return applyInterArchHeatToSurfaceGeometry(upperGeo, lowerGeo, viewMode, "upper");
+  }, [upperGeo, lowerGeo, viewMode]);
+
+  const lowerHeatGeo = useMemo(() => {
+    if (!upperGeo || !lowerGeo) return null;
+    return applyInterArchHeatToSurfaceGeometry(lowerGeo, upperGeo, viewMode, "lower");
+  }, [upperGeo, lowerGeo, viewMode]);
+
+  const matUpper = useMemo(() => createHeatmapMaterial(1), []);
+  const matLower = useMemo(() => createHeatmapMaterial(1), []);
+  const useTransparency = opacity < 1;
+  useEffect(() => {
+    matUpper.transparent = useTransparency;
+    matUpper.opacity = opacity;
+    matLower.transparent = useTransparency;
+    matLower.opacity = opacity;
+  }, [matUpper, matLower, opacity, useTransparency]);
+
+  if (!upperHeatGeo || !lowerHeatGeo) return null;
+
+  const rot = -Math.PI / 2;
+  return (
+    <group>
+      <mesh geometry={upperHeatGeo} rotation={[rot, 0, 0]} castShadow receiveShadow>
+        <primitive object={matUpper} attach="material" />
+      </mesh>
+      <mesh geometry={lowerHeatGeo} rotation={[rot, 0, 0]} castShadow receiveShadow>
+        <primitive object={matLower} attach="material" />
+      </mesh>
+    </group>
+  );
 }
 
 function PlyMesh({
   url,
   viewMode,
   showOcclusgramHeatmap,
+  opposingJawUrl,
+  occlusogramSurfaceJaw,
   editSelectionMode = false,
   eraseSelectionNonce = 0,
   opacity = 1,
@@ -321,11 +189,16 @@ function PlyMesh({
   url: string;
   viewMode: ViewMode;
   showOcclusgramHeatmap?: boolean;
+  /** When set (and different from `url`), upper/lower load together with shared normalize for correct occlusogram distances. */
+  opposingJawUrl?: string;
+  /** Required for inter-arch heat when paired: which arch `url` represents. */
+  occlusogramSurfaceJaw?: "upper" | "lower";
   editSelectionMode?: boolean;
   eraseSelectionNonce?: number;
   opacity?: number;
 }) {
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
+  const [opposingGeometry, setOpposingGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [selectedCount, setSelectedCount] = useState(0);
   const meshRef = useRef<THREE.Mesh>(null);
   const baseColorsRef = useRef<Float32Array | null>(null);
@@ -335,52 +208,69 @@ function PlyMesh({
 
   useEffect(() => {
     let cancelled = false;
-    const isStl = url.toLowerCase().endsWith(".stl");
+    const usePair = Boolean(opposingJawUrl) && opposingJawUrl !== url;
 
-    const applyLoaded = (geo: THREE.BufferGeometry) => {
-      if (cancelled) return;
-      normalizeScanMeshGeometry(geo);
-      const colorAttr = ensureVertexColors(geo);
-      baseColorsRef.current = new Float32Array((colorAttr.array as Float32Array).slice());
-      selectedMaskRef.current = new Uint8Array(
-        (geo.getAttribute("position") as THREE.BufferAttribute).count,
-      );
-      setSelectedCount(0);
-      setGeometry(geo);
-    };
-
-    if (isStl) {
-      const loader = new STLLoader();
-      loader.load(
-        url,
-        (geo) => {
-          if (cancelled) return;
-          applyLoaded(geo);
-        },
-        undefined,
-        (err) => {
-          console.error("[PlyModelViewer26A] Failed to load STL", url, err);
-        },
-      );
-    } else {
-      const loader = new PLYLoader();
-      loader.load(
-        url,
-        (geo) => {
-          if (cancelled) return;
-          applyLoaded(geo);
-        },
-        undefined,
-        (err) => {
-          console.error("[PlyModelViewer26A] Failed to load PLY/OBJ mesh", url, err);
-        },
-      );
+    async function loadPaired() {
+      try {
+        const [gSelf, gOpp] = await Promise.all([
+          loadScanMeshGeometry(url),
+          loadScanMeshGeometry(opposingJawUrl!),
+        ]);
+        if (cancelled) {
+          gSelf.dispose();
+          gOpp.dispose();
+          return;
+        }
+        normalizeScanMeshGeometriesPair(gSelf, gOpp);
+        const colorAttr = ensureVertexColors(gSelf);
+        baseColorsRef.current = new Float32Array((colorAttr.array as Float32Array).slice());
+        selectedMaskRef.current = new Uint8Array(
+          (gSelf.getAttribute("position") as THREE.BufferAttribute).count,
+        );
+        setSelectedCount(0);
+        setGeometry(gSelf);
+        setOpposingGeometry(gOpp);
+      } catch (e) {
+        console.error("[PlyModelViewer26A] Failed to load paired jaws", url, opposingJawUrl, e);
+        if (!cancelled) {
+          setGeometry(null);
+          setOpposingGeometry(null);
+        }
+      }
     }
+
+    async function loadSingle() {
+      try {
+        const geo = await loadScanMeshGeometry(url);
+        if (cancelled) {
+          geo.dispose();
+          return;
+        }
+        normalizeScanMeshGeometry(geo);
+        const colorAttr = ensureVertexColors(geo);
+        baseColorsRef.current = new Float32Array((colorAttr.array as Float32Array).slice());
+        selectedMaskRef.current = new Uint8Array(
+          (geo.getAttribute("position") as THREE.BufferAttribute).count,
+        );
+        setSelectedCount(0);
+        setOpposingGeometry(null);
+        setGeometry(geo);
+      } catch (e) {
+        console.error("[PlyModelViewer26A] Failed to load mesh", url, e);
+        if (!cancelled) {
+          setGeometry(null);
+          setOpposingGeometry(null);
+        }
+      }
+    }
+
+    if (usePair) void loadPaired();
+    else void loadSingle();
 
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [url, opposingJawUrl]);
 
   useEffect(() => {
     if (!geometry || eraseSelectionNonce <= lastEraseNonceRef.current) return;
@@ -419,7 +309,7 @@ function PlyMesh({
   }
 
   function handleSelectArea(event: ThreeEvent<PointerEvent>) {
-    if (!editSelectionMode || !geometry || showOcclusgramHeatmap) return;
+    if (!editSelectionMode || !geometry || occlusHeatActive) return;
     event.stopPropagation();
     const mesh = meshRef.current;
     if (!mesh) return;
@@ -429,7 +319,7 @@ function PlyMesh({
   }
 
   function handleSelectAreaMove(event: ThreeEvent<PointerEvent>) {
-    if (!editSelectionMode || !selectingGestureRef.current || !geometry || showOcclusgramHeatmap) return;
+    if (!editSelectionMode || !selectingGestureRef.current || !geometry || occlusHeatActive) return;
     event.stopPropagation();
     const mesh = meshRef.current;
     if (!mesh) return;
@@ -441,11 +331,15 @@ function PlyMesh({
     selectingGestureRef.current = false;
   }
 
-  const showHeat = showOcclusgramHeatmap === true;
+  const occlusHeatActive =
+    showOcclusgramHeatmap === true &&
+    opposingGeometry != null &&
+    occlusogramSurfaceJaw != null;
   const displayGeometry = useMemo(() => {
     if (!geometry) return null;
-    return showHeat ? applyHeatMapToGeometry(geometry, viewMode) : geometry;
-  }, [geometry, showHeat, viewMode]);
+    if (!occlusHeatActive || !opposingGeometry || !occlusogramSurfaceJaw) return geometry;
+    return applyInterArchHeatToSurfaceGeometry(geometry, opposingGeometry, viewMode, occlusogramSurfaceJaw);
+  }, [geometry, opposingGeometry, occlusHeatActive, occlusogramSurfaceJaw, viewMode]);
 
   const heatmapMaterial = useMemo(() => createHeatmapMaterial(1), []);
   const useTransparency = opacity < 1;
@@ -462,7 +356,7 @@ function PlyMesh({
   return (
     <mesh
       ref={meshRef}
-      key={`${viewMode}-${showHeat ? "heat" : "base"}`}
+      key={`${viewMode}-${occlusHeatActive ? "heat" : "base"}`}
       geometry={displayGeometry ?? geometry}
       rotation={[-Math.PI / 2, 0, 0]}
       onPointerDown={handleSelectArea}
@@ -470,7 +364,7 @@ function PlyMesh({
       onPointerUp={stopSelectionGesture}
       onPointerLeave={stopSelectionGesture}
     >
-      {showHeat ? (
+      {occlusHeatActive ? (
         <primitive object={heatmapMaterial} attach="material" />
       ) : editSelectionMode || selectedCount > 0 ? (
         <meshStandardMaterial
@@ -625,11 +519,14 @@ function LoadingIndicator() {
 
 interface PlyModelViewerProps {
   url: string;
+  /** Which jaw tab is selected (upper / lower / bite). Independent of occlusogram overlay. */
   jawView?: JawSelection;
   lowerUrl?: string;
   biteUrl?: string;
+  /** Material appearance: color vs stone (e.g. monochrome tool). Independent of jaw tab and occlusogram. */
   viewMode?: ViewMode;
   cameraStateRef?: MutableRefObject<CameraState>;
+  /** Occlusogram heat overlay. Does not change `jawView` and must not imply bite tab selection. */
   showOcclusgramHeatmap?: boolean;
   /** Opacity for the 3D model (0–1). Default 1. */
   opacity?: number;
@@ -656,6 +553,19 @@ export default function PlyModelViewer26A({
   const usesJawView = jawView != null;
   const usesBiteStlScene = usesJawView && jawView === "bite" && Boolean(biteUrl);
   const bitePairOcclusion = usesJawView && jawView === "bite" && upperAsset !== lowerAsset;
+  const pairedArchUrls = upperAsset !== lowerAsset;
+  /**
+   * Dual-arch occlusogram mesh: **only** when the jaw tab is **bite** and separate PLYs (no combined bite mesh).
+   * Occlusogram must not change jaw selection — never show both arches when `jawView` is upper or lower
+   * (those use a single `PlyMesh` + opposing geometry for BVH only).
+   */
+  const showDualArchOcclusogram =
+    Boolean(showOcclusgramHeatmap) &&
+    usesJawView &&
+    jawView === "bite" &&
+    pairedArchUrls &&
+    !usesBiteStlScene &&
+    upperAsset !== lowerAsset;
 
   return (
     <div className="relative h-full w-full">
@@ -686,13 +596,35 @@ export default function PlyModelViewer26A({
               opacity={opacity}
             />
           )}
-          {usesBiteStlScene && <BiteOcclusionScene26A biteUrl={biteUrl!} jawView="bite" viewMode={viewMode} />}
-          {!usesBiteStlScene && bitePairOcclusion && (
-            <BiteOcclusionScene26A biteUrl={upperAsset} jawView="bite" viewMode={viewMode} />
+          {usesBiteStlScene && (
+            <BiteOcclusionScene26A
+              biteUrl={biteUrl!}
+              jawView="bite"
+              viewMode={viewMode}
+              showOcclusgramHeatmap={showOcclusgramHeatmap}
+            />
+          )}
+          {!usesBiteStlScene && bitePairOcclusion && !showDualArchOcclusogram && (
+            <BiteOcclusionScene26A
+              biteUrl={upperAsset}
+              jawView="bite"
+              viewMode={viewMode}
+              showOcclusgramHeatmap={showOcclusgramHeatmap}
+            />
+          )}
+          {showDualArchOcclusogram && (
+            <PairedJawOcclusogramMeshes
+              upperUrl={upperAsset}
+              lowerUrl={lowerAsset}
+              viewMode={viewMode}
+              opacity={opacity}
+            />
           )}
           {usesJawView && jawView === "upper" && (
             <PlyMesh
               url={upperAsset}
+              opposingJawUrl={pairedArchUrls ? lowerAsset : undefined}
+              occlusogramSurfaceJaw="upper"
               viewMode={viewMode}
               showOcclusgramHeatmap={showOcclusgramHeatmap}
               editSelectionMode={editSelectionMode}
@@ -703,6 +635,8 @@ export default function PlyModelViewer26A({
           {usesJawView && jawView === "lower" && (
             <PlyMesh
               url={lowerAsset}
+              opposingJawUrl={pairedArchUrls ? upperAsset : undefined}
+              occlusogramSurfaceJaw="lower"
               viewMode={viewMode}
               showOcclusgramHeatmap={showOcclusgramHeatmap}
               editSelectionMode={editSelectionMode}
@@ -714,6 +648,7 @@ export default function PlyModelViewer26A({
             <>
               <PlyMesh
                 url={upperAsset}
+                occlusogramSurfaceJaw="upper"
                 viewMode={viewMode}
                 showOcclusgramHeatmap={showOcclusgramHeatmap}
                 editSelectionMode={editSelectionMode}
@@ -723,6 +658,7 @@ export default function PlyModelViewer26A({
               <group position={[0, 0.004, 0]}>
                 <PlyMesh
                   url={lowerAsset}
+                  occlusogramSurfaceJaw="lower"
                   viewMode={viewMode}
                   showOcclusgramHeatmap={showOcclusgramHeatmap}
                   editSelectionMode={editSelectionMode}

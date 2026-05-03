@@ -8,8 +8,9 @@
  *   4. Scan Options     — Figma 6171:2247
  *   5–8. Tooth Selector + Treatment Info + Attachments + Note — Figma 6171:2248–2251
  *        (delegated to FixedRestorativeForm26A with hideTopRow + hideToggles)
- *   Study model (treatment = study-model): Order + Scan Options match Figma 6172:3809; only
- *   Study model or Invisalign: same Order + Scan Options (2 toggles); Attachments + Note only — FixedRestorativeForm26A attachmentsNoteOnly.
+ *   Study model (treatment = study-model): Order is two rows (Procedure | Ortho bottom-aligned, Due Date | Send to dropdown); Scan Options (3 toggles: NIRI, Palatal & gingival feedback, Multi-Bite); Attachments + Note only — FixedRestorativeForm26A attachmentsNoteOnly.
+ *   Invisalign: Order in two rows (Procedure | Type, then Treatment Stages | Current Aligner with items-center); Type dropdown lists aligner/retainer products; stage options Initial–Final record; Scan Options (NIRI + Palatal & gingival feedback); Attachments + Note only.
+ *   Fixed restorative: Order — Procedure + Due Date (picker) | inactive Type (“Select procedure type”) + Send to; Scan Options — one row, NIRI + Pre- treatment Scan only (no New Sleeve / Multi Bite row).
  */
 
 import { useMemo, useRef, useState, type Dispatch, type SetStateAction, type FocusEvent } from "react";
@@ -35,8 +36,9 @@ import invisalignSvg from "../../assets/procedures/invisalign.svg";
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
+/** Matches DatePickerField + DropdownField (layer-02): subtle stroke, interactive border on focus. */
 const textFieldShell =
-  "flex w-full min-h-[60px] items-center gap-2 rounded-lg bg-[var(--color-background-layer-02)] px-4 py-4 outline-none transition-ui focus-within:ring-2 focus-within:ring-[var(--color-border-focus)] focus-within:ring-offset-0";
+  "flex w-full min-h-[60px] items-center gap-2 rounded-lg border border-solid border-border-subtle bg-[var(--color-background-layer-02)] px-4 py-4 outline-none transition-ui focus-within:border-[var(--color-border-interactive)] focus-within:ring-2 focus-within:ring-[var(--color-border-focus)] focus-within:ring-offset-0";
 
 const CARD_STYLE: React.CSSProperties = {
   border: "1px solid var(--color-border-subtle)",
@@ -56,26 +58,28 @@ const GENDER_OPTIONS = [
   { id: "Female", label: "Female" },
 ] as const;
 
-/** Order card — Study model / Invisalign RX (Figma 6172:3813) */
-const STUDY_ALIGNER_PRODUCT_OPTIONS: { id: string; label: string }[] = [
+/** Invisalign Order — Type (aligner product) dropdown */
+const INVISALIGN_TYPE_OPTIONS: { id: string; label: string }[] = [
   { id: "", label: "Select an option" },
   { id: "invisalign-aligners", label: "Invisalign Aligners" },
+  { id: "invisalign-first-aligners", label: "Invisalign First Aligners" },
+  { id: "invisalign-palatal-expander", label: "Invisalign Palatal Expander" },
+  { id: "vivera-retainer", label: "Vivera Retainer" },
+  { id: "invisalign-retainer", label: "Invisalign Retainer" },
 ];
 
-const STUDY_TREATMENT_STAGE_OPTIONS: { id: string; label: string }[] = [
+/** Fixed restorative Order — Type row is inactive; trigger shows placeholder copy only. */
+const FIXED_TYPE_PLACEHOLDER_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select procedure type" },
+];
+
+/** Invisalign Order — treatment stage dropdown */
+const INVISALIGN_TREATMENT_STAGE_OPTIONS: { id: string; label: string }[] = [
   { id: "", label: "Select an option" },
-  { id: "treatment-stage", label: "Treatment Stage" },
+  { id: "initial-record", label: "Initial Record" },
+  { id: "progress-record", label: "Progress record" },
+  { id: "final-record", label: "Final Record" },
 ];
-
-/** Figma 6172:3813 uses generic “Label” + required asterisk on all four order fields. */
-function OrderFieldLabelFigma() {
-  return (
-    <span className="tp-body-01 text-text-secondary">
-      Label{" "}
-      <span className="text-[var(--color-text-error,#d43f58)]">*</span>
-    </span>
-  );
-}
 
 function parsePatientDob(s: string): Date | null {
   const m = s.trim().match(/^(\d{2})[./](\d{2})[./](\d{4})$/);
@@ -188,6 +192,8 @@ export default function InfoStepContent26A({
   const [dobDate, setDobDate] = useState<Date | null>(() => parsePatientDob(patient.dateOfBirth));
   const [dobPickerOpen, setDobPickerOpen] = useState(false);
   const dobPickerRef = useRef<HTMLDivElement>(null);
+  const [dueDatePickerOpen, setDueDatePickerOpen] = useState(false);
+  const dueDatePickerRef = useRef<HTMLDivElement>(null);
   const [chartNumber, setChartNumber] = useState(patient.patientId ?? "");
   /** Which patient/order text field drives the on-screen keyboard (kiosk / touch parity with Orders search). */
   const [activeInfoTextField, setActiveInfoTextField] = useState<ActiveInfoTextField | null>(null);
@@ -201,12 +207,12 @@ export default function InfoStepContent26A({
   const [sendToDropdownOpen, setSendToDropdownOpen] = useState(false);
   /** Study model order row (Figma 6172:3813) */
   const [studyAlignerProductId, setStudyAlignerProductId] = useState("invisalign-aligners");
-  const [studyTreatmentStageId, setStudyTreatmentStageId] = useState("treatment-stage");
+  const [studyTreatmentStageId, setStudyTreatmentStageId] = useState("");
   const [studyCurrentAligner, setStudyCurrentAligner] = useState("");
   const [studyAlignerDropdownOpen, setStudyAlignerDropdownOpen] = useState(false);
   const [studyStageDropdownOpen, setStudyStageDropdownOpen] = useState(false);
 
-  /** Study model + Invisalign: same Order (Figma 6172:3813), Scan Options (2 toggles), and attachments-only form. */
+  /** Study model + Invisalign: same Order (Figma 6172:3813); Scan Options (3 toggles for study-model, NIRI + Palatal & gingival for Invisalign); attachments-only form. */
   const studyStyleInfoOrderAndScan = treatmentId === "study-model" || treatmentId === "invisalign";
   const attachmentsNoteOnly = studyStyleInfoOrderAndScan;
 
@@ -396,7 +402,7 @@ export default function InfoStepContent26A({
                   value={firstName}
                   readOnly
                   onChange={(e) => { setFirstName(e.target.value); commitPatient(e.target.value, lastName, gender, dobDate, chartNumber); }}
-                  onFocus={() => { setDobPickerOpen(false); setGenderDropdownOpen(false); setActiveInfoTextField("firstName"); }}
+                  onFocus={() => { setDobPickerOpen(false); setDueDatePickerOpen(false); setGenderDropdownOpen(false); setActiveInfoTextField("firstName"); }}
                   onBlur={handleInfoTextFieldBlur}
                   placeholder="First name"
                   className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
@@ -413,7 +419,7 @@ export default function InfoStepContent26A({
                   value={lastName}
                   readOnly
                   onChange={(e) => { setLastName(e.target.value); commitPatient(firstName, e.target.value, gender, dobDate, chartNumber); }}
-                  onFocus={() => { setDobPickerOpen(false); setGenderDropdownOpen(false); setActiveInfoTextField("lastName"); }}
+                  onFocus={() => { setDobPickerOpen(false); setDueDatePickerOpen(false); setGenderDropdownOpen(false); setActiveInfoTextField("lastName"); }}
                   onBlur={handleInfoTextFieldBlur}
                   placeholder="Last name"
                   className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
@@ -438,7 +444,7 @@ export default function InfoStepContent26A({
                     value={dobDate}
                     onChange={(d) => { setDobDate(d); commitPatient(firstName, lastName, gender, d, chartNumber); }}
                     isOpen={dobPickerOpen}
-                    onToggle={() => { setGenderDropdownOpen(false); setDobPickerOpen((o) => !o); }}
+                    onToggle={() => { setGenderDropdownOpen(false); setDueDatePickerOpen(false); setDobPickerOpen((o) => !o); }}
                     onClose={() => setDobPickerOpen(false)}
                     containerRef={dobPickerRef}
                     calendarAriaLabel="Choose date of birth"
@@ -460,7 +466,7 @@ export default function InfoStepContent26A({
                       commitPatient(firstName, lastName, g, dobDate, chartNumber);
                     }}
                     isOpen={genderDropdownOpen}
-                    onToggle={() => { setDobPickerOpen(false); setGenderDropdownOpen((o) => !o); }}
+                    onToggle={() => { setDobPickerOpen(false); setDueDatePickerOpen(false); setGenderDropdownOpen((o) => !o); }}
                     backgroundVariant="layer-02"
                   />
                 </div>
@@ -476,7 +482,7 @@ export default function InfoStepContent26A({
                   value={chartNumber}
                   readOnly
                   onChange={(e) => { setChartNumber(e.target.value); commitPatient(firstName, lastName, gender, dobDate, e.target.value); }}
-                  onFocus={() => { setDobPickerOpen(false); setGenderDropdownOpen(false); setActiveInfoTextField("chartNumber"); }}
+                  onFocus={() => { setDobPickerOpen(false); setDueDatePickerOpen(false); setGenderDropdownOpen(false); setActiveInfoTextField("chartNumber"); }}
                   onBlur={handleInfoTextFieldBlur}
                   placeholder="Chart number"
                   className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
@@ -492,10 +498,200 @@ export default function InfoStepContent26A({
         <div className="flex flex-col w-full" style={{ ...CARD_STYLE, padding: "32px 28px", gap: 16 }}>
           <h2 className="tp-heading-04 text-text-primary" style={{ fontSize: 24, lineHeight: "36px" }}>Order</h2>
           {studyStyleInfoOrderAndScan ? (
+            treatmentId === "study-model" ? (
+              <div className="flex w-full flex-col" style={{ gap: 18 }}>
+                <div className="flex w-full min-w-0" style={{ gap: 23 }}>
+                  <label className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
+                    <span className="tp-body-01 text-text-secondary">
+                      Procedure <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                    </span>
+                    <DropdownField
+                      id="info-treatment"
+                      ariaLabel="Treatment type"
+                      value={treatmentId}
+                      options={TREATMENT_OPTIONS}
+                      onChange={(id) => { setTreatmentId(id); setTreatmentDropdownOpen(false); }}
+                      isOpen={treatmentDropdownOpen}
+                      onToggle={() => {
+                        setSendToDropdownOpen(false);
+                        setStudyAlignerDropdownOpen(false);
+                        setStudyStageDropdownOpen(false);
+                        setDobPickerOpen(false);
+                        setDueDatePickerOpen(false);
+                        setTreatmentDropdownOpen((o) => !o);
+                      }}
+                      backgroundVariant="layer-02"
+                      triggerLeading={
+                        <img src={invisalignSvg} alt="" width={30} height={30} className="shrink-0 object-contain" aria-hidden />
+                      }
+                    />
+                  </label>
+                  <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-end">
+                    <div className="flex min-w-0 items-center" style={{ gap: 23 }}>
+                      <div className="flex min-w-0 flex-col" style={{ maxWidth: 508 }}>
+                        <span className="tp-body-02 font-medium text-text-primary">Ortho Model/iCast</span>
+                      </div>
+                      <ToggleSwitch
+                        label=""
+                        checked={toggles.orthoModelICast}
+                        onChange={(v) => setToggle("orthoModelICast", v)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex w-full min-w-0 items-center" style={{ gap: 23 }}>
+                  <label className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
+                    <span className="tp-body-01 text-text-secondary">
+                      Due Date <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                    </span>
+                    <DatePickerField
+                      label=""
+                      value={dueDate}
+                      onChange={setDueDate}
+                      isOpen={dueDatePickerOpen}
+                      onToggle={() => {
+                        setTreatmentDropdownOpen(false);
+                        setSendToDropdownOpen(false);
+                        setStudyAlignerDropdownOpen(false);
+                        setStudyStageDropdownOpen(false);
+                        setDobPickerOpen(false);
+                        setGenderDropdownOpen(false);
+                        setDueDatePickerOpen((o) => !o);
+                      }}
+                      onClose={() => setDueDatePickerOpen(false)}
+                      containerRef={dueDatePickerRef}
+                      calendarAriaLabel="Choose due date"
+                    />
+                  </label>
+                  <div className="flex flex-col min-w-0 flex-1" style={{ gap: 8 }}>
+                    <span className="tp-body-01 text-text-secondary">
+                      Send to <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                    </span>
+                    <DropdownField
+                      id="info-sendto"
+                      ariaLabel="Send to"
+                      value={sendToId}
+                      options={SEND_TO_OPTIONS}
+                      onChange={(id) => { setSendToId(id); setSendToDropdownOpen(false); }}
+                      isOpen={sendToDropdownOpen}
+                      onToggle={() => {
+                        setTreatmentDropdownOpen(false);
+                        setStudyAlignerDropdownOpen(false);
+                        setStudyStageDropdownOpen(false);
+                        setDueDatePickerOpen(false);
+                        setSendToDropdownOpen((o) => !o);
+                      }}
+                      backgroundVariant="layer-02"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex w-full flex-col" style={{ gap: 18 }}>
+                <div className="flex w-full min-w-0 items-center" style={{ gap: 23 }}>
+                  <div className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
+                    <span className="tp-body-01 text-text-secondary">
+                      Procedure <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                    </span>
+                    <DropdownField
+                      id="info-treatment"
+                      ariaLabel="Treatment type"
+                      value={treatmentId}
+                      options={TREATMENT_OPTIONS}
+                      onChange={(id) => { setTreatmentId(id); setTreatmentDropdownOpen(false); }}
+                      isOpen={treatmentDropdownOpen}
+                      onToggle={() => {
+                        setSendToDropdownOpen(false);
+                        setStudyAlignerDropdownOpen(false);
+                        setStudyStageDropdownOpen(false);
+                        setDueDatePickerOpen(false);
+                        setTreatmentDropdownOpen((o) => !o);
+                      }}
+                      backgroundVariant="layer-02"
+                      triggerLeading={
+                        <img src={invisalignSvg} alt="" width={30} height={30} className="shrink-0 object-contain" aria-hidden />
+                      }
+                    />
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
+                    <span className="tp-body-01 text-text-secondary">
+                      Type <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                    </span>
+                    <DropdownField
+                      id="info-study-aligner-product"
+                      ariaLabel="Type"
+                      value={studyAlignerProductId}
+                      options={INVISALIGN_TYPE_OPTIONS}
+                      onChange={(id) => { setStudyAlignerProductId(id); setStudyAlignerDropdownOpen(false); }}
+                      isOpen={studyAlignerDropdownOpen}
+                      onToggle={() => {
+                        setTreatmentDropdownOpen(false);
+                        setSendToDropdownOpen(false);
+                        setStudyStageDropdownOpen(false);
+                        setDueDatePickerOpen(false);
+                        setStudyAlignerDropdownOpen((o) => !o);
+                      }}
+                      backgroundVariant="layer-02"
+                    />
+                  </div>
+                </div>
+                <div className="flex w-full min-w-0 items-center" style={{ gap: 23 }}>
+                  <div className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
+                    <span className="tp-body-01 text-text-secondary">
+                      Treatment Stages <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                    </span>
+                    <DropdownField
+                      id="info-study-treatment-stage"
+                      ariaLabel="Treatment stages"
+                      value={studyTreatmentStageId}
+                      options={INVISALIGN_TREATMENT_STAGE_OPTIONS}
+                      onChange={(id) => { setStudyTreatmentStageId(id); setStudyStageDropdownOpen(false); }}
+                      isOpen={studyStageDropdownOpen}
+                      onToggle={() => {
+                        setTreatmentDropdownOpen(false);
+                        setSendToDropdownOpen(false);
+                        setStudyAlignerDropdownOpen(false);
+                        setDueDatePickerOpen(false);
+                        setStudyStageDropdownOpen((o) => !o);
+                      }}
+                      backgroundVariant="layer-02"
+                    />
+                  </div>
+                  <div className="flex min-w-0 flex-1 flex-col" style={{ gap: 8 }}>
+                    <span className="tp-body-01 text-text-secondary">Current Aligner</span>
+                    <input
+                      ref={studyCurrentAlignerInputRef}
+                      type="text"
+                      value={studyCurrentAligner}
+                      readOnly
+                      onChange={(e) => setStudyCurrentAligner(e.target.value)}
+                      onFocus={() => {
+                        setTreatmentDropdownOpen(false);
+                        setSendToDropdownOpen(false);
+                        setStudyAlignerDropdownOpen(false);
+                        setStudyStageDropdownOpen(false);
+                        setDobPickerOpen(false);
+                        setDueDatePickerOpen(false);
+                        setGenderDropdownOpen(false);
+                        setActiveInfoTextField("studyCurrentAligner");
+                      }}
+                      onBlur={handleInfoTextFieldBlur}
+                      placeholder="Current Aligner #:"
+                      className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
+                      autoComplete="off"
+                      aria-label="Current aligner number"
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          ) : (
             <div className="flex w-full" style={{ gap: 23 }}>
               <div className="flex flex-col flex-1 min-w-0" style={{ gap: 18 }}>
                 <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
-                  <OrderFieldLabelFigma />
+                  <span className="tp-body-01 text-text-secondary">
+                    Procedure <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                  </span>
                   <DropdownField
                     id="info-treatment"
                     ariaLabel="Treatment type"
@@ -507,6 +703,7 @@ export default function InfoStepContent26A({
                       setSendToDropdownOpen(false);
                       setStudyAlignerDropdownOpen(false);
                       setStudyStageDropdownOpen(false);
+                      setDueDatePickerOpen(false);
                       setTreatmentDropdownOpen((o) => !o);
                     }}
                     backgroundVariant="layer-02"
@@ -517,108 +714,47 @@ export default function InfoStepContent26A({
                     }
                   />
                 </div>
-                <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
-                  <OrderFieldLabelFigma />
-                  <DropdownField
-                    id="info-study-treatment-stage"
-                    ariaLabel="Treatment stage"
-                    value={studyTreatmentStageId}
-                    options={STUDY_TREATMENT_STAGE_OPTIONS}
-                    onChange={(id) => { setStudyTreatmentStageId(id); setStudyStageDropdownOpen(false); }}
-                    isOpen={studyStageDropdownOpen}
+                <label className="flex min-w-0 flex-1 flex-col self-stretch" style={{ gap: 8 }}>
+                  <span className="tp-body-01 text-text-secondary">
+                    Due Date <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                  </span>
+                  <DatePickerField
+                    label=""
+                    value={dueDate}
+                    onChange={setDueDate}
+                    isOpen={dueDatePickerOpen}
                     onToggle={() => {
-                      setTreatmentDropdownOpen(false);
-                      setSendToDropdownOpen(false);
-                      setStudyAlignerDropdownOpen(false);
-                      setStudyStageDropdownOpen((o) => !o);
-                    }}
-                    backgroundVariant="layer-02"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col flex-1 min-w-0" style={{ gap: 18 }}>
-                <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
-                  <OrderFieldLabelFigma />
-                  <DropdownField
-                    id="info-study-aligner-product"
-                    ariaLabel="Aligner product"
-                    value={studyAlignerProductId}
-                    options={STUDY_ALIGNER_PRODUCT_OPTIONS}
-                    onChange={(id) => { setStudyAlignerProductId(id); setStudyAlignerDropdownOpen(false); }}
-                    isOpen={studyAlignerDropdownOpen}
-                    onToggle={() => {
-                      setTreatmentDropdownOpen(false);
-                      setSendToDropdownOpen(false);
-                      setStudyStageDropdownOpen(false);
-                      setStudyAlignerDropdownOpen((o) => !o);
-                    }}
-                    backgroundVariant="layer-02"
-                  />
-                </div>
-                <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
-                  <OrderFieldLabelFigma />
-                  <input
-                    ref={studyCurrentAlignerInputRef}
-                    type="text"
-                    value={studyCurrentAligner}
-                    readOnly
-                    onChange={(e) => setStudyCurrentAligner(e.target.value)}
-                    onFocus={() => {
                       setTreatmentDropdownOpen(false);
                       setSendToDropdownOpen(false);
                       setStudyAlignerDropdownOpen(false);
                       setStudyStageDropdownOpen(false);
                       setDobPickerOpen(false);
                       setGenderDropdownOpen(false);
-                      setActiveInfoTextField("studyCurrentAligner");
+                      setDueDatePickerOpen((o) => !o);
                     }}
-                    onBlur={handleInfoTextFieldBlur}
-                    placeholder="Current Aligner #:"
-                    className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
-                    autoComplete="off"
-                    aria-label="Current aligner number"
+                    onClose={() => setDueDatePickerOpen(false)}
+                    containerRef={dueDatePickerRef}
+                    calendarAriaLabel="Choose due date"
                   />
-                </div>
+                </label>
               </div>
-            </div>
-          ) : (
-            <div className="flex w-full" style={{ gap: 23 }}>
               <div className="flex flex-col flex-1 min-w-0" style={{ gap: 18 }}>
                 <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
                   <span className="tp-body-01 text-text-secondary">
-                    Treatment <span className="text-[var(--color-text-error,#d43f58)]">*</span>
+                    Type <span className="text-[var(--color-text-error,#d43f58)]">*</span>
                   </span>
                   <DropdownField
-                    id="info-treatment"
-                    ariaLabel="Treatment type"
-                    value={treatmentId}
-                    options={TREATMENT_OPTIONS}
-                    onChange={(id) => { setTreatmentId(id); setTreatmentDropdownOpen(false); }}
-                    isOpen={treatmentDropdownOpen}
-                    onToggle={() => { setSendToDropdownOpen(false); setStudyAlignerDropdownOpen(false); setStudyStageDropdownOpen(false); setTreatmentDropdownOpen((o) => !o); }}
-                    backgroundVariant="layer-02"
-                    triggerLeading={
-                      treatmentId === "study-model" || treatmentId === "invisalign" ? (
-                        <img src={invisalignSvg} alt="" width={30} height={30} className="shrink-0 object-contain" aria-hidden />
-                      ) : undefined
-                    }
-                  />
-                </div>
-                <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
-                  <span className="tp-body-01 text-text-secondary">Treatment Stage</span>
-                  <DropdownField
-                    id="info-treatment-stage"
-                    ariaLabel="Treatment stage"
+                    id="info-fixed-type"
+                    ariaLabel="Select procedure type"
                     value=""
-                    options={[{ id: "", label: "Treatment Stage" }]}
+                    options={FIXED_TYPE_PLACEHOLDER_OPTIONS}
                     onChange={() => {}}
                     isOpen={false}
                     onToggle={() => {}}
+                    disabled
                     backgroundVariant="layer-02"
                   />
                 </div>
-              </div>
-              <div className="flex flex-col flex-1 min-w-0" style={{ gap: 18 }}>
                 <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
                   <span className="tp-body-01 text-text-secondary">
                     Send to <span className="text-[var(--color-text-error,#d43f58)]">*</span>
@@ -628,20 +764,19 @@ export default function InfoStepContent26A({
                     ariaLabel="Send to"
                     value={sendToId}
                     options={SEND_TO_OPTIONS}
-                    onChange={(id) => { setSendToId(id); setSendToDropdownOpen(false); }}
+                    onChange={(id) => {
+                      setSendToId(id);
+                      setSendToDropdownOpen(false);
+                    }}
                     isOpen={sendToDropdownOpen}
-                    onToggle={() => { setTreatmentDropdownOpen(false); setStudyAlignerDropdownOpen(false); setStudyStageDropdownOpen(false); setSendToDropdownOpen((o) => !o); }}
+                    onToggle={() => {
+                      setTreatmentDropdownOpen(false);
+                      setStudyAlignerDropdownOpen(false);
+                      setStudyStageDropdownOpen(false);
+                      setDueDatePickerOpen(false);
+                      setSendToDropdownOpen((o) => !o);
+                    }}
                     backgroundVariant="layer-02"
-                  />
-                </div>
-                <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
-                  <span className="tp-body-01 text-text-secondary">Current Aligner</span>
-                  <input
-                    type="text"
-                    placeholder="Current Aligner #:"
-                    className={`${textFieldShell} tp-body-04 text-text-primary placeholder:text-text-tertiary`}
-                    autoComplete="off"
-                    readOnly
                   />
                 </div>
               </div>
@@ -649,24 +784,112 @@ export default function InfoStepContent26A({
           )}
         </div>
 
-        {/* ── 4. Scan Options — Figma 6171:2247; Study model: Figma 6172:3814 (2 toggles) ─ */}
+        {/* ── 4. Scan Options — Figma 6171:2247; Study model: 3 toggles; Invisalign: NIRI + Palatal & gingival feedback (Figma 6172:3814) ─ */}
         <div className="flex flex-col w-full" style={{ ...CARD_STYLE, padding: "32px 28px", gap: studyStyleInfoOrderAndScan ? 16 : 24 }}>
           <h2 className="tp-heading-04 text-text-primary" style={{ fontSize: 24, lineHeight: "36px" }}>Scan Options</h2>
           {studyStyleInfoOrderAndScan ? (
-            <div className="flex items-start justify-between w-full" style={{ paddingTop: 10, paddingBottom: 10 }}>
-              <div className="flex items-center min-w-0" style={{ gap: 23 }}>
-                <div className="flex flex-col min-w-0" style={{ gap: 11, maxWidth: 508 }}>
-                  <span className="tp-body-02 font-medium text-text-primary">NIRI Capture</span>
-                  <span className="tp-body-02 text-text-secondary">Receive emails about your upcoming appointments</span>
+            treatmentId === "study-model" ? (
+              <div
+                className="ml-0 flex w-full min-w-0 items-center justify-between gap-16"
+                style={{ paddingTop: 10, paddingBottom: 10 }}
+              >
+                <div className="flex min-w-0 w-full flex-1 flex-col">
+                  <div
+                    className="flex min-w-0 w-full items-center border-0 border-b border-solid border-b-[#e0e0e0] pb-4"
+                    style={{ gap: 24 }}
+                  >
+                    <div className="flex min-w-0 flex-col" style={{ maxWidth: 508 }}>
+                      <span className="tp-body-02 !font-medium text-text-primary">NIRI Capture</span>
+                    </div>
+                    <ToggleSwitch label="" checked={toggles.niri} onChange={(v) => setToggle("niri", v)} />
+                  </div>
                 </div>
-                <ToggleSwitch label="" checked={toggles.niri} onChange={(v) => setToggle("niri", v)} />
+                <div className="flex min-w-0 w-full flex-1 flex-col">
+                  <div
+                    className="flex min-w-0 w-full items-center border-0 border-b border-solid border-b-[#e0e0e0] pb-4"
+                    style={{ gap: 24 }}
+                  >
+                    <div className="flex min-w-0 flex-col" style={{ maxWidth: 508 }}>
+                      <span className="tp-body-02 !font-medium text-text-primary">Palatal & gingival feedback</span>
+                    </div>
+                    <ToggleSwitch
+                      label=""
+                      checked={toggles.palatalGingivalFeedback}
+                      onChange={(v) => setToggle("palatalGingivalFeedback", v)}
+                    />
+                  </div>
+                </div>
+                <div className="flex min-w-0 w-full flex-1 flex-col">
+                  <div
+                    className="flex min-w-0 w-full items-center border-0 border-b border-solid border-b-[#e0e0e0] pb-4"
+                    style={{ gap: 24 }}
+                  >
+                    <div className="flex min-w-0 flex-col" style={{ maxWidth: 508 }}>
+                      <span className="tp-body-02 !font-medium text-text-primary">Multi-Bite</span>
+                    </div>
+                    <ToggleSwitch label="" checked={toggles.multiBite} onChange={(v) => setToggle("multiBite", v)} />
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center min-w-0" style={{ gap: 23 }}>
-                <div className="flex flex-col min-w-0" style={{ gap: 11, maxWidth: 508 }}>
-                  <span className="tp-body-02 font-medium text-text-primary">New Sleeve Attached</span>
-                  <span className="tp-body-02 text-text-secondary">Receive emails about your upcoming appointments</span>
+            ) : (
+              <div
+                className="ml-0 flex w-full min-w-0 items-center justify-between gap-16"
+                style={{ paddingTop: 10, paddingBottom: 10 }}
+              >
+                <div className="flex min-w-0 w-full flex-1 flex-col">
+                  <div
+                    className="flex min-w-0 w-full items-center border-0 border-b border-solid border-b-[#e0e0e0] pb-4"
+                    style={{ gap: 24 }}
+                  >
+                    <div className="flex min-w-0 flex-col" style={{ maxWidth: 508 }}>
+                      <span className="tp-body-02 !font-medium text-text-primary">NIRI Capture</span>
+                    </div>
+                    <ToggleSwitch label="" checked={toggles.niri} onChange={(v) => setToggle("niri", v)} />
+                  </div>
                 </div>
-                <ToggleSwitch label="" checked={toggles.sleeve} onChange={(v) => setToggle("sleeve", v)} />
+                <div className="flex min-w-0 w-full flex-1 flex-col">
+                  <div
+                    className="flex min-w-0 w-full items-center border-0 border-b border-solid border-b-[#e0e0e0] pb-4"
+                    style={{ gap: 24 }}
+                  >
+                    <div className="flex min-w-0 flex-col" style={{ maxWidth: 508 }}>
+                      <span className="tp-body-02 !font-medium text-text-primary">Palatal & gingival feedback</span>
+                    </div>
+                    <ToggleSwitch
+                      label=""
+                      checked={toggles.palatalGingivalFeedback}
+                      onChange={(v) => setToggle("palatalGingivalFeedback", v)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          ) : treatmentId === "fixed-restorative" ? (
+            <div
+              className="ml-0 flex w-full min-w-0 items-center justify-between gap-16"
+              style={{ paddingTop: 10, paddingBottom: 10 }}
+            >
+              <div className="flex min-w-0 w-full flex-1 flex-col">
+                <div
+                  className="flex min-w-0 w-full items-center border-0 border-b border-solid border-b-[#e0e0e0] pb-4"
+                  style={{ gap: 24 }}
+                >
+                  <div className="flex min-w-0 flex-col" style={{ maxWidth: 508 }}>
+                    <span className="tp-body-02 !font-medium text-text-primary">NIRI Capture</span>
+                  </div>
+                  <ToggleSwitch label="" checked={toggles.niri} onChange={(v) => setToggle("niri", v)} />
+                </div>
+              </div>
+              <div className="flex min-w-0 w-full flex-1 flex-col">
+                <div
+                  className="flex min-w-0 w-full items-center border-0 border-b border-solid border-b-[#e0e0e0] pb-4"
+                  style={{ gap: 24 }}
+                >
+                  <div className="flex min-w-0 flex-col" style={{ maxWidth: 508 }}>
+                    <span className="tp-body-02 !font-medium text-text-primary">Pre- treatment Scan</span>
+                  </div>
+                  <ToggleSwitch label="" checked={toggles.preTreatment} onChange={(v) => setToggle("preTreatment", v)} />
+                </div>
               </div>
             </div>
           ) : (
@@ -692,14 +915,14 @@ export default function InfoStepContent26A({
               <div className="flex w-full min-w-0 items-center justify-between">
                 <div className="flex min-w-0 items-center" style={{ gap: 23 }}>
                   <div className="flex min-w-0 flex-col" style={{ gap: 11, maxWidth: 508 }}>
-                    <span className="tp-body-02 font-medium text-text-primary">Pre Treatment Scan</span>
+                    <span className="tp-body-02 font-medium text-text-primary">Pre- treatment Scan</span>
                     <span className="tp-body-02 text-text-secondary">Receive emails about your upcoming appointments</span>
                   </div>
                   <ToggleSwitch label="" checked={toggles.preTreatment} onChange={(v) => setToggle("preTreatment", v)} />
                 </div>
                 <div className="flex min-w-0 items-center" style={{ gap: 23 }}>
                   <div className="flex min-w-0 flex-col" style={{ gap: 11, maxWidth: 508 }}>
-                    <span className="tp-body-02 font-medium text-text-primary">Multi Bite</span>
+                    <span className="tp-body-02 font-medium text-text-primary">Multi-Bite</span>
                     <span className="tp-body-02 text-text-secondary">Receive emails about your upcoming appointments</span>
                   </div>
                   <ToggleSwitch label="" checked={toggles.multiBite} onChange={(v) => setToggle("multiBite", v)} />

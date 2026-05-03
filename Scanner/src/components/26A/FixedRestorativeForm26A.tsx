@@ -33,7 +33,7 @@ export const RESTORATION_TYPES = [
 
 export const TREATMENT_OPTIONS: { id: string; label: string }[] = [
   { id: "fixed-restorative", label: "Fixed restorative" },
-  { id: "study-model", label: "Study model" },
+  { id: "study-model", label: "Study Model/iRecord" },
   { id: "invisalign", label: "Invisalign/Vivera" },
   { id: "appliance", label: "Appliance" },
   { id: "dentures-removable", label: "Dentures / Removable" },
@@ -198,6 +198,10 @@ export interface DropdownFieldProps {
   hideBorder?: boolean;
   /** Optional icon or element shown before the selected label in the trigger (e.g. Study model artwork). */
   triggerLeading?: ReactNode;
+  /** When true, the trigger is non-interactive and the list does not open. */
+  disabled?: boolean;
+  /** When set, shown in the trigger instead of the selected option label (e.g. disabled placeholder). */
+  placeholderOverride?: string;
 }
 
 const dropdownListContent = (
@@ -251,10 +255,12 @@ export function DropdownField({
   backgroundVariant = "layer-01",
   hideBorder = false,
   triggerLeading,
+  disabled = false,
+  placeholderOverride,
 }: DropdownFieldProps) {
   const selected = options.find((o) => o.id === value);
-  const displayLabel = selected?.label ?? value;
-  const isPlaceholder = !selected || selected.id === "";
+  const displayLabel = placeholderOverride ?? selected?.label ?? value;
+  const isPlaceholder = placeholderOverride != null || !selected || selected.id === "";
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [portalPosition, setPortalPosition] = useState<{ top: number; left: number; width: number } | null>(null);
   const bgLayer = backgroundVariant === "layer-02" ? "var(--color-background-layer-02)" : "var(--color-background-layer-01)";
@@ -281,13 +287,17 @@ export function DropdownField({
         ref={buttonRef}
         type="button"
         id={`dropdown-${id}`}
-        onClick={onToggle}
-        aria-expanded={isOpen}
+        disabled={disabled}
+        onClick={disabled ? undefined : onToggle}
+        aria-expanded={disabled ? false : isOpen}
         aria-haspopup="listbox"
+        aria-disabled={disabled}
         aria-label={ariaLabel ?? label ?? "Select"}
-        className={`flex items-center justify-between w-full overflow-clip text-left transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 hover:bg-[var(--color-background-layer-hovered)] ${
-          !hideBorder && backgroundVariant === "layer-02" ? "border border-border-subtle bg-[var(--color-background-layer-02)]" : ""
-        }`}
+        className={`flex items-center justify-between w-full overflow-clip text-left transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 ${
+          disabled
+            ? "cursor-not-allowed opacity-60"
+            : "hover:bg-[var(--color-background-layer-hovered)]"
+        } ${!hideBorder && backgroundVariant === "layer-02" ? "border border-border-subtle bg-[var(--color-background-layer-02)]" : ""}`}
         style={{
           backgroundColor: backgroundVariant === "layer-02" ? (hideBorder ? bgLayer : undefined) : (isOpen && backgroundVariant === "layer-01" ? "var(--color-background-layer-01)" : bgLayer),
           borderRadius: 8,
@@ -325,7 +335,7 @@ export function DropdownField({
           <span className="tp-label-01 text-[var(--color-text-error,#d43f58)]">{errorText}</span>
         </div>
       )}
-      {isOpen && usePortal && portalPosition && createPortal(
+      {isOpen && !disabled && usePortal && portalPosition && createPortal(
         dropdownListContent(id, value, options, onChange, {
           position: "fixed",
           top: portalPosition.top,
@@ -336,7 +346,7 @@ export function DropdownField({
         }),
         document.body
       )}
-      {isOpen && !usePortal && (
+      {isOpen && !disabled && !usePortal && (
         <ul
           role="listbox"
           aria-labelledby={`dropdown-${id}`}
@@ -683,8 +693,12 @@ export interface ToothDetail {
 export interface ToggleState {
   niri: boolean;
   sleeve: boolean;
+  /** Study model Scan Options — middle column (Palatal & gingival feedback). */
+  palatalGingivalFeedback: boolean;
   multiBite: boolean;
   preTreatment: boolean;
+  /** Study model Info Order — Ortho Model/iCast row (not shown in fixed restorative toggles). */
+  orthoModelICast: boolean;
 }
 
 export interface FixedRestorativeFormProps {

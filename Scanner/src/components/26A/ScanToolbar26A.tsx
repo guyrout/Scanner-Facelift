@@ -12,20 +12,24 @@
  * - Active: light-blue background (#A6E2F9) on icon only, blue label text (#009ACE)
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+
+export type ScanToolbarToolId = "scan-color" | "feedback" | "edit" | "swap";
 
 interface ScanToolbarProps {
   className?: string;
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   onToolClick?: (toolId: string, isActive: boolean) => void;
+  activeTools?: Set<ScanToolbarToolId>;
+  onActiveToolsChange?: (tools: Set<ScanToolbarToolId>) => void;
   /** Increment to clear the Edit tool active state (e.g. when Prep edit panel closes). */
   deselectEditNonce?: number;
   /** Increment to clear the Swap tool active state (e.g. when Swap modal closes). */
   deselectSwapNonce?: number;
 }
 
-type ToolId = "scan-color" | "feedback" | "edit" | "swap";
+type ToolId = ScanToolbarToolId;
 
 function IconScanColor() {
   return (
@@ -175,36 +179,44 @@ export default function ScanToolbar26A({
   expanded: controlledExpanded,
   onExpandedChange,
   onToolClick,
+  activeTools: controlledActiveTools,
+  onActiveToolsChange,
   deselectEditNonce = 0,
   deselectSwapNonce = 0,
 }: ScanToolbarProps) {
   const [internalExpanded, setInternalExpanded] = useState(false);
   const expanded = controlledExpanded ?? internalExpanded;
-  const [activeTools, setActiveTools] = useState<Set<ToolId>>(new Set());
+  const [internalActiveTools, setInternalActiveTools] = useState<Set<ToolId>>(() => new Set());
+  const activeTools = controlledActiveTools ?? internalActiveTools;
+
+  const setActiveTools = useCallback(
+    (next: Set<ToolId>) => {
+      if (onActiveToolsChange) onActiveToolsChange(next);
+      else setInternalActiveTools(next);
+    },
+    [onActiveToolsChange],
+  );
+
   const prevDeselectEditNonce = useRef(0);
   const prevDeselectSwapNonce = useRef(0);
 
   useEffect(() => {
     if (deselectEditNonce <= prevDeselectEditNonce.current) return;
     prevDeselectEditNonce.current = deselectEditNonce;
-    setActiveTools((prev) => {
-      if (!prev.has("edit")) return prev;
-      const next = new Set(prev);
-      next.delete("edit");
-      return next;
-    });
-  }, [deselectEditNonce]);
+    if (!activeTools.has("edit")) return;
+    const next = new Set(activeTools);
+    next.delete("edit");
+    setActiveTools(next);
+  }, [deselectEditNonce, activeTools, setActiveTools]);
 
   useEffect(() => {
     if (deselectSwapNonce <= prevDeselectSwapNonce.current) return;
     prevDeselectSwapNonce.current = deselectSwapNonce;
-    setActiveTools((prev) => {
-      if (!prev.has("swap")) return prev;
-      const next = new Set(prev);
-      next.delete("swap");
-      return next;
-    });
-  }, [deselectSwapNonce]);
+    if (!activeTools.has("swap")) return;
+    const next = new Set(activeTools);
+    next.delete("swap");
+    setActiveTools(next);
+  }, [deselectSwapNonce, activeTools, setActiveTools]);
 
   function toggleExpanded() {
     const next = !expanded;
@@ -237,13 +249,11 @@ export default function ScanToolbar26A({
                 key={tool.id}
                 type="button"
                 onClick={() => {
-                  setActiveTools((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(tool.id)) next.delete(tool.id);
-                    else next.add(tool.id);
-                    return next;
-                  });
-                  onToolClick?.(tool.id, !isActive);
+                  const next = new Set(activeTools);
+                  if (next.has(tool.id)) next.delete(tool.id);
+                  else next.add(tool.id);
+                  setActiveTools(next);
+                  onToolClick?.(tool.id, next.has(tool.id));
                 }}
                 className="flex flex-col items-center justify-center cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
                 style={{
