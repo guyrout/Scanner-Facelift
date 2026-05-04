@@ -29,6 +29,7 @@ export interface ScanFlowPatientSnapshot {
 export interface ScanFlowPageProps {
   onBack: () => void;
   onOpenSettings?: () => void;
+  onOpenSupport?: () => void;
   /** Patient captured on the pre-wizard “Patient details” screen (Home → Scan). */
   initialPatient?: ScanFlowPatientSnapshot;
 }
@@ -42,7 +43,7 @@ const DEFAULT_PATIENT: ScanFlowPatientSnapshot = {
   treatedBy: "Doctor Name | 12367854",
 };
 
-export default function ScanFlowPage({ onBack, onOpenSettings, initialPatient }: ScanFlowPageProps) {
+export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, initialPatient }: ScanFlowPageProps) {
   const [currentStep, setCurrentStep] = useState<ScanWizardStep>("info");
   const previousStepRef = useRef<ScanWizardStep>("info");
   const [selectedProcedure, setSelectedProcedure] = useState<ProcedureType | null>(null);
@@ -89,6 +90,7 @@ export default function ScanFlowPage({ onBack, onOpenSettings, initialPatient }:
           currentStep={currentStep}
           onStepClick={handleStepChange}
           onInfoClick={onBack}
+          onHelpClick={onOpenSupport}
           onSettingsClick={onOpenSettings}
         />
       </div>

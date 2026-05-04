@@ -436,9 +436,7 @@ export default function InfoStepContent26A({
             >
               <div className="flex w-full items-start" style={{ gap: 23 }}>
                 <label className="flex min-w-0 flex-1 flex-col self-stretch" style={{ gap: 8 }}>
-                  <span className="tp-body-01 text-text-secondary">
-                    Date of Birth <span className="text-[var(--color-text-error,#d43f58)]">*</span>
-                  </span>
+                  <span className="tp-body-01 text-text-secondary">Date of Birth</span>
                   <DatePickerField
                     label=""
                     value={dobDate}
@@ -451,9 +449,7 @@ export default function InfoStepContent26A({
                   />
                 </label>
                 <div className="flex min-w-0 flex-1 flex-col self-stretch" style={{ gap: 8 }}>
-                  <span className="tp-body-01 text-text-secondary">
-                    Gender at birth <span className="text-[var(--color-text-error,#d43f58)]">*</span>
-                  </span>
+                  <span className="tp-body-01 text-text-secondary">Gender at birth</span>
                   <DropdownField
                     id="info-gender"
                     ariaLabel="Gender at birth"

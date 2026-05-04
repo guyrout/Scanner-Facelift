@@ -11,6 +11,7 @@ import ScanPatientDetailsPage from "./components/ScanPatientDetailsPage";
 import ScanFlowPage26A from "./components/26A/ScanFlowPage26A";
 import ScanPatientDetailsPage26A from "./components/26A/ScanPatientDetailsPage26A";
 import SettingsModal from "./components/SettingsModal";
+import SupportModal from "./components/SupportModal";
 import { DENTISTS, SHOW_ALL_DRS_ID } from "./components/OrdersHeader";
 import type { Patient } from "./data/patients";
 import { getScanFlowVersion } from "./utils/scanFlowVersionManager";
@@ -55,6 +56,7 @@ function App() {
   const [scanEntryPatient, setScanEntryPatient] = useState<ScanFlowPatientSnapshot | null>(null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
   const [settingsInitialView, setSettingsInitialView] = useState<"main" | "scan">("main");
   const [brightness, setBrightness] = useState(getStoredBrightness);
   const [volume, setVolume] = useState(getStoredVolume);
@@ -74,6 +76,8 @@ function App() {
     setSettingsInitialView(view ?? "main");
     setShowSettings(true);
   };
+
+  const openSupport = useCallback(() => setSupportModalOpen(true), []);
 
   const selectedDoctorName =
     selectedDentistId === SHOW_ALL_DRS_ID ? null : DENTISTS.find((d) => d.id === selectedDentistId)?.name ?? null;
@@ -104,7 +108,11 @@ function App() {
       >
         {showLogin ? (
           <div key="login" className="animate-page-enter flex flex-col w-full h-full min-h-0">
-            <LoginPage onLogin={() => setShowLogin(false)} onOpenSettings={() => openSettings()} />
+            <LoginPage
+              onLogin={() => setShowLogin(false)}
+              onOpenSettings={() => openSettings()}
+              onOpenSupport={openSupport}
+            />
           </div>
         ) : showHome ? (
           <div key="home" className="animate-page-enter flex flex-col w-full h-full min-h-0">
@@ -148,6 +156,7 @@ function App() {
                 }
               }}
               onOpenSettings={() => openSettings()}
+              onOpenSupport={openSupport}
               onLockClick={() => {
                 setShowLogin(true);
                 setShowHome(true);
@@ -170,6 +179,7 @@ function App() {
                 setShowHome(true);
               }}
               onOpenSettings={() => openSettings()}
+              onOpenSupport={openSupport}
             />
           </div>
         ) : showScanPatientDetails ? (
@@ -182,6 +192,7 @@ function App() {
                   setShowHome(true);
                 }}
                 onOpenSettings={() => openSettings()}
+                onOpenSupport={openSupport}
                 onContinue={(p) => {
                   setScanEntryPatient(p);
                   setShowScanPatientDetails(false);
@@ -196,6 +207,7 @@ function App() {
                   setShowHome(true);
                 }}
                 onOpenSettings={() => openSettings()}
+                onOpenSupport={openSupport}
                 onContinue={(p) => {
                   setScanEntryPatient(p);
                   setShowScanPatientDetails(false);
@@ -215,6 +227,7 @@ function App() {
                   setShowHome(true);
                 }}
                 onOpenSettings={() => openSettings()}
+                onOpenSupport={openSupport}
               />
             ) : (
               <ScanFlowPage
@@ -225,6 +238,7 @@ function App() {
                   setShowHome(true);
                 }}
                 onOpenSettings={() => openSettings()}
+                onOpenSupport={openSupport}
               />
             )}
           </div>
@@ -239,6 +253,7 @@ function App() {
                 setShowHome(true);
               }}
               onOpenSettings={() => openSettings()}
+              onOpenSupport={openSupport}
             />
           </div>
         ) : selectedPatient ? (
@@ -247,6 +262,7 @@ function App() {
               patient={selectedPatient}
               onBack={() => setSelectedPatient(null)}
               onOpenSettings={() => openSettings()}
+              onOpenSupport={openSupport}
             />
           </div>
         ) : (
@@ -257,6 +273,7 @@ function App() {
               onDentistChange={setSelectedDentistId}
               onPatientClick={(patient: Patient) => setSelectedPatient(patient)}
               onOpenSettings={() => openSettings()}
+              onOpenSupport={openSupport}
               onBack={() => setShowHome(true)}
             />
           </div>
@@ -273,6 +290,8 @@ function App() {
           onVolumeChange={setVolume}
         />
       )}
+
+      <SupportModal open={supportModalOpen} onClose={() => setSupportModalOpen(false)} />
     </>
   );
 }

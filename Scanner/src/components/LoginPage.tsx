@@ -30,6 +30,7 @@ interface LoginPageProps {
   onLogin: () => void;
   /** Same as Home header — opens settings modal when provided. */
   onOpenSettings?: () => void;
+  onOpenSupport?: () => void;
 }
 
 function IteroLogo() {
@@ -45,7 +46,7 @@ function IteroLogo() {
   );
 }
 
-export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
+export default function LoginPage({ onLogin, onOpenSettings, onOpenSupport }: LoginPageProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showKeyboard, setShowKeyboard] = useState(false);
@@ -109,9 +110,10 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
         <div className="flex items-center" style={{ gap: 4, height: 60 }}>
           <button
             type="button"
+            onClick={onOpenSupport}
             className="flex items-center justify-center cursor-pointer border-0 appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)] rounded-lg"
             style={{ width: 60, height: 60, padding: 12, backgroundColor: "transparent" }}
-            aria-label="Help"
+            aria-label="Support"
           >
             <HelpIcon color="var(--color-icon-primary)" />
           </button>

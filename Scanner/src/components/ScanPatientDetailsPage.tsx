@@ -50,6 +50,7 @@ export interface ScanPatientDetailsPageProps {
   selectedDoctorName?: string | null;
   onBack: () => void;
   onOpenSettings?: () => void;
+  onOpenSupport?: () => void;
   onContinue: (patient: ScanFlowPatientSnapshot) => void;
 }
 
@@ -57,6 +58,7 @@ export default function ScanPatientDetailsPage({
   selectedDoctorName,
   onBack,
   onOpenSettings,
+  onOpenSupport,
   onContinue,
 }: ScanPatientDetailsPageProps) {
   const defaultTreatedBy = selectedDoctorName
@@ -127,6 +129,7 @@ export default function ScanPatientDetailsPage({
         onStepClick={undefined}
         wizardStepperInteractive={false}
         onInfoClick={onBack}
+        onHelpClick={onOpenSupport}
         onSettingsClick={onOpenSettings}
       />
 

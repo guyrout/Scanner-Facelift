@@ -151,6 +151,7 @@ interface OrdersPageProps {
   onDentistChange?: (id: string) => void;
   onBack: () => void;
   onOpenSettings?: () => void;
+  onOpenSupport?: () => void;
 }
 
 function getRowKey(row: OrderWithPatient): string {
@@ -166,6 +167,7 @@ export default function OrdersPage({
   onDentistChange,
   onBack,
   onOpenSettings,
+  onOpenSupport,
 }: OrdersPageProps) {
   const { inProgress: rawInProgress, past: rawPast } = useMemo(() => getAllOrdersForOrdersPage(), []);
   const { inProgress, past } = useMemo(() => {
@@ -188,6 +190,7 @@ export default function OrdersPage({
       <OrdersHeader
         onHomeClick={onBack}
         onSettingsClick={onOpenSettings}
+        onSupportClick={onOpenSupport}
         selectedDentistId={selectedDentistId}
         onDentistChange={onDentistChange}
       />

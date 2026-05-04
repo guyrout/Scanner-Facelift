@@ -21,6 +21,7 @@ interface MessagesPageProps {
   onDentistChange?: (id: string) => void;
   onBack: () => void;
   onOpenSettings?: () => void;
+  onOpenSupport?: () => void;
 }
 
 export default function MessagesPage({
@@ -28,6 +29,7 @@ export default function MessagesPage({
   onDentistChange,
   onBack,
   onOpenSettings,
+  onOpenSupport,
 }: MessagesPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -56,6 +58,7 @@ export default function MessagesPage({
         title="Messages"
         onHomeClick={onBack}
         onSettingsClick={onOpenSettings}
+        onSupportClick={onOpenSupport}
         selectedDentistId={selectedDentistId}
         onDentistChange={onDentistChange}
       />

@@ -329,12 +329,21 @@ export function PeopleIcon({ size = 24, className, color = "currentColor" }: Ico
   );
 }
 
-/** Battery icon */
+/** Battery with charging bolt — `Scanner/src/assets/battery-charging.svg` */
 export function BatteryIcon({ size = 24, className, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <path d="M24 24H6C5.46957 24 4.96086 23.7893 4.58579 23.4142C4.21071 23.0391 4 22.5304 4 22V10C4 9.46957 4.21071 8.96086 4.58579 8.58579C4.96086 8.21071 5.46957 8 6 8H24C24.5304 8 25.0391 8.21071 25.4142 8.58579C25.7893 8.96086 26 9.46957 26 10V11H27C27.5304 11 28.0391 11.2107 28.4142 11.5858C28.7893 11.9609 29 12.4696 29 13V19C29 19.5304 28.7893 20.0391 28.4142 20.4142C28.0391 20.7893 27.5304 21 27 21H26V22C26 22.5304 25.7893 23.0391 25.4142 23.4142C25.0391 23.7893 24.5304 24 24 24ZM6 10V22H24V19H27V13H24V10H6Z" fill={color} />
-      <path d="M22 20V12H8V20H22Z" fill={color} />
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden>
+      <path
+        d="M27 11H26V10C26 9.46957 25.7893 8.96086 25.4142 8.58579C25.0391 8.21071 24.5304 8 24 8H20V10H24V13H27V19H24V22H19V24H24C24.5304 24 25.0391 23.7893 25.4142 23.4142C25.7893 23.0391 26 22.5304 26 22V21H27C27.5304 21 28.0391 20.7893 28.4142 20.4142C28.7893 20.0391 29 19.5304 29 19V13C29 12.4696 28.7893 11.9609 28.4142 11.5858C28.0391 11.2107 27.5304 11 27 11Z"
+        fill={color}
+        fillOpacity={0.93}
+      />
+      <path
+        d="M11 22H6V10H12V8H6C5.46957 8 4.96086 8.21071 4.58579 8.58579C4.21071 8.96086 4 9.46957 4 10V22C4 22.5304 4.21071 23.0391 4.58579 23.4142C4.96086 23.7893 5.46957 24 6 24H11V22Z"
+        fill={color}
+        fillOpacity={0.93}
+      />
+      <path d="M14.81 23.58L13.19 22.42L17.06 17H9.37L16.22 8.38L17.78 9.62L13.51 15H20.94L14.81 23.58Z" fill={color} fillOpacity={0.93} />
     </svg>
   );
 }

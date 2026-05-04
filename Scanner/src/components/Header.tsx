@@ -29,9 +29,10 @@ interface HeaderProps {
   title?: string;
   onBack?: () => void;
   onSettingsClick?: () => void;
+  onSupportClick?: () => void;
 }
 
-export default function Header({ title = "Patients", onBack, onSettingsClick }: HeaderProps) {
+export default function Header({ title = "Patients", onBack, onSettingsClick, onSupportClick }: HeaderProps) {
   const [selectedCompanyId, setSelectedCompanyId] = useState(COMPANIES[0].id);
   const [selectedDentistId, setSelectedDentistId] = useState(DENTISTS[0].id);
   const [companyOpen, setCompanyOpen] = useState(false);
@@ -134,7 +135,12 @@ export default function Header({ title = "Patients", onBack, onSettingsClick }: 
 
       {/* Right: Help, Battery, Settings */}
       <div className="flex items-center justify-end gap-1 h-[var(--height-row)] min-w-0">
-        <button type="button" className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface">
+        <button
+          type="button"
+          onClick={onSupportClick}
+          className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+          aria-label="Support"
+        >
           <HelpIcon size={32} />
         </button>
         <button

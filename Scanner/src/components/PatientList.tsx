@@ -13,11 +13,12 @@ export interface PatientListProps {
   onDentistChange?: (id: string) => void;
   onPatientClick?: (patient: Patient) => void;
   onOpenSettings?: () => void;
+  onOpenSupport?: () => void;
   onBack?: () => void;
 }
 
 export default function PatientList(props: PatientListProps) {
-  const { selectedDoctorName, selectedDentistId, onDentistChange, onPatientClick, onOpenSettings, onBack } = props;
+  const { selectedDoctorName, selectedDentistId, onDentistChange, onPatientClick, onOpenSettings, onOpenSupport, onBack } = props;
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchInputRef = useRef<SearchInputRef>(null);
@@ -63,6 +64,7 @@ export default function PatientList(props: PatientListProps) {
         title="Patients"
         onHomeClick={onBack ?? (() => {})}
         onSettingsClick={onOpenSettings}
+        onSupportClick={onOpenSupport}
         selectedDentistId={selectedDentistId}
         onDentistChange={onDentistChange}
       />

@@ -30,6 +30,7 @@ export interface ScanFlowPatientSnapshot {
 export interface ScanFlowPageProps {
   onBack: () => void;
   onOpenSettings?: () => void;
+  onOpenSupport?: () => void;
   /** Patient captured on the pre-wizard “Patient details” screen (Home → Scan). */
   initialPatient?: ScanFlowPatientSnapshot;
 }
@@ -43,7 +44,7 @@ const DEFAULT_PATIENT: ScanFlowPatientSnapshot = {
   treatedBy: "",
 };
 
-export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient }: ScanFlowPageProps) {
+export default function ScanFlowPage26A({ onBack, onOpenSettings, onOpenSupport, initialPatient }: ScanFlowPageProps) {
   const [currentStep, setCurrentStep] = useState<ScanWizardStep>("info");
   const [sleeveModalOpen, setSleeveModalOpen] = useState(false);
   /** User acknowledged sleeve this visit to Scan — resets when the scan flow page unmounts (e.g. Home). */
@@ -145,6 +146,7 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
         currentStep={currentStep}
         onStepClick={handleStepChange}
         onInfoClick={onBack}
+        onHelpClick={onOpenSupport}
         onSettingsClick={onOpenSettings}
       />
 

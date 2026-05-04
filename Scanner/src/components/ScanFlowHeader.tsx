@@ -106,9 +106,9 @@ export default function ScanFlowHeader({
         )}
         <button
           type="button"
-          onClick={onHelpClick}
+          onClick={() => onHelpClick?.()}
           className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-          aria-label="Help"
+          aria-label="Support"
         >
           <HelpIcon size={32} color="var(--color-icon-primary)" />
         </button>

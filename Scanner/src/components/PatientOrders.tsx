@@ -11,6 +11,7 @@ interface PatientOrdersProps {
   patient: Patient;
   onBack: () => void;
   onOpenSettings?: () => void;
+  onOpenSupport?: () => void;
 }
 
 function calculateAge(dob: string): number {
@@ -150,7 +151,7 @@ function formatScanDateYearsAgo(yearsAgo: number): string {
   return `${mm}/${dd}/${d.getFullYear()}`;
 }
 
-export default function PatientOrders({ patient, onBack, onOpenSettings }: PatientOrdersProps) {
+export default function PatientOrders({ patient, onBack, onOpenSettings, onOpenSupport }: PatientOrdersProps) {
   const orders = getOrdersForPatient(patient.id);
   /** Table only: first two rows show scan dates relative to today (Orders seed unchanged). */
   const tableOrders = useMemo(
@@ -163,50 +164,51 @@ export default function PatientOrders({ patient, onBack, onOpenSettings }: Patie
     [orders],
   );
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
-  const [checkedOrderIds, setCheckedOrderIds] = useState<Set<string>>(new Set());
-  const [selectedTimelineKeys, setSelectedTimelineKeys] = useState<Set<string>>(new Set());
+  /** Table + timeline checkboxes stay in sync by scan date (displayed `tableOrders` dates). */
+  const [selectedScanDates, setSelectedScanDates] = useState<Set<string>>(() => new Set());
   const [showDoctorSiteLoginModal, setShowDoctorSiteLoginModal] = useState(false);
   const age = calculateAge(patient.dateOfBirth);
-  const timelineDates = getUniqueScanDates(orders);
-  /* When timeline is shown, display at least 2 date cards (Figma); each card has its own key */
+  const timelineDates = getUniqueScanDates(tableOrders);
+  /* When timeline is shown, display at least 2 date cards (Figma); each card has its own React key */
   const displayTimelineItems =
     timelineDates.length >= 2
       ? timelineDates.map((date) => ({ date, key: date }))
       : timelineDates.length === 1
         ? [
-            { date: timelineDates[0], key: "timeline-0" },
-            { date: timelineDates[0], key: "timeline-1" },
+            { date: timelineDates[0], key: `${timelineDates[0]}#0` },
+            { date: timelineDates[0], key: `${timelineDates[0]}#1` },
           ]
         : [];
 
-  const allOrdersChecked = orders.length > 0 && orders.every((o) => checkedOrderIds.has(o.orderId));
-  const someOrdersChecked = orders.some((o) => checkedOrderIds.has(o.orderId));
-  const toggleOrderChecked = (orderId: string) => {
-    setCheckedOrderIds((prev) => {
+  const allOrdersChecked =
+    tableOrders.length > 0 && tableOrders.every((o) => selectedScanDates.has(o.scanDate));
+  const someOrdersChecked = tableOrders.some((o) => selectedScanDates.has(o.scanDate)) && !allOrdersChecked;
+
+  function toggleScanDate(scanDate: string) {
+    setSelectedScanDates((prev) => {
       const next = new Set(prev);
-      if (next.has(orderId)) next.delete(orderId);
-      else next.add(orderId);
+      if (next.has(scanDate)) next.delete(scanDate);
+      else next.add(scanDate);
       return next;
     });
-  };
+  }
+
   const toggleAllOrders = () => {
-    if (allOrdersChecked) setCheckedOrderIds(new Set());
-    else setCheckedOrderIds(new Set(orders.map((o) => o.orderId)));
+    if (allOrdersChecked) setSelectedScanDates(new Set());
+    else setSelectedScanDates(new Set(tableOrders.map((o) => o.scanDate)));
   };
-  const toggleTimelineCard = (key: string) => {
-    setSelectedTimelineKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
-  /* Button active only when at least 2 timeline cards are selected (two separate elements) */
-  const compareSelectedDisabled = selectedTimelineKeys.size < 2;
+
+  /* Compare: need two distinct scan dates (same date twice in timeline still one date in set). */
+  const compareSelectedDisabled = selectedScanDates.size < 2;
   const selectAllRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
+    setSelectedScanDates(new Set());
+    setSelectedRowIndex(null);
+  }, [patient.id]);
+
+  useEffect(() => {
     const el = selectAllRef.current;
-    if (el) el.indeterminate = someOrdersChecked && !allOrdersChecked;
+    if (el) el.indeterminate = someOrdersChecked;
   }, [someOrdersChecked, allOrdersChecked]);
   /* Timeline only for patients with more than 4 orders */
   const showTimeline = orders.length > 4;
@@ -225,6 +227,7 @@ export default function PatientOrders({ patient, onBack, onOpenSettings }: Patie
         title={`Patient: ${patient.firstName} ${patient.lastName}`}
         onBack={onBack}
         onSettingsClick={onOpenSettings}
+        onSupportClick={onOpenSupport}
       />
 
       <section
@@ -347,9 +350,9 @@ export default function PatientOrders({ patient, onBack, onOpenSettings }: Patie
                     key={`${order.orderId}-${index}`}
                     order={order}
                     isSelected={selectedRowIndex === index}
-                    isChecked={checkedOrderIds.has(order.orderId)}
+                    isChecked={selectedScanDates.has(order.scanDate)}
                     onRowClick={() => setSelectedRowIndex(selectedRowIndex === index ? null : index)}
-                    onCheckboxChange={() => toggleOrderChecked(order.orderId)}
+                    onCheckboxChange={() => toggleScanDate(order.scanDate)}
                     onExpandedActionClick={(actionId) => {
                       if (actionId === "simulator-pro") setShowDoctorSiteLoginModal(true);
                     }}
@@ -392,8 +395,8 @@ export default function PatientOrders({ patient, onBack, onOpenSettings }: Patie
                 >
                   <input
                     type="checkbox"
-                    checked={selectedTimelineKeys.has(key)}
-                    onChange={() => toggleTimelineCard(key)}
+                    checked={selectedScanDates.has(date)}
+                    onChange={() => toggleScanDate(date)}
                     className="checkbox-scanner rounded"
                   />
                   <span className="tp-body-03 text-text-primary whitespace-nowrap">{date}</span>

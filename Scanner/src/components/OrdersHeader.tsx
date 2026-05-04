@@ -31,6 +31,7 @@ interface OrdersHeaderProps {
   title?: string;
   onHomeClick: () => void;
   onSettingsClick?: () => void;
+  onSupportClick?: () => void;
   /** When provided, doctor dropdown is controlled and filters PatientList/OrdersPage */
   selectedDentistId?: string;
   onDentistChange?: (id: string) => void;
@@ -40,6 +41,7 @@ export default function OrdersHeader({
   title = "Orders",
   onHomeClick,
   onSettingsClick,
+  onSupportClick,
   selectedDentistId: controlledDentistId,
   onDentistChange,
 }: OrdersHeaderProps) {
@@ -147,7 +149,12 @@ export default function OrdersHeader({
 
       {/* Right: Help, Battery, Settings */}
       <div className="flex items-center justify-end gap-1 h-[var(--height-row)] min-w-0">
-        <button type="button" className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface">
+        <button
+          type="button"
+          onClick={onSupportClick}
+          className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+          aria-label="Support"
+        >
           <HelpIcon size={32} color="var(--color-icon-primary)" />
         </button>
         <button
