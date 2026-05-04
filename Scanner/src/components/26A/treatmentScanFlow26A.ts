@@ -45,3 +45,11 @@ export function getTreatmentPlyPair(treatmentId: string): {
 export function treatmentUsesInvisalignStudyStl(treatmentId: string): boolean {
   return treatmentId === "study-model" || treatmentId === "invisalign";
 }
+
+/**
+ * Study Model/iRecord or Invisalign/Vivera — scan toolbar omits Edit + Swap;
+ * view toolbar omits Prep qc + Margin line (fixed-restorative-only tools).
+ */
+export function treatmentRestrictsScanViewToolbarTools(treatmentId: string): boolean {
+  return treatmentId === "study-model" || treatmentId === "invisalign";
+}

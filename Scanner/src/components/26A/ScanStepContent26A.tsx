@@ -14,13 +14,13 @@
  * └───────────┴──────────────────────────┴───────────────┘
  */
 
-import { useState, lazy, Suspense, type MutableRefObject } from "react";
+import { useState, useEffect, lazy, Suspense, type MutableRefObject } from "react";
 import ScanToolbar26A, { type ScanToolbarToolId } from "./ScanToolbar26A";
 import PrepEditPanel26A from "./PrepEditPanel26A";
 import SwapScansModal26A from "./SwapScansModal26A";
 import ToothMap26A from "./ToothMap26A";
 import JawSelector26A, { type JawSelection } from "./JawSelector26A";
-import { getTreatmentPlyPair } from "./treatmentScanFlow26A";
+import { getTreatmentPlyPair, treatmentRestrictsScanViewToolbarTools } from "./treatmentScanFlow26A";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer26A"));
@@ -71,6 +71,7 @@ export default function ScanStepContent26A({
   showScanViewport3d = true,
 }: ScanStepContentProps) {
   const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
+  const restrictToolbar = treatmentRestrictsScanViewToolbarTools(treatmentId);
   const [scanToolbarActiveTools, setScanToolbarActiveTools] = useState<Set<ScanToolbarToolId>>(() => new Set());
   const viewMode: ViewMode = scanToolbarActiveTools.has("scan-color") ? "stone" : "color";
   const [prepEditOpen, setPrepEditOpen] = useState(false);
@@ -79,6 +80,21 @@ export default function ScanStepContent26A({
   const [deselectEditNonce, setDeselectEditNonce] = useState(0);
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [deselectSwapNonce, setDeselectSwapNonce] = useState(0);
+
+  useEffect(() => {
+    if (!treatmentRestrictsScanViewToolbarTools(treatmentId)) return;
+    setPrepEditOpen(false);
+    setPrepSelectionMode(false);
+    setSwapModalOpen(false);
+    setScanToolbarActiveTools((prev) => {
+      const next = new Set(prev);
+      next.delete("edit");
+      next.delete("swap");
+      return next;
+    });
+    setDeselectEditNonce((n) => n + 1);
+    setDeselectSwapNonce((n) => n + 1);
+  }, [treatmentId]);
 
   function cycleJaw(dir: 1 | -1) {
     const idx = JAW_ORDER.indexOf(selectedJaw);
@@ -169,6 +185,7 @@ export default function ScanStepContent26A({
             onActiveToolsChange={setScanToolbarActiveTools}
             deselectEditNonce={deselectEditNonce}
             deselectSwapNonce={deselectSwapNonce}
+            showEditAndSwapTools={!restrictToolbar}
             onToolClick={(toolId, isActive) => {
               if (toolId === "edit") {
                 setPrepEditOpen(isActive);

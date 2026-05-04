@@ -18,7 +18,7 @@ import MultiLayerPanel26A, { type LayerItem, type SelectedLayerId } from "./Mult
 import ToothMap26A from "./ToothMap26A";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
 import type { JawSelection } from "./JawSelector26A";
-import { getTreatmentPlyPair } from "./treatmentScanFlow26A";
+import { getTreatmentPlyPair, treatmentRestrictsScanViewToolbarTools } from "./treatmentScanFlow26A";
 import { getScanFlowVersion } from "../../utils/scanFlowVersionManager";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer26A"));
@@ -620,6 +620,7 @@ export default function ViewStepContent26A({
 }: ViewStepContentProps) {
   const isScanFlow26A = getScanFlowVersion() === "26A";
   const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
+  const restrictToolbar = treatmentRestrictsScanViewToolbarTools(treatmentId);
   const [showTrimMenu, setShowTrimMenu] = useState(false);
   const [showPrepQc, setShowPrepQc] = useState(false);
   const [showPrepQcToast, setShowPrepQcToast] = useState(false);
@@ -627,6 +628,18 @@ export default function ViewStepContent26A({
   const [activeTools, setActiveTools] = useState<Set<ViewToolId>>(new Set());
   const viewMode: ViewMode = activeTools.has("scan-color") ? "stone" : "color";
   const [marginLineTooth, setMarginLineTooth] = useState("17");
+
+  useEffect(() => {
+    if (!treatmentRestrictsScanViewToolbarTools(treatmentId)) return;
+    setShowPrepQc(false);
+    setShowPrepQcToast(false);
+    setActiveTools((prev) => {
+      const next = new Set(prev);
+      next.delete("prep-qc");
+      next.delete("margin-line");
+      return next;
+    });
+  }, [treatmentId]);
 
   const [isPostProcessing, setIsPostProcessing] = useState(comingFromScan);
   const [postProcessProgress, setPostProcessProgress] = useState(0);
@@ -873,6 +886,7 @@ export default function ViewStepContent26A({
           onExpandedChange={onToolbarExpandedChange}
           activeTools={activeTools}
           onActiveToolsChange={setActiveTools}
+          showPrepQcAndMarginLineTools={!restrictToolbar}
           onToolClick={(toolId, isActive) => {
             if (toolId === "trim") {
               setShowTrimMenu(isActive);

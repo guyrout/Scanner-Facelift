@@ -7,6 +7,11 @@ interface ViewToolbarProps {
   onToolClick?: (toolId: string, isActive: boolean) => void;
   activeTools?: Set<ViewToolId>;
   onActiveToolsChange?: (tools: Set<ViewToolId>) => void;
+  /**
+   * When false (study-model / invisalign), Prep qc and Margin line are hidden.
+   * @default true
+   */
+  showPrepQcAndMarginLineTools?: boolean;
 }
 
 export type { ViewToolId };
@@ -193,12 +198,21 @@ export default function ViewToolbar26A({
   onToolClick,
   activeTools: controlledActiveTools,
   onActiveToolsChange,
+  showPrepQcAndMarginLineTools = true,
 }: ViewToolbarProps) {
   const [internalExpanded, setInternalExpanded] = useState(false);
   const expanded = controlledExpanded ?? internalExpanded;
   const [internalActiveTools, setInternalActiveTools] = useState<Set<ViewToolId>>(new Set());
   const activeTools = controlledActiveTools ?? internalActiveTools;
   const setActiveTools = onActiveToolsChange ?? setInternalActiveTools;
+
+  const visibleViewTools = useMemo(
+    () =>
+      showPrepQcAndMarginLineTools
+        ? VIEW_TOOLS
+        : VIEW_TOOLS.filter((t) => t.id !== "prep-qc" && t.id !== "margin-line"),
+    [showPrepQcAndMarginLineTools],
+  );
 
   function toggleExpanded() {
     const next = !expanded;
@@ -218,7 +232,7 @@ export default function ViewToolbar26A({
     >
       <div className="flex items-stretch justify-center" style={{ gap: 8 }}>
         <div className="flex items-start" style={{ gap: 12 }}>
-          {VIEW_TOOLS.map((tool) => {
+          {visibleViewTools.map((tool) => {
             const isActive = activeTools.has(tool.id);
             return (
               <button

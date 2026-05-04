@@ -104,7 +104,7 @@ function App() {
       >
         {showLogin ? (
           <div key="login" className="animate-page-enter flex flex-col w-full h-full min-h-0">
-            <LoginPage onLogin={() => setShowLogin(false)} />
+            <LoginPage onLogin={() => setShowLogin(false)} onOpenSettings={() => openSettings()} />
           </div>
         ) : showHome ? (
           <div key="home" className="animate-page-enter flex flex-col w-full h-full min-h-0">

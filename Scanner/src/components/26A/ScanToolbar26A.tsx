@@ -12,7 +12,7 @@
  * - Active: light-blue background (#A6E2F9) on icon only, blue label text (#009ACE)
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 export type ScanToolbarToolId = "scan-color" | "feedback" | "edit" | "swap";
 
@@ -27,6 +27,11 @@ interface ScanToolbarProps {
   deselectEditNonce?: number;
   /** Increment to clear the Swap tool active state (e.g. when Swap modal closes). */
   deselectSwapNonce?: number;
+  /**
+   * When false (study-model / invisalign), Edit and Swap are not shown; fixed-restorative keeps full toolbar.
+   * @default true
+   */
+  showEditAndSwapTools?: boolean;
 }
 
 type ToolId = ScanToolbarToolId;
@@ -183,6 +188,7 @@ export default function ScanToolbar26A({
   onActiveToolsChange,
   deselectEditNonce = 0,
   deselectSwapNonce = 0,
+  showEditAndSwapTools = true,
 }: ScanToolbarProps) {
   const [internalExpanded, setInternalExpanded] = useState(false);
   const expanded = controlledExpanded ?? internalExpanded;
@@ -224,6 +230,12 @@ export default function ScanToolbar26A({
     setInternalExpanded(next);
   }
 
+  const visibleTools = useMemo(
+    () =>
+      showEditAndSwapTools ? TOOLS : TOOLS.filter((t) => t.id !== "edit" && t.id !== "swap"),
+    [showEditAndSwapTools],
+  );
+
   return (
     <div
       className={className ?? ""}
@@ -242,7 +254,7 @@ export default function ScanToolbar26A({
           className="flex items-start"
           style={{ gap: 12 }}
         >
-          {TOOLS.map((tool) => {
+          {visibleTools.map((tool) => {
             const isActive = activeTools.has(tool.id);
             return (
               <button
