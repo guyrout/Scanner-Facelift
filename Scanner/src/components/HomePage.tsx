@@ -4,10 +4,11 @@
  * Header with iTero logo (left) and icon buttons (right).
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import notificationActiveSvg from "../assets/notification-active.svg";
 import scanIllustration from "../assets/scan-illustration.png";
 import { HelpIcon } from "./Icons";
+import SupportModal from "./SupportModal";
 import { setScanFlowVersion } from "../utils/scanFlowVersionManager";
 
 export interface HomePageProps {
@@ -114,6 +115,8 @@ export default function HomePage({
   onOpenSettings,
   onLockClick,
 }: HomePageProps) {
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
+
   useEffect(() => {
     // Keep scanner flow pinned to 26A while the toggle is hidden.
     setScanFlowVersion("26A");
@@ -157,7 +160,7 @@ export default function HomePage({
             { label: "Library", Icon: IconBook },
             { label: "Messages", Icon: IconBell, onClick: onMessagesClick },
             { label: "Lock", Icon: IconLock, onClick: onLockClick },
-            { label: "Help", Icon: HelpIcon },
+            { label: "Support", Icon: HelpIcon, onClick: () => setSupportModalOpen(true) },
             { label: "Camera", Icon: IconCamera },
             { label: "Settings", Icon: IconSettings, onClick: onOpenSettings },
           ].map((btn) => (
@@ -174,6 +177,8 @@ export default function HomePage({
           ))}
         </div>
       </div>
+
+      <SupportModal open={supportModalOpen} onClose={() => setSupportModalOpen(false)} />
 
       {/* Cards area */}
       <div className="flex flex-1 items-center justify-center min-h-0 min-w-0">
