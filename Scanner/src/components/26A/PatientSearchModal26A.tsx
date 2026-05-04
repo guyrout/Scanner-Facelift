@@ -130,22 +130,20 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
       onClick={handleBackdropClick}
     >
       <div
-        className="mx-auto my-auto flex w-full max-w-[880px] shrink-0 flex-col rounded-2xl bg-[var(--color-background-layer-01)]"
+        className="mx-auto my-auto flex h-[800px] max-h-[calc(100vh-48px)] w-full max-w-[880px] shrink-0 flex-col overflow-hidden rounded-2xl bg-[var(--color-background-layer-01)]"
         style={{
-          height: "auto",
-          minHeight: 320,
           paddingTop: 8,
           paddingBottom: 24,
           paddingLeft: 24,
           paddingRight: 24,
-          gap: 24,
+          gap: 16,
         }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="patient-search-modal-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex shrink-0 flex-col gap-4">
           <div className="flex h-[60px] w-full shrink-0 items-center gap-4">
             <h2 id="patient-search-modal-title" className="tp-heading-03 min-w-0 flex-1 truncate text-text-primary" style={{ fontSize: 20, lineHeight: "28px" }}>
               Search Patient
@@ -161,100 +159,97 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
             </button>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="flex w-full shrink-0 items-start justify-between gap-2">
-              <div
-                role="search"
-                className={`
+          <div className="flex w-full shrink-0 items-start justify-between gap-2">
+            <div
+              role="search"
+              className={`
                   flex h-[var(--height-row)] min-h-[60px] w-full min-w-0 cursor-text items-center gap-2 overflow-hidden rounded-lg border border-solid bg-surface-alt transition-ui
                   ${searchActive ? "border-border-interactive" : "border-border-subtle"}
                   focus-within:border-focus-border
                 `}
-                style={{ paddingLeft: 16, paddingRight: 16 }}
-                onMouseDown={(e) => {
-                  if (e.target === searchInputRef.current) return;
-                  e.preventDefault();
-                  searchInputRef.current?.focus();
-                }}
-              >
-                <SearchIcon
-                  size={24}
-                  color={searchActive ? "var(--color-icon-secondary)" : "var(--color-icon-tertiary)"}
-                  className="shrink-0"
-                  aria-hidden
-                />
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                  placeholder="Search"
-                  className="tp-body-02 min-w-0 flex-1 cursor-text border-0 bg-transparent text-left text-text-primary outline-none placeholder:text-text-tertiary"
-                  autoComplete="off"
-                  aria-label="Filter patients"
-                />
-              </div>
+              style={{ paddingLeft: 16, paddingRight: 16 }}
+              onMouseDown={(e) => {
+                if (e.target === searchInputRef.current) return;
+                e.preventDefault();
+                searchInputRef.current?.focus();
+              }}
+            >
+              <SearchIcon
+                size={24}
+                color={searchActive ? "var(--color-icon-secondary)" : "var(--color-icon-tertiary)"}
+                className="shrink-0"
+                aria-hidden
+              />
+              <input
+                ref={searchInputRef}
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                placeholder="Search"
+                className="tp-body-02 min-w-0 flex-1 cursor-text border-0 bg-transparent text-left text-text-primary outline-none placeholder:text-text-tertiary"
+                autoComplete="off"
+                aria-label="Filter patients"
+              />
             </div>
+          </div>
+        </div>
 
-            <div className="relative flex min-w-0 flex-col rounded-lg border border-solid border-[var(--color-border-subtle)]">
-              <div className="min-w-0 w-full">
-                  <div
-                    className="grid items-center border-b-2 border-solid border-[var(--color-border-subtle)] bg-[var(--color-background-layer-01)] sticky top-0 z-[1] tp-body-02 font-medium text-text-secondary"
-                    style={{
-                      minHeight: 52,
-                      paddingLeft: 16,
-                      paddingRight: 16,
-                      gridTemplateColumns: "24px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
-                      gap: 16,
-                    }}
-                  >
-                    <span aria-hidden className="block" />
-                    <span>Name</span>
-                    <span>Gender</span>
-                    <span>Date of birth</span>
-                    <span>Chart</span>
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-solid border-[var(--color-border-subtle)]">
+          <div className="scrollbar-table min-h-0 flex-1 overflow-x-auto overflow-y-auto">
+            <div
+              className="grid items-center border-b-2 border-solid border-[var(--color-border-subtle)] bg-[var(--color-background-layer-01)] sticky top-0 z-[1] tp-body-02 font-medium text-text-secondary"
+              style={{
+                minHeight: 52,
+                paddingLeft: 16,
+                paddingRight: 16,
+                gridTemplateColumns: "24px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
+                gap: 16,
+              }}
+            >
+              <span aria-hidden className="block" />
+              <span>Name</span>
+              <span>Gender</span>
+              <span>Date of birth</span>
+              <span>Chart</span>
+            </div>
+            {filtered.map((p) => {
+              const isSel = selectedId === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelectedId(p.id)}
+                  className={`group grid w-full cursor-pointer items-center border-0 border-b border-solid border-[var(--color-border-subtle)] text-left transition-ui last:border-b-0 outline-none focus-visible:outline-none ${
+                    isSel ? "bg-[var(--color-background-layer-02)]" : "bg-[var(--color-background-layer-01)] hover:bg-[var(--color-background-layer-hovered)]"
+                  }`}
+                  style={{
+                    minHeight: 92,
+                    paddingLeft: 16,
+                    paddingRight: 16,
+                    paddingTop: 12,
+                    paddingBottom: 12,
+                    gridTemplateColumns: "24px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
+                    gap: 16,
+                  }}
+                >
+                  <ScannerCoreCheckboxIndicator checked={isSel} />
+                  <div className="flex min-w-0 gap-3 items-center">
+                    <Avatar firstName={p.firstName} lastName={p.lastName} size={36} initialsFontSize={14} imageUrl={p.avatarUrl} />
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <span className="tp-body-02 text-text-primary break-words">
+                        {p.firstName} {p.lastName}
+                      </span>
+                      <span className="tp-body-02 text-text-secondary break-words">{p.doctor}</span>
+                    </div>
                   </div>
-                  {filtered.map((p) => {
-                    const isSel = selectedId === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setSelectedId(p.id)}
-                        className={`group grid w-full cursor-pointer items-center border-0 border-b border-solid border-[var(--color-border-subtle)] text-left transition-ui last:border-b-0 outline-none focus-visible:outline-none ${
-                          isSel ? "bg-[var(--color-background-layer-02)]" : "bg-[var(--color-background-layer-01)] hover:bg-[var(--color-background-layer-hovered)]"
-                        }`}
-                        style={{
-                          minHeight: 92,
-                          paddingLeft: 16,
-                          paddingRight: 16,
-                          paddingTop: 12,
-                          paddingBottom: 12,
-                          gridTemplateColumns: "24px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
-                          gap: 16,
-                        }}
-                      >
-                        <ScannerCoreCheckboxIndicator checked={isSel} />
-                        <div className="flex min-w-0 gap-3 items-center">
-                          <Avatar firstName={p.firstName} lastName={p.lastName} size={36} initialsFontSize={14} imageUrl={p.avatarUrl} />
-                          <div className="flex min-w-0 flex-col gap-1">
-                            <span className="tp-body-02 text-text-primary break-words">
-                              {p.firstName} {p.lastName}
-                            </span>
-                            <span className="tp-body-02 text-text-secondary break-words">{p.doctor}</span>
-                          </div>
-
-                        </div>
-                        <span className="tp-body-02 text-text-primary min-w-0 break-words">{p.gender}</span>
-                        <span className="tp-body-02 text-text-primary min-w-0 break-words">{p.dateOfBirth}</span>
-                        <span className="tp-body-02 text-text-primary min-w-0 break-words">{p.patientId}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-            </div>
+                  <span className="tp-body-02 text-text-primary min-w-0 break-words">{p.gender}</span>
+                  <span className="tp-body-02 text-text-primary min-w-0 break-words">{p.dateOfBirth}</span>
+                  <span className="tp-body-02 text-text-primary min-w-0 break-words">{p.patientId}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
