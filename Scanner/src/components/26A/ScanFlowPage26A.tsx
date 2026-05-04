@@ -95,7 +95,7 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, initialPatient
     if (currentStep !== "scan") setSleeveModalOpen(false);
   }, [currentStep]);
 
-  const [treatmentId, setTreatmentId] = useState("fixed-restorative");
+  const [treatmentId, setTreatmentId] = useState("study-model");
   const [sendToId, setSendToId] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [toothSelections, setToothSelections] = useState<Record<number, string>>({});

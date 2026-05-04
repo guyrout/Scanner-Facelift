@@ -90,5 +90,17 @@ export function getAllOrdersForOrdersPage(): {
       }
     }
   }
+  // Past table: keep Mina Young’s completed Study Model/iRecord row last (demo ordering).
+  const minaStudyCompletedIdx = past.findIndex(
+    (r) =>
+      r.patient.id === "6" &&
+      r.orderId === "24040527" &&
+      r.procedure === "Study Model/iRecord" &&
+      r.scanDate === "01/08/2026",
+  );
+  if (minaStudyCompletedIdx !== -1) {
+    const [minaRow] = past.splice(minaStudyCompletedIdx, 1);
+    past.push(minaRow);
+  }
   return { inProgress, past };
 }

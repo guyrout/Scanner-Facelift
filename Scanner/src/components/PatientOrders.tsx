@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Header from "./Header";
 import Avatar from "./Avatar";
 import DoctorSiteLoginModal from "./DoctorSiteLoginModal";
@@ -141,8 +141,27 @@ function getUniqueScanDates(orders: Order[]): string[] {
   return Array.from(set).sort();
 }
 
+/** MM/DD/YYYY for table display — same shape as `orders` seed data. */
+function formatScanDateYearsAgo(yearsAgo: number): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - yearsAgo);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}/${dd}/${d.getFullYear()}`;
+}
+
 export default function PatientOrders({ patient, onBack, onOpenSettings }: PatientOrdersProps) {
   const orders = getOrdersForPatient(patient.id);
+  /** Table only: first two rows show scan dates relative to today (Orders seed unchanged). */
+  const tableOrders = useMemo(
+    () =>
+      orders.map((o, i) => {
+        if (i === 0) return { ...o, scanDate: formatScanDateYearsAgo(1) };
+        if (i === 1) return { ...o, scanDate: formatScanDateYearsAgo(2) };
+        return o;
+      }),
+    [orders],
+  );
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const [checkedOrderIds, setCheckedOrderIds] = useState<Set<string>>(new Set());
   const [selectedTimelineKeys, setSelectedTimelineKeys] = useState<Set<string>>(new Set());
@@ -316,14 +335,14 @@ export default function PatientOrders({ patient, onBack, onOpenSettings }: Patie
               </div>
 
               {/* Data rows */}
-              {orders.length === 0 ? (
+              {tableOrders.length === 0 ? (
                 <div className={`flex items-center justify-center w-full border-b border-border-subtle ${ROW_PADDING_X}`} style={{ minHeight: 72 }}>
                   <p className="tp-body-04 text-text-secondary">
                     No orders found.
                   </p>
                 </div>
               ) : (
-                orders.map((order, index) => (
+                tableOrders.map((order, index) => (
                   <OrderRow
                     key={`${order.orderId}-${index}`}
                     order={order}
