@@ -7,7 +7,7 @@
 import { useEffect } from "react";
 import notificationActiveSvg from "../assets/notification-active.svg";
 import scanIllustration from "../assets/scan-illustration.png";
-import { HelpIcon } from "./Icons";
+import { BatteryIcon, HelpIcon } from "./Icons";
 import { setScanFlowVersion } from "../utils/scanFlowVersionManager";
 
 export interface HomePageProps {
@@ -68,15 +68,6 @@ function IconLock() {
   );
 }
 
-function IconCamera() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <path d="M24 24H6C5.46957 24 4.96086 23.7893 4.58579 23.4142C4.21071 23.0391 4 22.5304 4 22V10C4 9.46957 4.21071 8.96086 4.58579 8.58579C4.96086 8.21071 5.46957 8 6 8H24C24.5304 8 25.0391 8.21071 25.4142 8.58579C25.7893 8.96086 26 9.46957 26 10V11H27C27.5304 11 28.0391 11.2107 28.4142 11.5858C28.7893 11.9609 29 12.4696 29 13V19C29 19.5304 28.7893 20.0391 28.4142 20.4142C28.0391 20.7893 27.5304 21 27 21H26V22C26 22.5304 25.7893 23.0391 25.4142 23.4142C25.0391 23.7893 24.5304 24 24 24ZM6 10V22H24V19H27V13H24V10H6Z" fill="black" fillOpacity="0.93" />
-      <path d="M22 20V12H8V20H22Z" fill="black" fillOpacity="0.93" />
-    </svg>
-  );
-}
-
 /** Messages — asset matches Figma “Notification active”. */
 function IconBell() {
   return (
@@ -99,6 +90,10 @@ function IconSettings() {
       <path d="M16 22C14.8133 22 13.6533 21.6481 12.6666 20.9888C11.6799 20.3295 10.9109 19.3924 10.4567 18.2961C10.0026 17.1997 9.88379 15.9933 10.1153 14.8294C10.3468 13.6656 10.9183 12.5965 11.7574 11.7573C12.5965 10.9182 13.6656 10.3468 14.8295 10.1153C15.9934 9.88376 17.1998 10.0026 18.2961 10.4567C19.3925 10.9108 20.3295 11.6799 20.9888 12.6666C21.6481 13.6533 22 14.8133 22 16C22.008 16.7901 21.8583 17.574 21.5596 18.3055C21.2609 19.0371 20.8193 19.7017 20.2605 20.2605C19.7018 20.8193 19.0371 21.2609 18.3056 21.5596C17.574 21.8583 16.7902 22.008 16 22ZM16 12C15.4714 11.9877 14.9457 12.0827 14.4548 12.2794C13.964 12.476 13.5181 12.7702 13.1442 13.1441C12.7702 13.518 12.4761 13.9639 12.2794 14.4548C12.0827 14.9457 11.9877 15.4713 12 16C11.9877 16.5286 12.0827 17.0543 12.2794 17.5452C12.4761 18.036 12.7702 18.4819 13.1442 18.8558C13.5181 19.2297 13.964 19.5239 14.4548 19.7206C14.9457 19.9172 15.4714 20.0123 16 20C16.5287 20.0123 17.0543 19.9172 17.5452 19.7206C18.0361 19.5239 18.4819 19.2297 18.8559 18.8558C19.2298 18.4819 19.524 18.036 19.7206 17.5452C19.9173 17.0543 20.0123 16.5286 20 16C20.0123 15.4713 19.9173 14.9457 19.7206 14.4548C19.524 13.9639 19.2298 13.518 18.8559 13.1441C18.4819 12.7702 18.0361 12.476 17.5452 12.2794C17.0543 12.0827 16.5287 11.9877 16 12Z" fill="black" fillOpacity="0.93" />
     </svg>
   );
+}
+
+function HomeHeaderBatteryIcon() {
+  return <BatteryIcon size={32} color="var(--color-icon-primary)" />;
 }
 
 const CARDS = [
@@ -160,7 +155,7 @@ export default function HomePage({
             { label: "Messages", Icon: IconBell, onClick: onMessagesClick },
             { label: "Lock", Icon: IconLock, onClick: onLockClick },
             { label: "Support", Icon: HelpIcon, onClick: onOpenSupport },
-            { label: "Camera", Icon: IconCamera },
+            { label: "Battery status", Icon: HomeHeaderBatteryIcon },
             { label: "Settings", Icon: IconSettings, onClick: onOpenSettings },
           ].map((btn) => (
             <button
