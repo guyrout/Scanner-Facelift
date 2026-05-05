@@ -32,6 +32,8 @@ interface OrdersHeaderProps {
   onHomeClick: () => void;
   onSettingsClick?: () => void;
   onSupportClick?: () => void;
+  /** When true, hides the middle company/dentist dropdowns (Messages page variant). */
+  hideCenterFilters?: boolean;
   /** When provided, doctor dropdown is controlled and filters PatientList/OrdersPage */
   selectedDentistId?: string;
   onDentistChange?: (id: string) => void;
@@ -42,6 +44,7 @@ export default function OrdersHeader({
   onHomeClick,
   onSettingsClick,
   onSupportClick,
+  hideCenterFilters = false,
   selectedDentistId: controlledDentistId,
   onDentistChange,
 }: OrdersHeaderProps) {
@@ -106,46 +109,48 @@ export default function OrdersHeader({
         <span className="tp-heading-03 text-text-primary whitespace-nowrap">{title}</span>
       </div>
 
-      {/* Center: Two dropdowns — always centered in header */}
-      <div className="flex items-center justify-center gap-4 min-w-0">
-        <HeaderDropdown
-          ref={companyRef}
-          icon={<TagIcon size={20} color="var(--color-icon-secondary)" />}
-          label={selectedCompany.name}
-          isOpen={companyOpen}
-          onToggle={() => {
-            setCompanyOpen(!companyOpen);
-            setDentistOpen(false);
-          }}
-          options={COMPANIES.map((c) => ({ id: c.id, label: c.name }))}
-          selectedId={selectedCompanyId}
-          onSelect={(id) => {
-            setSelectedCompanyId(id);
-            setCompanyOpen(false);
-          }}
-          ariaLabel="Select company"
-        />
-        <HeaderDropdown
-          ref={dentistRef}
-          icon={<UserIcon size={20} color="var(--color-icon-secondary)" />}
-          label={dentistDisplayLabel}
-          isOpen={dentistOpen}
-          onToggle={() => {
-            setDentistOpen(!dentistOpen);
-            setCompanyOpen(false);
-          }}
-          options={[
-            { id: SHOW_ALL_DRS_ID, label: "Show all Drs" },
-            ...DENTISTS.map((d) => ({ id: d.id, label: `${d.name} - ${d.role}` })),
-          ]}
-          selectedId={selectedDentistId}
-          onSelect={(id) => {
-            setSelectedDentistId(id);
-            setDentistOpen(false);
-          }}
-          ariaLabel="Select dentist"
-        />
-      </div>
+      {/* Center: Company + dentist dropdowns (hidden on Messages page). */}
+      {hideCenterFilters ? <div aria-hidden /> : (
+        <div className="flex items-center justify-center gap-4 min-w-0">
+          <HeaderDropdown
+            ref={companyRef}
+            icon={<TagIcon size={20} color="var(--color-icon-secondary)" />}
+            label={selectedCompany.name}
+            isOpen={companyOpen}
+            onToggle={() => {
+              setCompanyOpen(!companyOpen);
+              setDentistOpen(false);
+            }}
+            options={COMPANIES.map((c) => ({ id: c.id, label: c.name }))}
+            selectedId={selectedCompanyId}
+            onSelect={(id) => {
+              setSelectedCompanyId(id);
+              setCompanyOpen(false);
+            }}
+            ariaLabel="Select company"
+          />
+          <HeaderDropdown
+            ref={dentistRef}
+            icon={<UserIcon size={20} color="var(--color-icon-secondary)" />}
+            label={dentistDisplayLabel}
+            isOpen={dentistOpen}
+            onToggle={() => {
+              setDentistOpen(!dentistOpen);
+              setCompanyOpen(false);
+            }}
+            options={[
+              { id: SHOW_ALL_DRS_ID, label: "Show all Drs" },
+              ...DENTISTS.map((d) => ({ id: d.id, label: `${d.name} - ${d.role}` })),
+            ]}
+            selectedId={selectedDentistId}
+            onSelect={(id) => {
+              setSelectedDentistId(id);
+              setDentistOpen(false);
+            }}
+            ariaLabel="Select dentist"
+          />
+        </div>
+      )}
 
       {/* Right: Help, Battery, Settings */}
       <div className="flex items-center justify-end gap-1 h-[var(--height-row)] min-w-0">

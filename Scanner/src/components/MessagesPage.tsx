@@ -59,6 +59,7 @@ export default function MessagesPage({
         onHomeClick={onBack}
         onSettingsClick={onOpenSettings}
         onSupportClick={onOpenSupport}
+        hideCenterFilters
         selectedDentistId={selectedDentistId}
         onDentistChange={onDentistChange}
       />

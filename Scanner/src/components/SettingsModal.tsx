@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CaretDownIcon, CaretUpIcon, CheckIcon, CloseIcon, EraseIcon } from "./Icons";
+import screenCastingIcon from "../assets/screen-casting.svg";
+import volumeMuteIcon from "../assets/volume-mute.svg";
+import volumeDownIcon from "../assets/volume-down.svg";
+import volumeUpIcon from "../assets/volume-up.svg";
 
 type SettingsView = "main" | "brightness" | "volume" | "wifi" | "timezone" | "license" | "screen-casting" | "diagnostics" | "signature" | "localization" | "export" | "rx" | "system" | "account-pairing" | "itero" | "login" | "scan";
 
@@ -17,7 +21,7 @@ const DEVICE_ITEMS: { id: string; label: string; icon: string }[] = [
   { id: "volume", label: "Volume", icon: "/settings/Icon-12.svg" },
   { id: "wifi", label: "WiFi", icon: "/settings/Vector-1.svg" },
   { id: "timezone", label: "Time Zone", icon: "/settings/Icon-11.svg" },
-  { id: "screen-casting", label: "Screen Casting", icon: "/settings/Icon-10.svg" },
+  { id: "screen-casting", label: "Screen Casting", icon: screenCastingIcon },
 ];
 
 const USER_ITEMS: { id: string; label: string; icon: string }[] = [
@@ -119,7 +123,7 @@ const THIRD_PARTY_LICENSES: { id: string; label: string; licenseText: string }[]
 
 const SYSTEM_ITEMS: { id: string; label: string; icon: string }[] = [
   { id: "login", label: "Login Settings", icon: "/settings/Icon-4.svg" },
-  { id: "diagnostics", label: "Diagnostics", icon: "/settings/Icon-3.svg" },
+  { id: "diagnostics", label: "System diagnostics", icon: "/settings/Icon-3.svg" },
   { id: "license", label: "License", icon: "/settings/Document%20signed1.svg" },
   { id: "system", label: "System", icon: "/settings/Icon-2.svg" },
   { id: "sync", label: "Sync Configuration", icon: "/settings/Icon-6.svg" },
@@ -375,6 +379,9 @@ function VolumeView({
     return () => document.removeEventListener("pointerup", clearAdjusting);
   }, [isAdjusting]);
 
+  const volumeIconSrc =
+    volume === 0 ? volumeMuteIcon : volume <= 60 ? volumeDownIcon : volumeUpIcon;
+
   return (
     <>
       <div
@@ -446,7 +453,7 @@ function VolumeView({
               </span>
             </div>
             <img
-              src="/settings/Volume-up-outline.svg"
+              src={volumeIconSrc}
               alt=""
               className="w-8 h-8 shrink-0 pointer-events-none opacity-70"
               aria-hidden
