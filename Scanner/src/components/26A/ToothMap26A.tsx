@@ -593,7 +593,7 @@ export default function ToothMap26A({
           className="absolute z-[3] outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
           style={{
             left: 95,
-            top: 150,
+            top: 142,
             width: 65,
             height: 70,
             borderRadius: 18,

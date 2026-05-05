@@ -600,6 +600,11 @@ interface ViewStepContentProps {
   onLowerJawGuidanceDismissed?: () => void;
   biteGuidanceDismissedThisFlow?: boolean;
   onBiteGuidanceDismissed?: () => void;
+  /**
+   * When true, Occlusgram and Trim cannot both be active (View step only).
+   * @default false
+   */
+  occlusgramTrimMutuallyExclusive?: boolean;
 }
 
 export default function ViewStepContent26A({
@@ -617,6 +622,7 @@ export default function ViewStepContent26A({
   onLowerJawGuidanceDismissed,
   biteGuidanceDismissedThisFlow = false,
   onBiteGuidanceDismissed,
+  occlusgramTrimMutuallyExclusive = false,
 }: ViewStepContentProps) {
   const isScanFlow26A = getScanFlowVersion() === "26A";
   const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
@@ -640,6 +646,14 @@ export default function ViewStepContent26A({
       return next;
     });
   }, [treatmentId]);
+
+  /** When Trim is turned off (toggle or exclusivity), mirror the trim button handler cleanup. */
+  useEffect(() => {
+    if (activeTools.has("trim")) return;
+    setShowTrimMenu(false);
+    setTrimPaths([]);
+    setCurrentTrimPath([]);
+  }, [activeTools]);
 
   const [isPostProcessing, setIsPostProcessing] = useState(comingFromScan);
   const [postProcessProgress, setPostProcessProgress] = useState(0);
@@ -887,6 +901,9 @@ export default function ViewStepContent26A({
           activeTools={activeTools}
           onActiveToolsChange={setActiveTools}
           showPrepQcAndMarginLineTools={!restrictToolbar}
+          mutuallyExclusiveToolPairs={
+            occlusgramTrimMutuallyExclusive ? [["occlusgram", "trim"]] : undefined
+          }
           onToolClick={(toolId, isActive) => {
             if (toolId === "trim") {
               setShowTrimMenu(isActive);

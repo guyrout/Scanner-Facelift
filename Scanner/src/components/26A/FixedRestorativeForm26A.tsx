@@ -396,10 +396,37 @@ function getCalendarDays(year: number, month: number): (number | null)[] {
   return result;
 }
 
+/** Month step that keeps the day-of-month when possible (avoids Date rollover quirks). */
+function addMonthsPreserveDay(date: Date, delta: number): Date {
+  const day = date.getDate();
+  const next = new Date(date.getFullYear(), date.getMonth() + delta, 1);
+  const lastDayOfMonth = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+  next.setDate(Math.min(day, lastDayOfMonth));
+  return next;
+}
+
+function setYearKeepingMonthAndDay(d: Date, year: number): Date {
+  const m = d.getMonth();
+  const day = d.getDate();
+  const last = new Date(year, m + 1, 0).getDate();
+  return new Date(year, m, Math.min(day, last));
+}
+
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+
+const MONTH_ABBREVS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** Year picker range — Figma 21235:30460 (scrollable 4-column grid). */
+const YEAR_PICKER_MIN = 1900;
+const YEAR_PICKER_MAX = 2026;
+const YEAR_PICKER_YEARS: number[] = (() => {
+  const ys: number[] = [];
+  for (let y = YEAR_PICKER_MIN; y <= YEAR_PICKER_MAX; y++) ys.push(y);
+  return ys;
+})();
 
 export interface DatePickerFieldProps {
   label: string;
@@ -424,11 +451,26 @@ export function DatePickerField({
   calendarAriaLabel = "Choose due date",
 }: DatePickerFieldProps) {
   const [viewDate, setViewDate] = useState(() => value ?? new Date());
+  const [calendarPanel, setCalendarPanel] = useState<"days" | "months" | "years">("days");
+  const yearScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setCalendarPanel("days");
+      return;
+    }
     setViewDate((d) => value ?? d);
+    setCalendarPanel("days");
   }, [isOpen, value]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || calendarPanel !== "years") return;
+    const root = yearScrollRef.current;
+    if (!root) return;
+    const y = viewDate.getFullYear();
+    const el = root.querySelector<HTMLElement>(`[data-year="${y}"]`);
+    el?.scrollIntoView({ block: "nearest", behavior: "auto" });
+  }, [isOpen, calendarPanel, viewDate]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -445,15 +487,43 @@ export function DatePickerField({
   const days = getCalendarDays(viewDate.getFullYear(), viewDate.getMonth());
 
   function goPrevMonth() {
-    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1));
+    setViewDate((d) => addMonthsPreserveDay(d, -1));
   }
   function goNextMonth() {
-    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + 1));
+    setViewDate((d) => addMonthsPreserveDay(d, 1));
+  }
+  function goPrevYear() {
+    setViewDate((d) => setYearKeepingMonthAndDay(d, d.getFullYear() - 1));
+  }
+  function goNextYear() {
+    setViewDate((d) => setYearKeepingMonthAndDay(d, d.getFullYear() + 1));
+  }
+  function selectMonth(monthIndex: number) {
+    setViewDate((d) => {
+      const y = d.getFullYear();
+      const last = new Date(y, monthIndex + 1, 0).getDate();
+      const day = Math.min(d.getDate(), last);
+      return new Date(y, monthIndex, day);
+    });
+    setCalendarPanel("days");
+  }
+  function selectYear(year: number) {
+    setViewDate((d) => setYearKeepingMonthAndDay(d, year));
+    setCalendarPanel("months");
   }
   function selectDay(day: number) {
     const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
     onChange(d);
     onClose();
+  }
+  /** Days → months → years; year header returns to months (Figma 21235:30460 / 30660). */
+  function onCalendarHeaderClick() {
+    setCalendarPanel((p) => {
+      if (p === "days") return "months";
+      if (p === "months") return "years";
+      if (p === "years") return "months";
+      return "days";
+    });
   }
 
   const triggerAriaLabel = label.trim() || calendarAriaLabel;
@@ -494,105 +564,230 @@ export function DatePickerField({
           role="dialog"
           aria-label={calendarAriaLabel}
           className="absolute left-0 top-full z-20 mt-1 flex flex-col items-start overflow-clip bg-[var(--color-background-elevated)]"
-          style={{ borderRadius: 8, boxShadow: "0px 2px 12px 0px rgba(0,0,0,0.13)", width: 375 }}
+          style={{
+            borderRadius: 8,
+            boxShadow: "0px 2px 12px 0px rgba(0,0,0,0.13)",
+            width: 375,
+            minHeight: calendarPanel === "months" || calendarPanel === "years" ? 350 : undefined,
+          }}
         >
-          {/* Header — Figma: border-bottom, px-16 py-12, chevrons + "Month Year ▾" */}
-          <div
-            className="flex items-center w-full border-b border-border-subtle overflow-clip"
-            style={{ padding: "12px 16px", gap: 8 }}
-          >
-            <button
-              type="button"
-              onClick={goPrevMonth}
-              aria-label="Previous month"
-              className="flex items-center justify-center shrink-0 rounded transition-ui hover:bg-[var(--color-background-layer-hovered)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] cursor-pointer bg-transparent border-0 appearance-none"
-              style={{ width: 24, height: 24 }}
+          {calendarPanel === "years" ? (
+            /* Year picker header — Figma 21235:30460: centered year only, no chevrons */
+            <div
+              className="flex items-center justify-center w-full border-b border-border-subtle overflow-clip"
+              style={{ padding: "12px 16px" }}
             >
-              <ChevronLeftIcon size={24} color="var(--color-icon-primary)" />
-            </button>
-            <div className="flex flex-1 items-center justify-center" style={{ gap: 8 }}>
-              <span className="tp-headling-02 text-text-primary text-center whitespace-nowrap">
-                {MONTH_NAMES[viewDate.getMonth()]} {viewDate.getFullYear()}
-              </span>
-              <CaretDownIcon size={24} color="var(--color-icon-primary)" />
+              <button
+                type="button"
+                onClick={onCalendarHeaderClick}
+                aria-label="Back to month selection"
+                className="flex min-w-0 items-center justify-center rounded transition-ui hover:bg-[var(--color-background-layer-hovered)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] cursor-pointer bg-transparent border-0 appearance-none"
+                style={{ padding: "4px 8px" }}
+              >
+                <span className="tp-headling-02 text-text-primary text-center whitespace-nowrap">
+                  {viewDate.getFullYear()}
+                </span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={goNextMonth}
-              aria-label="Next month"
-              className="flex items-center justify-center shrink-0 rounded transition-ui hover:bg-[var(--color-background-layer-hovered)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] cursor-pointer bg-transparent border-0 appearance-none"
-              style={{ width: 24, height: 24 }}
+          ) : (
+            /* Day / month header — Figma 21235:30660 */
+            <div
+              className="flex items-center w-full border-b border-border-subtle overflow-clip"
+              style={{ padding: "12px 16px", gap: 8 }}
             >
-              <ChevronRightSmallIcon size={24} color="var(--color-icon-primary)" />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={calendarPanel === "days" ? goPrevMonth : goPrevYear}
+                aria-label={calendarPanel === "days" ? "Previous month" : "Previous year"}
+                className="flex items-center justify-center shrink-0 rounded transition-ui hover:bg-[var(--color-background-layer-hovered)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] cursor-pointer bg-transparent border-0 appearance-none"
+                style={{ width: 24, height: 24 }}
+              >
+                <ChevronLeftIcon size={24} color="var(--color-icon-primary)" />
+              </button>
+              <button
+                type="button"
+                onClick={onCalendarHeaderClick}
+                aria-expanded={calendarPanel !== "days"}
+                aria-label={
+                  calendarPanel === "days" ? "Choose month" : "Choose year"
+                }
+                className="flex flex-1 min-w-0 items-center justify-center rounded transition-ui hover:bg-[var(--color-background-layer-hovered)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] cursor-pointer bg-transparent border-0 appearance-none"
+                style={{ gap: 8, padding: "4px 8px" }}
+              >
+                <span className="tp-headling-02 text-text-primary text-center whitespace-nowrap truncate">
+                  {MONTH_NAMES[viewDate.getMonth()]} {viewDate.getFullYear()}
+                </span>
+                <CaretDownIcon size={24} color="var(--color-icon-primary)" className="shrink-0" />
+              </button>
+              <button
+                type="button"
+                onClick={calendarPanel === "days" ? goNextMonth : goNextYear}
+                aria-label={calendarPanel === "days" ? "Next month" : "Next year"}
+                className="flex items-center justify-center shrink-0 rounded transition-ui hover:bg-[var(--color-background-layer-hovered)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] cursor-pointer bg-transparent border-0 appearance-none"
+                style={{ width: 24, height: 24 }}
+              >
+                <ChevronRightSmallIcon size={24} color="var(--color-icon-primary)" />
+              </button>
+            </div>
+          )}
 
-          {/* Date container — CSS Grid ensures weekday headers and day cells share the same 7-column track */}
-          <div className="w-full" style={{ padding: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((wd) => (
-                <div
-                  key={wd}
-                  className="flex items-center justify-center"
-                  style={{ height: 36, padding: 4 }}
-                >
-                  <span className="tp-body-01 text-text-tertiary text-center">{wd}</span>
-                </div>
-              ))}
-              {(() => {
-                const padded = [...days];
-                while (padded.length % 7 !== 0) padded.push(null);
-                const now = new Date();
-                return padded.map((day, i) => {
-                  if (day === null) {
-                    return <div key={`e-${i}`} style={{ height: 52 }} />;
-                  }
-                  const isSelected =
-                    value &&
-                    value.getDate() === day &&
-                    value.getMonth() === viewDate.getMonth() &&
-                    value.getFullYear() === viewDate.getFullYear();
-                  const isToday =
-                    day === now.getDate() &&
-                    viewDate.getMonth() === now.getMonth() &&
-                    viewDate.getFullYear() === now.getFullYear();
+          {calendarPanel === "days" ? (
+            <div className="w-full" style={{ padding: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((wd) => (
+                  <div
+                    key={wd}
+                    className="flex items-center justify-center"
+                    style={{ height: 36, padding: 4 }}
+                  >
+                    <span className="tp-body-01 text-text-tertiary text-center">{wd}</span>
+                  </div>
+                ))}
+                {(() => {
+                  const padded = [...days];
+                  while (padded.length % 7 !== 0) padded.push(null);
+                  const now = new Date();
+                  return padded.map((day, i) => {
+                    if (day === null) {
+                      return <div key={`e-${i}`} style={{ height: 52 }} />;
+                    }
+                    const isSelected =
+                      value &&
+                      value.getDate() === day &&
+                      value.getMonth() === viewDate.getMonth() &&
+                      value.getFullYear() === viewDate.getFullYear();
+                    const isToday =
+                      day === now.getDate() &&
+                      viewDate.getMonth() === now.getMonth() &&
+                      viewDate.getFullYear() === now.getFullYear();
+                    return (
+                      <div
+                        key={day}
+                        className="flex items-center justify-center"
+                        style={{ height: 52 }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => selectDay(day)}
+                          className={`flex flex-col items-center justify-center cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] bg-transparent hover:bg-[var(--color-background-layer-hovered)] ${isToday ? "ring-1 ring-[var(--color-border-subtle)]" : ""}`}
+                          style={{ width: 44, height: 44, borderRadius: 8 }}
+                        >
+                          <span
+                            className={`tp-body-01 text-center ${
+                              isSelected ? "text-[var(--color-text-interactive)]" : "text-text-primary"
+                            }`}
+                          >
+                            {day}
+                          </span>
+                          {isSelected && (
+                            <div
+                              style={{
+                                width: 16,
+                                height: 2,
+                                borderRadius: 1,
+                                backgroundColor: "var(--color-border-interactive)",
+                                marginTop: 2,
+                              }}
+                            />
+                          )}
+                        </button>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          ) : calendarPanel === "months" ? (
+            /* Month grid — Figma 21235:30660, 4×3, abbreviations + interactive underline */
+            <div className="w-full flex-1 min-h-0" style={{ padding: 8 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                }}
+              >
+                {MONTH_ABBREVS.map((abbr, monthIndex) => {
+                  const isActiveMonth = viewDate.getMonth() === monthIndex;
                   return (
                     <div
-                      key={day}
+                      key={abbr}
                       className="flex items-center justify-center"
-                      style={{ height: 52 }}
+                      style={{ minHeight: 52, padding: 4 }}
                     >
                       <button
                         type="button"
-                        onClick={() => selectDay(day)}
-                        className={`flex flex-col items-center justify-center cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] bg-transparent hover:bg-[var(--color-background-layer-hovered)] ${isToday ? "ring-1 ring-[var(--color-border-subtle)]" : ""}`}
-                        style={{ width: 44, height: 44, borderRadius: 8 }}
+                        onClick={() => selectMonth(monthIndex)}
+                        className="flex flex-col items-center justify-center cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] bg-transparent hover:bg-[var(--color-background-layer-hovered)]"
+                        style={{ width: 50, height: 50, borderRadius: 8 }}
                       >
                         <span
-                          className={`tp-body-01 text-center ${
-                            isSelected ? "text-[var(--color-text-interactive)]" : "text-text-primary"
-                          }`}
+                          className={`tp-body-01 text-center ${isActiveMonth ? "text-[var(--color-text-interactive)]" : "text-text-primary"}`}
                         >
-                          {day}
+                          {abbr}
                         </span>
-                        {isSelected && (
+                        {isActiveMonth && (
                           <div
                             style={{
-                              width: 16,
+                              width: 24,
                               height: 2,
                               borderRadius: 1,
                               backgroundColor: "var(--color-border-interactive)",
-                              marginTop: 2,
+                              marginTop: 4,
                             }}
                           />
                         )}
                       </button>
                     </div>
                   );
-                });
-              })()}
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Year grid — Figma 21235:30460: scrollable 4-col, tp-body-01, underline on active year */
+            <div
+              ref={yearScrollRef}
+              className="w-full min-h-0 scrollbar-table-y"
+              style={{ padding: 8, maxHeight: 319, overflowY: "auto" }}
+            >
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+                {YEAR_PICKER_YEARS.map((year) => {
+                  const isActiveYear = viewDate.getFullYear() === year;
+                  return (
+                    <div
+                      key={year}
+                      className="flex items-center justify-center"
+                      style={{ minHeight: 52, padding: 4 }}
+                    >
+                      <button
+                        type="button"
+                        data-year={year}
+                        onClick={() => selectYear(year)}
+                        className="flex flex-col items-center justify-center cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] bg-transparent hover:bg-[var(--color-background-layer-hovered)]"
+                        style={{ width: 50, height: 50, borderRadius: 8 }}
+                      >
+                        <span
+                          className={`tp-body-01 text-center ${isActiveYear ? "text-[var(--color-text-interactive)]" : "text-text-primary"}`}
+                        >
+                          {year}
+                        </span>
+                        {isActiveYear && (
+                          <div
+                            style={{
+                              width: 24,
+                              height: 2,
+                              borderRadius: 1,
+                              backgroundColor: "var(--color-border-interactive)",
+                              marginTop: 4,
+                            }}
+                          />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

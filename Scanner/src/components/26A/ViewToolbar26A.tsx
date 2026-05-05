@@ -12,6 +12,8 @@ interface ViewToolbarProps {
    * @default true
    */
   showPrepQcAndMarginLineTools?: boolean;
+  /** Pairs that cannot both be on; activating one removes the other from the active set. */
+  mutuallyExclusiveToolPairs?: [ViewToolId, ViewToolId][];
 }
 
 export type { ViewToolId };
@@ -183,7 +185,7 @@ function ChevronIcon({ up }: { up: boolean }) {
 }
 
 const VIEW_TOOLS: { id: ViewToolId; label: string; Icon: () => React.JSX.Element }[] = [
-  { id: "scan-color", label: "monochrome", Icon: IconScanColor },
+  { id: "scan-color", label: "Monochrome", Icon: IconScanColor },
   { id: "review-tool", label: "Review tool", Icon: IconReviewTool },
   { id: "occlusgram", label: "Occlusgram", Icon: IconOcclusgram },
   { id: "prep-qc", label: "Prep qc", Icon: IconPrepQc },
@@ -199,8 +201,9 @@ export default function ViewToolbar26A({
   activeTools: controlledActiveTools,
   onActiveToolsChange,
   showPrepQcAndMarginLineTools = true,
+  mutuallyExclusiveToolPairs,
 }: ViewToolbarProps) {
-  const [internalExpanded, setInternalExpanded] = useState(false);
+  const [internalExpanded, setInternalExpanded] = useState(true);
   const expanded = controlledExpanded ?? internalExpanded;
   const [internalActiveTools, setInternalActiveTools] = useState<Set<ViewToolId>>(new Set());
   const activeTools = controlledActiveTools ?? internalActiveTools;
@@ -240,10 +243,17 @@ export default function ViewToolbar26A({
                 type="button"
                 onClick={() => {
                   const next = new Set<ViewToolId>(activeTools);
-                  if (next.has(tool.id)) next.delete(tool.id);
-                  else next.add(tool.id);
+                  if (next.has(tool.id)) {
+                    next.delete(tool.id);
+                  } else {
+                    next.add(tool.id);
+                    for (const [a, b] of mutuallyExclusiveToolPairs ?? []) {
+                      if (tool.id === a) next.delete(b);
+                      else if (tool.id === b) next.delete(a);
+                    }
+                  }
                   setActiveTools(next);
-                  onToolClick?.(tool.id, !isActive);
+                  onToolClick?.(tool.id, next.has(tool.id));
                 }}
                 className="flex flex-col items-center justify-center cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
                 style={{

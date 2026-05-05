@@ -130,7 +130,7 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
       onClick={handleBackdropClick}
     >
       <div
-        className="mx-auto my-auto flex h-[800px] max-h-[calc(100vh-48px)] w-full max-w-[880px] shrink-0 flex-col overflow-hidden rounded-2xl bg-[var(--color-background-layer-01)]"
+        className="mx-auto my-auto flex h-[758px] max-h-[calc(100vh-48px)] w-full max-w-[880px] shrink-0 flex-col overflow-hidden rounded-2xl bg-[var(--color-background-layer-01)]"
         style={{
           paddingTop: 8,
           paddingBottom: 24,

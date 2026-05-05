@@ -517,9 +517,6 @@ export default function InfoStepContent26A({
                         setTreatmentDropdownOpen((o) => !o);
                       }}
                       backgroundVariant="layer-02"
-                      triggerLeading={
-                        <img src={invisalignSvg} alt="" width={30} height={30} className="shrink-0 object-contain" aria-hidden />
-                      }
                     />
                   </label>
                   <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-end">
@@ -704,7 +701,7 @@ export default function InfoStepContent26A({
                     }}
                     backgroundVariant="layer-02"
                     triggerLeading={
-                      treatmentId === "study-model" || treatmentId === "invisalign" ? (
+                      treatmentId === "invisalign" ? (
                         <img src={invisalignSvg} alt="" width={30} height={30} className="shrink-0 object-contain" aria-hidden />
                       ) : undefined
                     }

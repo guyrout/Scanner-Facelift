@@ -72,7 +72,9 @@ export default function ScanStepContent26A({
 }: ScanStepContentProps) {
   const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
   const restrictToolbar = treatmentRestrictsScanViewToolbarTools(treatmentId);
-  const [scanToolbarActiveTools, setScanToolbarActiveTools] = useState<Set<ScanToolbarToolId>>(() => new Set());
+  const [scanToolbarActiveTools, setScanToolbarActiveTools] = useState<Set<ScanToolbarToolId>>(
+    () => new Set<ScanToolbarToolId>(["feedback"]),
+  );
   const viewMode: ViewMode = scanToolbarActiveTools.has("scan-color") ? "stone" : "color";
   const [prepEditOpen, setPrepEditOpen] = useState(false);
   const [prepSelectionMode, setPrepSelectionMode] = useState(false);
@@ -186,6 +188,7 @@ export default function ScanStepContent26A({
             deselectEditNonce={deselectEditNonce}
             deselectSwapNonce={deselectSwapNonce}
             showEditAndSwapTools={!restrictToolbar}
+            stickyActiveToolIds={["feedback"]}
             onToolClick={(toolId, isActive) => {
               if (toolId === "edit") {
                 setPrepEditOpen(isActive);

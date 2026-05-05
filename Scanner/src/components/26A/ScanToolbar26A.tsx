@@ -32,6 +32,8 @@ interface ScanToolbarProps {
    * @default true
    */
   showEditAndSwapTools?: boolean;
+  /** Tools that stay active (cannot be toggled off). */
+  stickyActiveToolIds?: ScanToolbarToolId[];
 }
 
 type ToolId = ScanToolbarToolId;
@@ -173,7 +175,7 @@ function ChevronIcon({ up }: { up: boolean }) {
 }
 
 const TOOLS: { id: ToolId; label: string; Icon: () => React.JSX.Element }[] = [
-  { id: "scan-color", label: "monochrome", Icon: IconScanColor },
+  { id: "scan-color", label: "Monochrome", Icon: IconScanColor },
   { id: "feedback", label: "Feedback", Icon: IconFeedback },
   { id: "edit", label: "Edit", Icon: IconEdit },
   { id: "swap", label: "Swap", Icon: IconSwap },
@@ -189,8 +191,9 @@ export default function ScanToolbar26A({
   deselectEditNonce = 0,
   deselectSwapNonce = 0,
   showEditAndSwapTools = true,
+  stickyActiveToolIds,
 }: ScanToolbarProps) {
-  const [internalExpanded, setInternalExpanded] = useState(false);
+  const [internalExpanded, setInternalExpanded] = useState(true);
   const expanded = controlledExpanded ?? internalExpanded;
   const [internalActiveTools, setInternalActiveTools] = useState<Set<ToolId>>(() => new Set());
   const activeTools = controlledActiveTools ?? internalActiveTools;
@@ -261,9 +264,13 @@ export default function ScanToolbar26A({
                 key={tool.id}
                 type="button"
                 onClick={() => {
+                  const sticky = stickyActiveToolIds?.includes(tool.id);
                   const next = new Set(activeTools);
-                  if (next.has(tool.id)) next.delete(tool.id);
-                  else next.add(tool.id);
+                  if (next.has(tool.id)) {
+                    if (!sticky) next.delete(tool.id);
+                  } else {
+                    next.add(tool.id);
+                  }
                   setActiveTools(next);
                   onToolClick?.(tool.id, next.has(tool.id));
                 }}

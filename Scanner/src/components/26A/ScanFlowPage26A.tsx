@@ -57,7 +57,7 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, onOpenSupport,
   /** Bumped when the sleeve modal closes (or sleeve skipped) so scan-step can open upper-jaw guidance once. */
   const [postSleeveUpperGuidanceNonce, setPostSleeveUpperGuidanceNonce] = useState(0);
   const previousStepRef = useRef<ScanWizardStep>("info");
-  const [toolbarExpanded, setToolbarExpanded] = useState(false);
+  const [toolbarExpanded, setToolbarExpanded] = useState(true);
   const [patient, setPatient] = useState<ScanFlowPatientSnapshot>(() => initialPatient ?? DEFAULT_PATIENT);
 
   const cameraStateRef = useRef<CameraState>({
@@ -198,6 +198,7 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, onOpenSupport,
             onToolbarExpandedChange={setToolbarExpanded}
             cameraStateRef={cameraStateRef}
             comingFromScan={previousStepRef.current === "scan"}
+            occlusgramTrimMutuallyExclusive
             treatmentId={treatmentId}
             toothSelections={toothSelections}
             selectedJaw={selectedJaw}
