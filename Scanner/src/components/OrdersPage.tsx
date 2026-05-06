@@ -3,7 +3,7 @@ import OrdersHeader from "./OrdersHeader";
 import Avatar from "./Avatar";
 import SearchInput from "./SearchInput";
 import type { SearchInputRef } from "./SearchInput";
-import VirtualKeyboard from "./VirtualKeyboard";
+import NumberKeyboard from "./NumberKeyboard";
 import DoctorSiteLoginModal from "./DoctorSiteLoginModal";
 import { InvisalignLogoIcon } from "./Icons";
 import { getAllOrdersForOrdersPage } from "../data/orders";
@@ -158,8 +158,8 @@ function getRowKey(row: OrderWithPatient): string {
   return `${row.patient.id}-${row.orderId}`;
 }
 
-/** Virtual keyboard height so we reserve space and don't cover content */
-const KEYBOARD_HEIGHT = 340;
+/** Number keyboard height so we reserve space and don't cover content */
+const KEYBOARD_HEIGHT = 376;
 
 export default function OrdersPage({
   selectedDoctorName,
@@ -298,7 +298,7 @@ export default function OrdersPage({
       )}
 
       {pastSearchFocused && (
-        <VirtualKeyboard
+        <NumberKeyboard
           onKeyPress={(key) => setPastSearch((prev) => prev + key)}
           onBackspace={() => setPastSearch((prev) => prev.slice(0, -1))}
           onClose={() => {
