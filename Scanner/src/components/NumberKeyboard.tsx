@@ -73,7 +73,7 @@ export default function NumberKeyboard({ onKeyPress, onBackspace, onClose, posit
   return (
     <div
       id="scanner-number-keyboard"
-      className={`left-0 right-0 flex justify-center bg-[var(--backgrounds-main/background-subtle-01,#1b1b1b)] animate-keyboard-enter ${posClass}`}
+      className={`left-0 right-0 flex justify-center bg-keyboard-bg animate-keyboard-enter ${posClass}`}
       style={{ padding: "8px" }}
     >
       <div className="w-full flex items-start justify-between">
