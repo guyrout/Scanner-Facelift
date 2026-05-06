@@ -145,11 +145,12 @@ export function BiteOcclusionScene26A({
 
   const prepared = useMemo(() => {
     if (!raw) return null;
+    const hasNativeVertexColors = Boolean(raw.getAttribute("color"));
     const biteGeo = raw.clone();
     normalizeScanMeshGeometry(biteGeo);
     ensureVertexColors(biteGeo);
     const { upperGeo, lowerGeo } = splitBiteGeometry(biteGeo);
-    return { biteGeo, upperGeo, lowerGeo };
+    return { biteGeo, upperGeo, lowerGeo, hasNativeVertexColors };
   }, [raw]);
 
   const heatActive = showOcclusgramHeatmap === true;
@@ -170,6 +171,9 @@ export function BiteOcclusionScene26A({
   if (!prepared) return null;
 
   const isStone = viewMode === "stone";
+  const useVertexColorsInColorMode = !isStone && prepared.hasNativeVertexColors;
+  const fallbackColorUpper = "#f4f4f4";
+  const fallbackColorLower = "#ffd6d6";
   const materialProps = {
     roughness: 0.45,
     metalness: 0.06,
@@ -179,12 +183,26 @@ export function BiteOcclusionScene26A({
   return (
     <group>
       {jawView === "bite" && !heatActive && (
-        <mesh geometry={prepared.biteGeo} rotation={[MESH_ROT_X, 0, 0]} castShadow receiveShadow>
-          <meshStandardMaterial
-            {...(isStone ? { color: "#dfd2bc" } : { vertexColors: true as const })}
-            {...materialProps}
-          />
-        </mesh>
+        useVertexColorsInColorMode ? (
+          <mesh geometry={prepared.biteGeo} rotation={[MESH_ROT_X, 0, 0]} castShadow receiveShadow>
+            <meshStandardMaterial vertexColors {...materialProps} />
+          </mesh>
+        ) : (
+          <>
+            <mesh geometry={prepared.upperGeo} rotation={[MESH_ROT_X, 0, 0]} castShadow receiveShadow>
+              <meshStandardMaterial
+                color={isStone ? "#dfd2bc" : fallbackColorUpper}
+                {...materialProps}
+              />
+            </mesh>
+            <mesh geometry={prepared.lowerGeo} rotation={[MESH_ROT_X, 0, 0]} castShadow receiveShadow>
+              <meshStandardMaterial
+                color={isStone ? "#cfc0a8" : fallbackColorLower}
+                {...materialProps}
+              />
+            </mesh>
+          </>
+        )
       )}
       {jawView === "bite" && heatActive && upperHeatGeo && lowerHeatGeo && (
         <>
@@ -207,7 +225,11 @@ export function BiteOcclusionScene26A({
             <primitive object={heatmapMaterialUpper} attach="material" />
           ) : (
             <meshStandardMaterial
-              {...(isStone ? { color: "#dfd2bc" } : { vertexColors: true as const })}
+              {...(isStone
+                ? { color: "#dfd2bc" }
+                : useVertexColorsInColorMode
+                  ? { vertexColors: true as const }
+                  : { color: fallbackColorUpper })}
               {...materialProps}
             />
           )}
@@ -224,7 +246,11 @@ export function BiteOcclusionScene26A({
             <primitive object={heatmapMaterialLower} attach="material" />
           ) : (
             <meshStandardMaterial
-              {...(isStone ? { color: "#cfc0a8" } : { vertexColors: true as const })}
+              {...(isStone
+                ? { color: "#cfc0a8" }
+                : useVertexColorsInColorMode
+                  ? { vertexColors: true as const }
+                  : { color: fallbackColorLower })}
               {...materialProps}
             />
           )}
