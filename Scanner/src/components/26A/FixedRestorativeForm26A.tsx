@@ -1455,23 +1455,6 @@ export default function FixedRestorativeForm26A({
                 />
               </div>
             </div>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 cursor-pointer bg-transparent appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-02)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
-                style={{
-                  border: "2px solid var(--color-border-subtle)",
-                  borderRadius: 8,
-                  height: 64,
-                  padding: "12px 32px",
-                  minWidth: 72,
-                }}
-                aria-label="Add note"
-              >
-                <AddEmptyIcon size={24} color="var(--color-icon-primary)" />
-                <span className="tp-body-02 text-text-primary">Add</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
