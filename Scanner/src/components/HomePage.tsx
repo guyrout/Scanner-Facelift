@@ -4,11 +4,12 @@
  * Header with iTero logo (left) and icon buttons (right).
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import notificationActiveSvg from "../assets/notification-active.svg";
 import scanIllustration from "../assets/scan-illustration.png";
 import { BatteryIcon, HelpIcon } from "./Icons";
 import { setScanFlowVersion } from "../utils/scanFlowVersionManager";
+import BatteryModal from "./BatteryModal";
 
 export interface HomePageProps {
   onPatientListClick: () => void;
@@ -111,6 +112,8 @@ export default function HomePage({
   onOpenSupport,
   onLockClick,
 }: HomePageProps) {
+  const [batteryModalOpen, setBatteryModalOpen] = useState(false);
+
   useEffect(() => {
     // Keep scanner flow pinned to 26A while the toggle is hidden.
     setScanFlowVersion("26A");
@@ -155,7 +158,7 @@ export default function HomePage({
             { label: "Messages", Icon: IconBell, onClick: onMessagesClick },
             { label: "Lock", Icon: IconLock, onClick: onLockClick },
             { label: "Support", Icon: HelpIcon, onClick: onOpenSupport },
-            { label: "Battery status", Icon: HomeHeaderBatteryIcon },
+            { label: "Battery status", Icon: HomeHeaderBatteryIcon, onClick: () => setBatteryModalOpen((o) => !o) },
             { label: "Settings", Icon: IconSettings, onClick: onOpenSettings },
           ].map((btn) => (
             <button
@@ -225,6 +228,10 @@ export default function HomePage({
           ))}
         </div>
       </div>
+
+      {batteryModalOpen && (
+        <BatteryModal onClose={() => setBatteryModalOpen(false)} level={100} />
+      )}
     </div>
   );
 }

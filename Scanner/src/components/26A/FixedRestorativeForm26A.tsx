@@ -934,7 +934,13 @@ export default function FixedRestorativeForm26A({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   /** Per-tooth contextual menu: which tooth is being assigned, and where on screen */
-  const [toothContextMenu, setToothContextMenu] = useState<{ tooth: number; x: number; y: number } | null>(null);
+  /** Full restoration menu height (~header + optional remove + 9 types); used only for viewport clamping */
+  const TOOTH_MENU_APPROX_HEIGHT = 620;
+  /** Reserve space so the fixed scan-flow header is never covered */
+  const TOOTH_MENU_SAFE_TOP = 72;
+  const TOOTH_MENU_SAFE_BOTTOM = 16;
+
+  const [toothContextMenu, setToothContextMenu] = useState<{ tooth: number; menuTop: number } | null>(null);
   const [implantBaseModalOpen, setImplantBaseModalOpen] = useState(false);
   const [implantBaseModalTeeth, setImplantBaseModalTeeth] = useState<number[]>([]);
   const [, setImplantCaseByTooth] = useState<Record<number, string>>({});
@@ -952,13 +958,31 @@ export default function FixedRestorativeForm26A({
   const toothChartSvgRef = useRef<SVGSVGElement>(null);
   const toothContextMenuRef = useRef<HTMLUListElement>(null);
 
-  function handleToothClick(toothNum: number, svgEl: SVGSVGElement, x: number, y: number) {
-    // Open the contextual restoration-type menu for this tooth.
+  function clampToothMenuTop(isUpper: boolean, toothBottom: number, toothTop: number): number {
+    const gap = 8;
+    const innerH = window.innerHeight;
+    const h = TOOTH_MENU_APPROX_HEIGHT;
+    const minTop = TOOTH_MENU_SAFE_TOP;
+    const maxTop = Math.max(minTop, innerH - h - TOOTH_MENU_SAFE_BOTTOM);
+    let ideal: number;
+    if (isUpper) {
+      ideal = toothBottom + gap;
+    } else {
+      ideal = toothTop - gap - h;
+    }
+    return Math.min(maxTop, Math.max(minTop, ideal));
+  }
+
+  function handleToothClick(toothNum: number, svgEl: SVGSVGElement, _x: number, svgY: number) {
+    const isUpper = svgY < 139;
     const rect = svgEl.getBoundingClientRect();
+    const scale = rect.height / 277;
+    const toothBottom = rect.top + (svgY + 52) * scale;
+    const toothTop = rect.top + (svgY - 52) * scale;
+
     setToothContextMenu({
       tooth: toothNum,
-      x: rect.left + (x / 1171) * rect.width,
-      y: rect.top + (y / 277) * rect.height,
+      menuTop: clampToothMenuTop(isUpper, toothBottom, toothTop),
     });
   }
 
@@ -1151,9 +1175,14 @@ export default function FixedRestorativeForm26A({
                 const sprite = sel ? TOOTH_SPRITES[tooth]?.[sel] : undefined;
                 const hasSpriteVisual = Boolean(sel && sprite);
                 const contextHere = toothContextMenu?.tooth === tooth;
+                const selectSprite = TOOTH_SPRITES[tooth]?.["Select"];
+                // When menu is open on an already-assigned tooth use strong glow; on unassigned use normal glow
                 const spriteFilter = hasSpriteVisual
                   ? (contextHere ? "url(#tooth-sprite-glow-strong-26a)" : "url(#tooth-sprite-glow-26a)")
-                  : undefined;
+                  : contextHere && selectSprite ? "url(#tooth-sprite-glow-26a)" : undefined;
+                // Prefer the assigned-state sprite; fall back to Select sprite while menu is open
+                const renderSprite = sprite ?? (contextHere ? selectSprite : undefined);
+                const hasVisual = Boolean(renderSprite);
                 return (
                   <g
                     key={tooth}
@@ -1168,25 +1197,15 @@ export default function FixedRestorativeForm26A({
                     tabIndex={-1}
                   >
                     <rect x={x - 29} y={5} width={58} height={105} fill="transparent" stroke="none" focusable={false} />
-                    {hasSpriteVisual && (
+                    {hasVisual && (
                       <>
                         <rect x={x - 29} y={5} width={58} height={105} fill="var(--color-background-layer-01)" style={{ pointerEvents: "none" }} />
                         <g filter={spriteFilter}>
-                          <svg x={x - 29} y={5} width={58} height={105} viewBox={`${sprite![0]} ${sprite![1]} ${sprite![2]} ${sprite![3]}`} style={{ pointerEvents: "none", overflow: "hidden" }}>
+                          <svg x={x - 29} y={5} width={58} height={105} viewBox={`${renderSprite![0]} ${renderSprite![1]} ${renderSprite![2]} ${renderSprite![3]}`} style={{ pointerEvents: "none", overflow: "hidden" }}>
                             <image href={toothSprites} width={SPRITE_W} height={SPRITE_H} />
                           </svg>
                         </g>
                       </>
-                    )}
-                    {contextHere && !hasSpriteVisual && (
-                      <circle
-                        cx={x}
-                        cy={57.5}
-                        r={32}
-                        fill="var(--color-border-interactive)"
-                        fillOpacity={0.14}
-                        style={{ pointerEvents: "none" }}
-                      />
                     )}
                   </g>
                 );
@@ -1197,9 +1216,12 @@ export default function FixedRestorativeForm26A({
                 const sprite = sel ? TOOTH_SPRITES[tooth]?.[sel] : undefined;
                 const hasSpriteVisual = Boolean(sel && sprite);
                 const contextHere = toothContextMenu?.tooth === tooth;
+                const selectSprite = TOOTH_SPRITES[tooth]?.["Select"];
                 const spriteFilter = hasSpriteVisual
                   ? (contextHere ? "url(#tooth-sprite-glow-strong-26a)" : "url(#tooth-sprite-glow-26a)")
-                  : undefined;
+                  : contextHere && selectSprite ? "url(#tooth-sprite-glow-26a)" : undefined;
+                const renderSprite = sprite ?? (contextHere ? selectSprite : undefined);
+                const hasVisual = Boolean(renderSprite);
                 return (
                   <g
                     key={tooth}
@@ -1214,25 +1236,15 @@ export default function FixedRestorativeForm26A({
                     tabIndex={-1}
                   >
                     <rect x={x - 29} y={167} width={58} height={105} fill="transparent" stroke="none" focusable={false} />
-                    {hasSpriteVisual && (
+                    {hasVisual && (
                       <>
                         <rect x={x - 29} y={167} width={58} height={105} fill="var(--color-background-layer-01)" style={{ pointerEvents: "none" }} />
                         <g filter={spriteFilter}>
-                          <svg x={x - 29} y={167} width={58} height={105} viewBox={`${sprite![0]} ${sprite![1]} ${sprite![2]} ${sprite![3]}`} style={{ pointerEvents: "none", overflow: "hidden" }}>
+                          <svg x={x - 29} y={167} width={58} height={105} viewBox={`${renderSprite![0]} ${renderSprite![1]} ${renderSprite![2]} ${renderSprite![3]}`} style={{ pointerEvents: "none", overflow: "hidden" }}>
                             <image href={toothSprites} width={SPRITE_W} height={SPRITE_H} />
                           </svg>
                         </g>
                       </>
-                    )}
-                    {contextHere && !hasSpriteVisual && (
-                      <circle
-                        cx={x}
-                        cy={219.5}
-                        r={32}
-                        fill="var(--color-border-interactive)"
-                        fillOpacity={0.14}
-                        style={{ pointerEvents: "none" }}
-                      />
                     )}
                   </g>
                 );
@@ -1389,32 +1401,15 @@ export default function FixedRestorativeForm26A({
                 minHeight: 276,
               }}
             >
-              <div className="flex flex-col items-center" style={{ gap: 23 }}>
-                <div className="flex flex-col items-center" style={{ gap: 16 }}>
-                  {/* Attachment icon */}
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                    <path d="M21.0008 11.2192L11.9308 20.2892C10.9708 21.2492 9.67077 21.7892 8.31077 21.7892C6.95077 21.7892 5.65077 21.2492 4.69077 20.2892C3.73077 19.3292 3.19077 18.0292 3.19077 16.6692C3.19077 15.3092 3.73077 14.0092 4.69077 13.0492L13.7508 3.99922C14.3908 3.35922 15.2608 2.99922 16.1608 2.99922C17.0608 2.99922 17.9308 3.35922 18.5708 3.99922C19.2108 4.63922 19.5708 5.50922 19.5708 6.40922C19.5708 7.30922 19.2108 8.17922 18.5708 8.81922L9.50077 17.8792C9.18077 18.1992 8.74077 18.3792 8.29077 18.3792C7.84077 18.3792 7.40077 18.1992 7.08077 17.8792C6.76077 17.5592 6.58077 17.1192 6.58077 16.6692C6.58077 16.2192 6.76077 15.7792 7.08077 15.4592L15.4508 7.09922L14.3908 6.03922L6.02077 14.3992C5.42077 14.9992 5.08077 15.8092 5.08077 16.6592C5.08077 17.5092 5.42077 18.3192 6.02077 18.9192C6.62077 19.5192 7.43077 19.8592 8.28077 19.8592C9.13077 19.8592 9.94077 19.5192 10.5408 18.9192L19.6108 9.85922C20.6308 8.83922 21.2008 7.45922 21.2008 6.00922C21.2008 4.55922 20.6308 3.17922 19.6108 2.15922C18.5908 1.13922 17.2108 0.569219 15.7608 0.569219C14.3108 0.569219 12.9308 1.13922 11.9108 2.15922L2.84077 11.2292C1.49077 12.5792 0.740771 14.3892 0.740771 16.2892C0.740771 18.1892 1.49077 19.9992 2.84077 21.3492C4.19077 22.6992 6.00077 23.4492 7.90077 23.4492C9.80077 23.4492 11.6108 22.6992 12.9608 21.3492L22.0508 12.2592L21.0008 11.2192Z" fill="var(--color-icon-secondary)"/>
-                  </svg>
-                  <div className="flex flex-col items-center text-center" style={{ gap: 11 }}>
-                    <span className="tp-body-02 text-text-secondary">Attachments Overview</span>
-                    <span className="tp-body-01 text-text-tertiary">Easily upload and attach files to the RX</span>
-                  </div>
+              <div className="flex flex-col items-center" style={{ gap: 16 }}>
+                {/* Attachment icon */}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M21.0008 11.2192L11.9308 20.2892C10.9708 21.2492 9.67077 21.7892 8.31077 21.7892C6.95077 21.7892 5.65077 21.2492 4.69077 20.2892C3.73077 19.3292 3.19077 18.0292 3.19077 16.6692C3.19077 15.3092 3.73077 14.0092 4.69077 13.0492L13.7508 3.99922C14.3908 3.35922 15.2608 2.99922 16.1608 2.99922C17.0608 2.99922 17.9308 3.35922 18.5708 3.99922C19.2108 4.63922 19.5708 5.50922 19.5708 6.40922C19.5708 7.30922 19.2108 8.17922 18.5708 8.81922L9.50077 17.8792C9.18077 18.1992 8.74077 18.3792 8.29077 18.3792C7.84077 18.3792 7.40077 18.1992 7.08077 17.8792C6.76077 17.5592 6.58077 17.1192 6.58077 16.6692C6.58077 16.2192 6.76077 15.7792 7.08077 15.4592L15.4508 7.09922L14.3908 6.03922L6.02077 14.3992C5.42077 14.9992 5.08077 15.8092 5.08077 16.6592C5.08077 17.5092 5.42077 18.3192 6.02077 18.9192C6.62077 19.5192 7.43077 19.8592 8.28077 19.8592C9.13077 19.8592 9.94077 19.5192 10.5408 18.9192L19.6108 9.85922C20.6308 8.83922 21.2008 7.45922 21.2008 6.00922C21.2008 4.55922 20.6308 3.17922 19.6108 2.15922C18.5908 1.13922 17.2108 0.569219 15.7608 0.569219C14.3108 0.569219 12.9308 1.13922 11.9108 2.15922L2.84077 11.2292C1.49077 12.5792 0.740771 14.3892 0.740771 16.2892C0.740771 18.1892 1.49077 19.9992 2.84077 21.3492C4.19077 22.6992 6.00077 23.4492 7.90077 23.4492C9.80077 23.4492 11.6108 22.6992 12.9608 21.3492L22.0508 12.2592L21.0008 11.2192Z" fill="var(--color-icon-secondary)"/>
+                </svg>
+                <div className="flex flex-col items-center text-center" style={{ gap: 11 }}>
+                  <span className="tp-body-02 text-text-secondary">Attachments Overview</span>
+                  <span className="tp-body-01 text-text-tertiary">Easily upload and attach files to the RX from myiTero.com</span>
                 </div>
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2 cursor-pointer bg-transparent appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-02)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
-                  style={{
-                    border: "2px solid var(--color-border-subtle)",
-                    borderRadius: 8,
-                    height: 64,
-                    padding: "12px 32px",
-                    minWidth: 72,
-                  }}
-                  aria-label="Add attachment"
-                >
-                  <AddEmptyIcon size={24} color="var(--color-icon-primary)" />
-                  <span className="tp-body-02 text-text-primary">Add</span>
-                </button>
               </div>
             </div>
           </div>
@@ -1691,11 +1686,11 @@ export default function FixedRestorativeForm26A({
         ref={toothContextMenuRef}
         role="listbox"
         aria-label={`Tooth ${toothContextMenu.tooth} restoration`}
-        className="flex min-h-0 w-max min-w-[min(280px,calc(100vw-2rem))] max-h-[min(26.25rem,calc(100svh-8rem))] max-w-[calc(100vw-2rem)] flex-col rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table-y"
+        className="flex min-h-0 w-max min-w-[min(280px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] flex-col rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle"
         style={{
           position: "fixed",
-          left: toothContextMenu.x,
-          top: toothContextMenu.y + 4,
+          left: "50%",
+          top: toothContextMenu.menuTop,
           zIndex: 20000,
           boxShadow: "var(--shadow-card)",
           transform: "translateX(-50%)",

@@ -17,15 +17,25 @@ export const DEFAULT_ORTHOCAD_PLY_PAIR = {
   biteUrl: "/models/Bite.ply",
 } as const;
 
+/**
+ * Fixed restorative only — STL exports (iTero ditch jaws + bite).
+ * Files live under `public/models/fixed-restorative/`.
+ */
+export const FIXED_RESTORATIVE_STL_PAIR = {
+  upperUrl: "/models/fixed-restorative/upper_jaw_with_ditch.stl",
+  lowerUrl: "/models/fixed-restorative/lower_jaw_with_ditch.stl",
+  biteUrl: "/models/fixed-restorative/Bite.stl",
+} as const;
+
 /** Default when `treatmentId` is unknown — must resolve to existing files under `public/`. */
 export const DEFAULT_TREATMENT_PLY = DEFAULT_ORTHOCAD_PLY_PAIR;
 
 /**
  * One row per `TREATMENT_OPTIONS` id in `FixedRestorativeForm26A`.
- * Swap URLs when dedicated assets exist; until then all rows use the default OrthoCAD pair.
+ * Scan / View use `PlyModelViewer26A`, which loads PLY or STL via the same URLs.
  */
 export const TREATMENT_3D_PLY: Record<string, { upperUrl: string; lowerUrl: string; biteUrl: string }> = {
-  "fixed-restorative": DEFAULT_ORTHOCAD_PLY_PAIR,
+  "fixed-restorative": FIXED_RESTORATIVE_STL_PAIR,
   "study-model": DEFAULT_ORTHOCAD_PLY_PAIR,
   invisalign: DEFAULT_ORTHOCAD_PLY_PAIR,
   appliance: DEFAULT_ORTHOCAD_PLY_PAIR,

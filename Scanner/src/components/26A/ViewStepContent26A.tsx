@@ -631,8 +631,25 @@ export default function ViewStepContent26A({
   const [showPrepQc, setShowPrepQc] = useState(false);
   const [showPrepQcToast, setShowPrepQcToast] = useState(false);
   const [prepQcStep, setPrepQcStep] = useState(0.1);
-  const [activeTools, setActiveTools] = useState<Set<ViewToolId>>(new Set());
+  const [activeTools, setActiveTools] = useState<Set<ViewToolId>>(() => {
+    const initial = new Set<ViewToolId>();
+    if (treatmentId === "fixed-restorative") initial.add("scan-color");
+    return initial;
+  });
   const viewMode: ViewMode = activeTools.has("scan-color") ? "stone" : "color";
+
+  // Auto-activate Monochrome when Fixed restorative is selected; deactivate for other treatments
+  useEffect(() => {
+    setActiveTools((prev) => {
+      const next = new Set(prev);
+      if (treatmentId === "fixed-restorative") {
+        next.add("scan-color");
+      } else {
+        next.delete("scan-color");
+      }
+      return next;
+    });
+  }, [treatmentId]);
   const [marginLineTooth, setMarginLineTooth] = useState("17");
 
   useEffect(() => {

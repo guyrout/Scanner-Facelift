@@ -73,9 +73,26 @@ export default function ScanStepContent26A({
   const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
   const restrictToolbar = treatmentRestrictsScanViewToolbarTools(treatmentId);
   const [scanToolbarActiveTools, setScanToolbarActiveTools] = useState<Set<ScanToolbarToolId>>(
-    () => new Set<ScanToolbarToolId>(["feedback"]),
+    () => {
+      const initial = new Set<ScanToolbarToolId>(["feedback"]);
+      if (treatmentId === "fixed-restorative") initial.add("scan-color");
+      return initial;
+    },
   );
   const viewMode: ViewMode = scanToolbarActiveTools.has("scan-color") ? "stone" : "color";
+
+  // Auto-activate Monochrome when Fixed restorative is selected; deactivate for other treatments
+  useEffect(() => {
+    setScanToolbarActiveTools((prev) => {
+      const next = new Set(prev);
+      if (treatmentId === "fixed-restorative") {
+        next.add("scan-color");
+      } else {
+        next.delete("scan-color");
+      }
+      return next;
+    });
+  }, [treatmentId]);
   const [prepEditOpen, setPrepEditOpen] = useState(false);
   const [prepSelectionMode, setPrepSelectionMode] = useState(false);
   const [eraseSelectionNonce, setEraseSelectionNonce] = useState(0);

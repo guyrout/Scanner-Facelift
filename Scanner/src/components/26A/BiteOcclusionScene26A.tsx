@@ -13,7 +13,7 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import type { JawSelection } from "./JawSelector26A";
 import type { ViewMode } from "./PlyModelViewer26A";
 import { createHeatmapMaterial } from "../../shaders/occlusalHeatmap";
-import { ensureVertexColors, normalizeScanMeshGeometry } from "./scanMeshUtils26A";
+import { ensureVertexColors, normalizeScanMeshGeometry, STONE_COLOR } from "./scanMeshUtils26A";
 import { applyInterArchHeatToSurfaceGeometry } from "./occlusogramDistance26A";
 
 const MESH_ROT_X = -Math.PI / 2;
@@ -172,8 +172,10 @@ export function BiteOcclusionScene26A({
 
   const isStone = viewMode === "stone";
   const useVertexColorsInColorMode = !isStone && prepared.hasNativeVertexColors;
-  const fallbackColorUpper = "#f4f4f4";
-  const fallbackColorLower = "#ffd6d6";
+  // Match PlyMesh: when no native vertex colors, use STONE_COLOR so bite looks
+  // identical to the upper/lower jaw views
+  const fallbackColorUpper = STONE_COLOR;
+  const fallbackColorLower = STONE_COLOR;
   const materialProps = {
     roughness: 0.45,
     metalness: 0.06,
