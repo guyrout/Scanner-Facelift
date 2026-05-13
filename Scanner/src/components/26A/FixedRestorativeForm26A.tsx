@@ -167,7 +167,7 @@ export const TOOTH_SPRITES: Record<number, Partial<Record<string, SpriteRect>>> 
   44: { Crown: [164, 2398, 58, 102], Missing: [232, 2399, 58, 102], "Implant based": [301, 2407, 58, 102], Select: [95, 2398, 58, 102] },
   43: { Crown: [164, 2532, 58, 102], Missing: [232, 2532, 58, 102], "Implant based": [301, 2540, 58, 102], Select: [95, 2532, 58, 102] },
   42: { Crown: [163, 2665, 58, 102], Missing: [232, 2665, 58, 102], "Implant based": [301, 2673, 58, 102], Select: [95, 2666, 58, 102] },
-  41: { Select: [95, 2788, 58, 102] },
+  41: { Crown: [163, 2788, 58, 102], Missing: [232, 2788, 58, 102], "Implant based": [301, 2796, 58, 102], Select: [95, 2788, 58, 102] },
   31: { Crown: [163, 2910, 58, 102], Missing: [231, 2910, 58, 102], "Implant based": [301, 2918, 58, 102], Select: [102, 2910, 58, 102] },
   32: { Crown: [166, 3030, 58, 102], Missing: [234, 3031, 58, 102], "Implant based": [301, 3039, 58, 102], Select: [100, 3031, 58, 102] },
   33: { Crown: [169, 3149, 58, 102], Missing: [238, 3149, 58, 102], "Implant based": [301, 3157, 58, 102], Select: [102, 3149, 58, 102] },
@@ -202,6 +202,11 @@ export interface DropdownFieldProps {
   disabled?: boolean;
   /** When set, shown in the trigger instead of the selected option label (e.g. disabled placeholder). */
   placeholderOverride?: string;
+}
+
+/** Portaled listboxes live outside modal refs; ignore outside-click when interacting with them (see CrownModal26A). */
+function isDropdownPortalTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("[data-dropdown-portal]") !== null;
 }
 
 const dropdownListContent = (
@@ -1066,6 +1071,7 @@ export default function FixedRestorativeForm26A({
   useEffect(() => {
     if (!implantBaseModalOpen) return;
     const handleClick = (e: MouseEvent) => {
+      if (isDropdownPortalTarget(e.target)) return;
       if (implantBaseModalRef.current && !implantBaseModalRef.current.contains(e.target as Node)) {
         closeImplantModal();
       }
@@ -1377,9 +1383,9 @@ export default function FixedRestorativeForm26A({
       </>
       )}
 
-      {/* Section 4: Attachments + Note — Figma 6171:2250 / 6171:2251 */}
+      {/* Section 4: Attachments + Note — Figma 6171:2250 / 6171:2251 (Attachments hidden for Invisalign/Vivera) */}
       <div className="flex flex-col" style={{ gap: 16 }}>
-        {/* Attachments card — Figma 6171:2250 */}
+        {treatmentId !== "invisalign" && (
         <div
           className="flex flex-col flex-1 min-w-0 bg-surface overflow-clip"
           style={{
@@ -1414,6 +1420,7 @@ export default function FixedRestorativeForm26A({
             </div>
           </div>
         </div>
+        )}
 
         {/* Note card — Figma 6171:2251 */}
         <div
