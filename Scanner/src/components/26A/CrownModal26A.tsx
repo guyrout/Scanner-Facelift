@@ -11,8 +11,11 @@ import { CaretDownIcon, ChevronLeftIcon } from "../Icons";
 import {
   BODY_OPTIONS,
   DropdownField,
+  MARGIN_DESIGN_OPTIONS,
   MATERIAL_OPTIONS,
+  PREP_DESIGN_OPTIONS,
   SHADE_OPTIONS,
+  SHADE_VALUE_OPTIONS,
   SPEC_OPTIONS,
   SPRITE_H,
   SPRITE_W,
@@ -61,19 +64,26 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
     >
       <div
         ref={modalRef}
-        className="flex flex-col bg-[var(--color-background-layer-01)] shrink-0 w-full max-w-[1104px] overflow-hidden rounded-2xl"
+        className="flex flex-col bg-[var(--color-background-layer-01)] shrink-0 w-full max-w-[1104px] rounded-2xl overflow-hidden"
+        style={{
+          boxShadow: "var(--shadow-card, 0px 4px 12px rgba(0,0,0,0.08))",
+          maxHeight: "calc(100vh - 48px)",
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="crown-modal-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+      <div
+        className="flex flex-col w-full min-w-0"
         style={{
           paddingTop: 8,
           paddingBottom: 24,
           paddingLeft: 24,
           paddingRight: 24,
           gap: 24,
-          boxShadow: "var(--shadow-card, 0px 4px 12px rgba(0,0,0,0.08))",
+          overflowY: "auto",
         }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="crown-modal-title"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col w-full min-w-0" style={{ gap: 24 }}>
           <div className="flex flex-col w-full">
@@ -205,17 +215,185 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
                     <span className="tp-headling-02 text-text-primary flex-1 min-w-0">Additional information</span>
                     <span
                       className="shrink-0 flex items-center justify-center"
-                      style={{ width: 24, height: 24, transform: additionalOpen ? "rotate(180deg)" : "none" }}
+                      style={{
+                        width: 24,
+                        height: 24,
+                        transform: additionalOpen ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 280ms cubic-bezier(0.4, 0, 0.2, 1)",
+                      }}
                     >
                       <CaretDownIcon size={24} color="var(--color-icon-primary)" />
                     </span>
                   </button>
-                  {additionalOpen && (
+                  <div
+                    className="grid w-full"
+                    style={{
+                      gridTemplateRows: additionalOpen ? "1fr" : "0fr",
+                      transition: "grid-template-rows 280ms cubic-bezier(0.4, 0, 0.2, 1)",
+                    }}
+                    aria-hidden={!additionalOpen}
+                  >
                     <div
-                      className="w-full border-t border-solid border-border-subtle bg-[var(--color-background-layer-01)] rounded-b-lg"
-                      style={{ minHeight: 40 }}
-                    />
-                  )}
+                      className="flex flex-col w-full"
+                      style={{
+                        minHeight: 0,
+                        overflow: "hidden",
+                        padding: additionalOpen ? "0 16px 16px 16px" : "0 16px 0 16px",
+                        gap: 10,
+                        opacity: additionalOpen ? 1 : 0,
+                        transform: additionalOpen ? "translateY(0)" : "translateY(-4px)",
+                        transition:
+                          "opacity 220ms cubic-bezier(0.4, 0, 0.2, 1), transform 280ms cubic-bezier(0.4, 0, 0.2, 1), padding 280ms cubic-bezier(0.4, 0, 0.2, 1)",
+                      }}
+                    >
+                      {/* Row 1: Preparation Design — Buccal / Lingual / Incisal */}
+                      <div className="flex w-full items-start" style={{ gap: 24 }}>
+                        <div className="flex-1 min-w-0">
+                          <DropdownField
+                            id="crown-prep-buccal"
+                            label="Preparation Design- Buccal"
+                            value={detail.prepDesignBuccal}
+                            options={PREP_DESIGN_OPTIONS}
+                            onChange={(id) => {
+                              onDetailChange("prepDesignBuccal", id);
+                              setOpenDropdown(null);
+                            }}
+                            isOpen={openDropdown === "prep-buccal"}
+                            onToggle={() =>
+                              setOpenDropdown(openDropdown === "prep-buccal" ? null : "prep-buccal")
+                            }
+                            listZIndex={10001}
+                            placeholderTone="primary"
+                            hideBorder
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <DropdownField
+                            id="crown-prep-lingual"
+                            label="Preparation Design- Lingual"
+                            value={detail.prepDesignLingual}
+                            options={PREP_DESIGN_OPTIONS}
+                            onChange={(id) => {
+                              onDetailChange("prepDesignLingual", id);
+                              setOpenDropdown(null);
+                            }}
+                            isOpen={openDropdown === "prep-lingual"}
+                            onToggle={() =>
+                              setOpenDropdown(openDropdown === "prep-lingual" ? null : "prep-lingual")
+                            }
+                            listZIndex={10001}
+                            placeholderTone="primary"
+                            hideBorder
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <DropdownField
+                            id="crown-incisal"
+                            label="Incisal"
+                            value={detail.incisal}
+                            options={SHADE_VALUE_OPTIONS}
+                            onChange={(id) => {
+                              onDetailChange("incisal", id);
+                              setOpenDropdown(null);
+                            }}
+                            isOpen={openDropdown === "incisal"}
+                            onToggle={() =>
+                              setOpenDropdown(openDropdown === "incisal" ? null : "incisal")
+                            }
+                            listZIndex={10001}
+                            placeholderTone="primary"
+                            hideBorder
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 2: Margin Design — Buccal / Lingual / Gingival */}
+                      <div className="flex w-full items-start" style={{ gap: 24 }}>
+                        <div className="flex-1 min-w-0">
+                          <DropdownField
+                            id="crown-margin-buccal"
+                            label="Margin Design- Buccal"
+                            value={detail.marginDesignBuccal}
+                            options={MARGIN_DESIGN_OPTIONS}
+                            onChange={(id) => {
+                              onDetailChange("marginDesignBuccal", id);
+                              setOpenDropdown(null);
+                            }}
+                            isOpen={openDropdown === "margin-buccal"}
+                            onToggle={() =>
+                              setOpenDropdown(openDropdown === "margin-buccal" ? null : "margin-buccal")
+                            }
+                            listZIndex={10001}
+                            placeholderTone="primary"
+                            hideBorder
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <DropdownField
+                            id="crown-margin-lingual"
+                            label="Margin Design- Lingual"
+                            value={detail.marginDesignLingual}
+                            options={MARGIN_DESIGN_OPTIONS}
+                            onChange={(id) => {
+                              onDetailChange("marginDesignLingual", id);
+                              setOpenDropdown(null);
+                            }}
+                            isOpen={openDropdown === "margin-lingual"}
+                            onToggle={() =>
+                              setOpenDropdown(openDropdown === "margin-lingual" ? null : "margin-lingual")
+                            }
+                            listZIndex={10001}
+                            placeholderTone="primary"
+                            hideBorder
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <DropdownField
+                            id="crown-gingival"
+                            label="Gingival"
+                            value={detail.gingival}
+                            options={SHADE_VALUE_OPTIONS}
+                            onChange={(id) => {
+                              onDetailChange("gingival", id);
+                              setOpenDropdown(null);
+                            }}
+                            isOpen={openDropdown === "gingival"}
+                            onToggle={() =>
+                              setOpenDropdown(openDropdown === "gingival" ? null : "gingival")
+                            }
+                            listZIndex={10001}
+                            placeholderTone="primary"
+                            hideBorder
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 3: empty / empty / Stump Shade */}
+                      <div className="flex w-full items-start justify-end" style={{ gap: 24 }}>
+                        <div className="flex-1 min-w-0" aria-hidden />
+                        <div className="flex-1 min-w-0" aria-hidden />
+                        <div className="flex-1 min-w-0">
+                          <DropdownField
+                            id="crown-stump-shade"
+                            label="Stump Shade"
+                            value={detail.stumpShade}
+                            options={SHADE_VALUE_OPTIONS}
+                            onChange={(id) => {
+                              onDetailChange("stumpShade", id);
+                              setOpenDropdown(null);
+                            }}
+                            isOpen={openDropdown === "stump-shade"}
+                            onToggle={() =>
+                              setOpenDropdown(openDropdown === "stump-shade" ? null : "stump-shade")
+                            }
+                            listZIndex={10001}
+                            placeholderTone="primary"
+                            hideBorder
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -238,6 +416,7 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
             Delete
           </button>
         </div>
+      </div>
       </div>
     </div>,
     document.body,

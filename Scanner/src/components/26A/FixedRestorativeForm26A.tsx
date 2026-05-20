@@ -87,6 +87,39 @@ export const BODY_OPTIONS: { id: string; label: string }[] = [
   { id: "d3", label: "D3" },
 ];
 
+/** Crown — Additional information accordion (Figma 5322:96732). */
+export const PREP_DESIGN_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
+  { id: "shoulder", label: "Shoulder" },
+  { id: "chamfer", label: "Chamfer" },
+  { id: "feather-edge", label: "Feather edge" },
+  { id: "knife-edge", label: "Knife edge" },
+  { id: "rounded-shoulder", label: "Rounded shoulder" },
+];
+
+export const MARGIN_DESIGN_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
+  { id: "supragingival", label: "Supragingival" },
+  { id: "equigingival", label: "Equigingival" },
+  { id: "subgingival", label: "Subgingival" },
+];
+
+/** Shared value list for the shade-style dropdowns (Incisal / Gingival / Stump Shade). */
+export const SHADE_VALUE_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
+  { id: "a1", label: "A1" },
+  { id: "a2", label: "A2" },
+  { id: "a3", label: "A3" },
+  { id: "a3.5", label: "A3.5" },
+  { id: "b1", label: "B1" },
+  { id: "b2", label: "B2" },
+  { id: "b3", label: "B3" },
+  { id: "c1", label: "C1" },
+  { id: "c2", label: "C2" },
+  { id: "d2", label: "D2" },
+  { id: "d3", label: "D3" },
+];
+
 export const IMPLANT_CASE_OPTIONS: { id: string; label: string }[] = [
   { id: "", label: "Select case" },
   { id: "case-a", label: "Case A" },
@@ -202,6 +235,12 @@ export interface DropdownFieldProps {
   disabled?: boolean;
   /** When set, shown in the trigger instead of the selected option label (e.g. disabled placeholder). */
   placeholderOverride?: string;
+  /**
+   * Color used for the placeholder text in the trigger.
+   * - "tertiary" (default) — standard placeholder grey.
+   * - "primary"            — full text-primary (Figma 5322:96732 — Crown additional info).
+   */
+  placeholderTone?: "tertiary" | "primary";
 }
 
 /** Portaled listboxes live outside modal refs; ignore outside-click when interacting with them (see CrownModal26A). */
@@ -220,7 +259,7 @@ const dropdownListContent = (
     role="listbox"
     aria-labelledby={`dropdown-${id}`}
     data-dropdown-portal=""
-    className="flex max-h-[min(15rem,calc(100svh-8rem))] min-h-0 flex-col rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table-y"
+    className="flex min-h-0 flex-col rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table-y"
     style={listStyle}
   >
     {options.map((opt) => (
@@ -262,22 +301,38 @@ export function DropdownField({
   triggerLeading,
   disabled = false,
   placeholderOverride,
+  placeholderTone = "tertiary",
 }: DropdownFieldProps) {
   const selected = options.find((o) => o.id === value);
   const displayLabel = placeholderOverride ?? selected?.label ?? value;
   const isPlaceholder = placeholderOverride != null || !selected || selected.id === "";
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [portalPosition, setPortalPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [portalPosition, setPortalPosition] = useState<
+    { top: number; left: number; width: number; maxHeight: number } | null
+  >(null);
   const bgLayer = backgroundVariant === "layer-02" ? "var(--color-background-layer-02)" : "var(--color-background-layer-01)";
 
+  /**
+   * Position the portaled listbox below the trigger by default, but flip it above when there isn't
+   * enough room (e.g. modal field near the viewport's bottom edge). Caps maxHeight to the available
+   * space so the menu never spills off the screen.
+   */
   useLayoutEffect(() => {
     if (isOpen && listZIndex != null && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setPortalPosition({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      const itemHeight = 60;
+      const naturalHeight = Math.min(options.length * itemHeight + 2, 240);
+      const margin = 16;
+      const spaceBelow = window.innerHeight - rect.bottom - margin - 4;
+      const spaceAbove = rect.top - margin - 4;
+      const openUp = spaceBelow < naturalHeight && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(120, Math.min(naturalHeight, openUp ? spaceAbove : spaceBelow));
+      const top = openUp ? rect.top - 4 - maxHeight : rect.bottom + 4;
+      setPortalPosition({ top, left: rect.left, width: rect.width, maxHeight });
     } else {
       setPortalPosition(null);
     }
-  }, [isOpen, listZIndex]);
+  }, [isOpen, listZIndex, options.length]);
 
   const usePortal = isOpen && listZIndex != null;
 
@@ -306,11 +361,15 @@ export function DropdownField({
         style={{
           backgroundColor: backgroundVariant === "layer-02" ? (hideBorder ? bgLayer : undefined) : (isOpen && backgroundVariant === "layer-01" ? "var(--color-background-layer-01)" : bgLayer),
           borderRadius: 8,
-          border: hideBorder ? "none" : (backgroundVariant === "layer-02" ? undefined : (error
+          border: error
             ? "1px solid var(--color-border-error, #d43f58)"
             : isOpen
               ? "1px solid var(--color-border-interactive)"
-              : "1px solid var(--color-border-subtle)")),
+              : hideBorder
+                ? "none"
+                : backgroundVariant === "layer-02"
+                  ? undefined
+                  : "1px solid var(--color-border-subtle)",
           padding: "16px 16px",
           gap: 8,
           minHeight: 60,
@@ -321,7 +380,11 @@ export function DropdownField({
           {triggerLeading}
           <span
             className={`tp-body-02 min-w-0 flex-1 truncate ${
-              isPlaceholder ? "text-text-tertiary" : "text-text-primary"
+              isPlaceholder
+                ? placeholderTone === "primary"
+                  ? "text-text-primary"
+                  : "text-text-tertiary"
+                : "text-text-primary"
             }`}
           >
             {displayLabel}
@@ -346,6 +409,8 @@ export function DropdownField({
           top: portalPosition.top,
           left: portalPosition.left,
           width: portalPosition.width,
+          maxHeight: portalPosition.maxHeight,
+          overflowY: "auto",
           zIndex: listZIndex,
           boxShadow: "var(--shadow-card)",
         }),
@@ -888,6 +953,14 @@ export interface ToothDetail {
   material: string;
   shadeSystem: string;
   body: string;
+  /** Additional information — Figma 5322:96732 (open state). */
+  prepDesignBuccal: string;
+  prepDesignLingual: string;
+  incisal: string;
+  marginDesignBuccal: string;
+  marginDesignLingual: string;
+  gingival: string;
+  stumpShade: string;
 }
 
 export interface ToggleState {
@@ -1005,8 +1078,20 @@ export default function FixedRestorativeForm26A({
     if (crownModalTooth === toothNum) setCrownModalTooth(null);
   }
 
-  function getToothDetail(toothNum: number) {
-    return toothDetails[toothNum] ?? { specification: "", material: "", shadeSystem: "", body: "" };
+  function getToothDetail(toothNum: number): ToothDetail {
+    return toothDetails[toothNum] ?? {
+      specification: "",
+      material: "",
+      shadeSystem: "",
+      body: "",
+      prepDesignBuccal: "",
+      prepDesignLingual: "",
+      incisal: "",
+      marginDesignBuccal: "",
+      marginDesignLingual: "",
+      gingival: "",
+      stumpShade: "",
+    };
   }
 
   function updateToothDetail(toothNum: number, field: string, value: string) {
