@@ -267,10 +267,12 @@ export default function ScanStepContent26A({
             onToolClick={(toolId, isActive) => {
               if (toolId === "edit") {
                 setPrepEditOpen(isActive);
-                if (isActive) {
-                  setPrepEditMode("select");
-                } else {
+                if (!isActive) {
+                  // Leaving Edit also drops any in-progress selection so the
+                  // derived panel mode falls back to "select" next time.
                   setPrepSelectionMode(false);
+                  setPrepLassoPaths([]);
+                  setPrepLassoCurrent([]);
                 }
               }
               if (toolId === "swap") {
