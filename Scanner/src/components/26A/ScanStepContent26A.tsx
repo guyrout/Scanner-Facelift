@@ -14,12 +14,13 @@
  * └───────────┴──────────────────────────┴───────────────┘
  */
 
-import { useState, useEffect, lazy, Suspense, type MutableRefObject } from "react";
+import { useCallback, useEffect, useRef, useState, lazy, Suspense, type MutableRefObject } from "react";
 import ScanToolbar26A, { type ScanToolbarToolId } from "./ScanToolbar26A";
-import PrepEditPanel26A from "./PrepEditPanel26A";
+import PrepEditPanel26A, { type PrepEditMode } from "./PrepEditPanel26A";
 import SwapScansModal26A from "./SwapScansModal26A";
 import ToothMap26A from "./ToothMap26A";
 import JawSelector26A, { type JawSelection } from "./JawSelector26A";
+import LassoDrawingOverlay26A, { type LassoPoint } from "./LassoDrawingOverlay26A";
 import { getTreatmentPlyPair, treatmentRestrictsScanViewToolbarTools } from "./treatmentScanFlow26A";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
 
@@ -100,10 +101,53 @@ export default function ScanStepContent26A({
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [deselectSwapNonce, setDeselectSwapNonce] = useState(0);
 
+  // Lasso drawing state for prep-edit "Select and rescan" — mirrors the View
+  // step's Trim tool: closed paths are projected to 3D and cut on Rescan.
+  const [prepLassoPaths, setPrepLassoPaths] = useState<LassoPoint[][]>([]);
+  const [prepLassoCurrent, setPrepLassoCurrent] = useState<LassoPoint[]>([]);
+
+  // Clearing the lasso must happen AFTER PlyMesh has performed its cut.
+  // Child effects fire before parent effects in the same commit, so by the
+  // time this effect runs the cut is already applied — at which point we can
+  // safely drop the now-rendered overlay paths.
+  const lastClearedEraseNonceRef = useRef(0);
+  useEffect(() => {
+    if (eraseSelectionNonce <= lastClearedEraseNonceRef.current) return;
+    lastClearedEraseNonceRef.current = eraseSelectionNonce;
+    setPrepLassoPaths([]);
+    setPrepLassoCurrent([]);
+  }, [eraseSelectionNonce]);
+
+  // Derive panel mode: the Rescan button is only enabled (mode === "selected")
+  // once the user has actually drawn something to cut. Until then we fall back
+  // to the panel's "disabled" mode which renders Rescan as a disabled button.
+  const prepEditMode: PrepEditMode = !prepSelectionMode
+    ? "select"
+    : prepLassoPaths.length > 0
+      ? "selected"
+      : "disabled";
+
+  const handlePrepDrawStart = useCallback((p: LassoPoint) => {
+    setPrepLassoCurrent([p]);
+  }, []);
+  const handlePrepDrawMove = useCallback((p: LassoPoint) => {
+    setPrepLassoCurrent((prev) => [...prev, p]);
+  }, []);
+  const handlePrepDrawEnd = useCallback(() => {
+    setPrepLassoCurrent((prev) => {
+      if (prev.length > 2) {
+        setPrepLassoPaths((paths) => [...paths, prev]);
+      }
+      return [];
+    });
+  }, []);
+
   useEffect(() => {
     if (!treatmentRestrictsScanViewToolbarTools(treatmentId)) return;
     setPrepEditOpen(false);
     setPrepSelectionMode(false);
+    setPrepLassoPaths([]);
+    setPrepLassoCurrent([]);
     setSwapModalOpen(false);
     setScanToolbarActiveTools((prev) => {
       const next = new Set(prev);
@@ -144,6 +188,7 @@ export default function ScanStepContent26A({
                 cameraStateRef={cameraStateRef}
                 editSelectionMode={prepSelectionMode}
                 eraseSelectionNonce={eraseSelectionNonce}
+                lassoPaths={prepLassoPaths}
               />
             </Suspense>
           ) : (
@@ -154,6 +199,19 @@ export default function ScanStepContent26A({
             </div>
           )}
         </div>
+
+        {/* Prep-edit lasso overlay — mirrors the View step's Trim drawing overlay.
+            Sits above the 3D viewport but below z-10 UI (tooth map / jaw selector)
+            and the z-20 prep-edit panel, so those remain interactive. */}
+        {prepEditOpen && prepSelectionMode && showScanViewport3d && (
+          <LassoDrawingOverlay26A
+            paths={prepLassoPaths}
+            currentPath={prepLassoCurrent}
+            onDrawStart={handlePrepDrawStart}
+            onDrawMove={handlePrepDrawMove}
+            onDrawEnd={handlePrepDrawEnd}
+          />
+        )}
 
         {/* Top-left: tooth map — same chart also shown on View (26A replaces multi-layer panel there) */}
         <div
@@ -209,7 +267,9 @@ export default function ScanStepContent26A({
             onToolClick={(toolId, isActive) => {
               if (toolId === "edit") {
                 setPrepEditOpen(isActive);
-                if (!isActive) {
+                if (isActive) {
+                  setPrepEditMode("select");
+                } else {
                   setPrepSelectionMode(false);
                 }
               }
@@ -238,23 +298,37 @@ export default function ScanStepContent26A({
           />
         )}
 
-        {/* Bottom-left: Prep edit menu — Figma 4285:156904 when Edit tool is active */}
+        {/* Bottom-left: Prep edit menu — Figma 5386:98816 / 5386:98770 / 5404:89938 when Edit tool is active */}
         {prepEditOpen && (
           <div className="absolute z-20" style={{ left: 28, bottom: 28 }}>
             <PrepEditPanel26A
+              mode={prepEditMode}
               onClose={() => {
                 setPrepEditOpen(false);
                 setPrepSelectionMode(false);
+                setPrepLassoPaths([]);
+                setPrepLassoCurrent([]);
                 setDeselectEditNonce((n) => n + 1);
               }}
-              onSelect={() => {
+              onSelectAndRescan={() => {
                 setPrepSelectionMode(true);
+                setPrepLassoPaths([]);
+                setPrepLassoCurrent([]);
               }}
-              onEraseAndScan={() => {
+              onRescan={() => {
+                // Triggers the projection + cut inside PlyMesh. The lasso paths
+                // are NOT cleared here — that happens in a useEffect after this
+                // commit so PlyMesh's child effect still sees the paths when it
+                // performs the cut. (Clearing in the same batch would race the
+                // cut and leave the model intact.)
                 setEraseSelectionNonce((n) => n + 1);
-                setPrepSelectionMode(false);
               }}
-              selectActive={prepSelectionMode}
+              onUndoSelection={() => {
+                // Clears the in-progress lasso but keeps the user in selection
+                // mode so they can re-draw without re-opening the panel.
+                setPrepLassoPaths([]);
+                setPrepLassoCurrent([]);
+              }}
             />
           </div>
         )}

@@ -35,9 +35,12 @@ export interface SignCaseModal26AProps {
   onConfirmSend: () => void;
   /** Close control in header — e.g. return to View step */
   onRequestClose?: () => void;
+  /** Active treatment id from the Info step. When "fixed-restorative", the
+   *  "Create Invisalign Simulation+" option is hidden (it doesn't apply to fixed cases). */
+  treatmentId?: string;
 }
 
-export default function SignCaseModal26A({ sendToId: _sendToId, onConfirmSend, onRequestClose }: SignCaseModal26AProps) {
+export default function SignCaseModal26A({ sendToId: _sendToId, onConfirmSend, onRequestClose, treatmentId }: SignCaseModal26AProps) {
   const [saveSignature, setSaveSignature] = useState(true);
   const [createSimulation, setCreateSimulation] = useState(false);
   const [consentChecked, setConsentChecked] = useState(true);
@@ -220,14 +223,16 @@ export default function SignCaseModal26A({ sendToId: _sendToId, onConfirmSend, o
               <CheckboxIcon checked={saveSignature} />
               <span className="tp-body-02 text-text-primary">Save signature</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setCreateSimulation((v) => !v)}
-              className="flex items-center cursor-pointer bg-transparent border-0 appearance-none outline-none shrink-0 min-h-[60px] gap-2 w-full text-left py-[18px]"
-            >
-              <CheckboxIcon checked={createSimulation} />
-              <span className="tp-body-02 text-text-primary">Create Invisalign Simulation+</span>
-            </button>
+            {treatmentId !== "fixed-restorative" && (
+              <button
+                type="button"
+                onClick={() => setCreateSimulation((v) => !v)}
+                className="flex items-center cursor-pointer bg-transparent border-0 appearance-none outline-none shrink-0 min-h-[60px] gap-2 w-full text-left py-[18px]"
+              >
+                <CheckboxIcon checked={createSimulation} />
+                <span className="tp-body-02 text-text-primary">Create Invisalign Simulation+</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setConsentChecked((v) => !v)}

@@ -1,8 +1,9 @@
 import { Suspense, useState, useEffect, useRef, useMemo, type MutableRefObject } from "react";
-import { Canvas, useThree, useFrame, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { createHeatmapMaterial } from "../../shaders/occlusalHeatmap";
 import type { JawSelection } from "./JawSelector26A";
+import type { LassoPoint } from "./LassoDrawingOverlay26A";
 import {
   STONE_COLOR,
   normalizeScanMeshGeometry,
@@ -24,33 +25,74 @@ export interface CameraState {
 
 export type ViewMode = "color" | "stone";
 
-const EDIT_SELECTION_RADIUS = 0.145;
-const SELECTION_TINT = new THREE.Color("#009ACE");
+/**
+ * Even-odd point-in-polygon (ray casting) for screen-space lasso cuts.
+ */
+function pointInPolygon(px: number, py: number, polygon: LassoPoint[]): boolean {
+  let inside = false;
+  const n = polygon.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+    const intersect =
+      yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi + 1e-12) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
 
-function applySelectionTint(
+/**
+ * Build a vertex selection mask by projecting each mesh vertex to screen-space
+ * and testing against the supplied 2D lasso polygons. Vertices facing away
+ * from the camera are skipped so the cut only affects the visible front face
+ * of the model (mirrors the user's mental model of "cut what I see").
+ */
+function buildLassoSelectionMask(
+  mesh: THREE.Mesh,
   geometry: THREE.BufferGeometry,
-  selectedMask: Uint8Array,
-  baseColors: Float32Array,
-) {
-  const colorAttr = ensureVertexColors(geometry);
-  const colors = colorAttr.array as Float32Array;
-  const vertexCount = colorAttr.count;
-  for (let i = 0; i < vertexCount; i++) {
-    const base = i * 3;
-    const r = baseColors[base];
-    const g = baseColors[base + 1];
-    const b = baseColors[base + 2];
-    if (selectedMask[i]) {
-      colors[base] = r * 0.45 + SELECTION_TINT.r * 0.55;
-      colors[base + 1] = g * 0.45 + SELECTION_TINT.g * 0.55;
-      colors[base + 2] = b * 0.45 + SELECTION_TINT.b * 0.55;
-    } else {
-      colors[base] = r;
-      colors[base + 1] = g;
-      colors[base + 2] = b;
+  camera: THREE.Camera,
+  canvasWidth: number,
+  canvasHeight: number,
+  lassoPaths: LassoPoint[][],
+): Uint8Array {
+  const position = geometry.getAttribute("position") as THREE.BufferAttribute;
+  const normal = geometry.getAttribute("normal") as THREE.BufferAttribute | null;
+  const mask = new Uint8Array(position.count);
+  if (lassoPaths.length === 0) return mask;
+
+  mesh.updateMatrixWorld(true);
+  const worldVertex = new THREE.Vector3();
+  const projected = new THREE.Vector3();
+  const worldNormal = new THREE.Vector3();
+  const cameraDir = new THREE.Vector3();
+  camera.getWorldDirection(cameraDir);
+  const halfW = canvasWidth * 0.5;
+  const halfH = canvasHeight * 0.5;
+
+  for (let i = 0; i < position.count; i++) {
+    worldVertex.fromBufferAttribute(position, i);
+    mesh.localToWorld(worldVertex);
+    projected.copy(worldVertex).project(camera);
+    if (projected.z < -1 || projected.z > 1) continue;
+    const sx = (projected.x + 1) * halfW;
+    const sy = (1 - projected.y) * halfH;
+
+    if (normal) {
+      worldNormal.fromBufferAttribute(normal, i);
+      worldNormal.transformDirection(mesh.matrixWorld);
+      if (worldNormal.dot(cameraDir) > 0) continue;
+    }
+
+    for (const path of lassoPaths) {
+      if (pointInPolygon(sx, sy, path)) {
+        mask[i] = 1;
+        break;
+      }
     }
   }
-  colorAttr.needsUpdate = true;
+  return mask;
 }
 
 function eraseSelectedFaces(geometry: THREE.BufferGeometry, selectedMask: Uint8Array): THREE.BufferGeometry {
@@ -182,8 +224,8 @@ function PlyMesh({
   showOcclusgramHeatmap,
   opposingJawUrl,
   occlusogramSurfaceJaw,
-  editSelectionMode = false,
   eraseSelectionNonce = 0,
+  lassoPaths,
   opacity = 1,
 }: {
   url: string;
@@ -193,18 +235,19 @@ function PlyMesh({
   opposingJawUrl?: string;
   /** Required for inter-arch heat when paired: which arch `url` represents. */
   occlusogramSurfaceJaw?: "upper" | "lower";
-  editSelectionMode?: boolean;
+  /** Increment to trigger a lasso-based cut using the currently provided `lassoPaths`. */
   eraseSelectionNonce?: number;
+  /** Screen-space lasso polygons (canvas coordinates relative to the viewport canvas). */
+  lassoPaths?: LassoPoint[][];
   opacity?: number;
 }) {
+  const { camera, gl } = useThree();
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [opposingGeometry, setOpposingGeometry] = useState<THREE.BufferGeometry | null>(null);
-  const [selectedCount, setSelectedCount] = useState(0);
   const meshRef = useRef<THREE.Mesh>(null);
-  const baseColorsRef = useRef<Float32Array | null>(null);
-  const selectedMaskRef = useRef<Uint8Array>(new Uint8Array(0));
   const lastEraseNonceRef = useRef(0);
-  const selectingGestureRef = useRef(false);
+  const lassoPathsRef = useRef<LassoPoint[][] | undefined>(lassoPaths);
+  lassoPathsRef.current = lassoPaths;
 
   useEffect(() => {
     let cancelled = false;
@@ -222,12 +265,7 @@ function PlyMesh({
           return;
         }
         normalizeScanMeshGeometriesPair(gSelf, gOpp);
-        const colorAttr = ensureVertexColors(gSelf);
-        baseColorsRef.current = new Float32Array((colorAttr.array as Float32Array).slice());
-        selectedMaskRef.current = new Uint8Array(
-          (gSelf.getAttribute("position") as THREE.BufferAttribute).count,
-        );
-        setSelectedCount(0);
+        ensureVertexColors(gSelf);
         setGeometry(gSelf);
         setOpposingGeometry(gOpp);
       } catch (e) {
@@ -247,12 +285,7 @@ function PlyMesh({
           return;
         }
         normalizeScanMeshGeometry(geo);
-        const colorAttr = ensureVertexColors(geo);
-        baseColorsRef.current = new Float32Array((colorAttr.array as Float32Array).slice());
-        selectedMaskRef.current = new Uint8Array(
-          (geo.getAttribute("position") as THREE.BufferAttribute).count,
-        );
-        setSelectedCount(0);
+        ensureVertexColors(geo);
         setOpposingGeometry(null);
         setGeometry(geo);
       } catch (e) {
@@ -273,63 +306,33 @@ function PlyMesh({
   }, [url, opposingJawUrl]);
 
   useEffect(() => {
-    if (!geometry || eraseSelectionNonce <= lastEraseNonceRef.current) return;
+    if (!geometry || !meshRef.current) return;
+    if (eraseSelectionNonce <= lastEraseNonceRef.current) return;
     lastEraseNonceRef.current = eraseSelectionNonce;
-    if (selectedCount <= 0) return;
-    const next = eraseSelectedFaces(geometry, selectedMaskRef.current);
-    const colorAttr = ensureVertexColors(next);
-    baseColorsRef.current = new Float32Array((colorAttr.array as Float32Array).slice());
-    selectedMaskRef.current = new Uint8Array((next.getAttribute("position") as THREE.BufferAttribute).count);
-    setSelectedCount(0);
+    const paths = lassoPathsRef.current;
+    if (!paths || paths.length === 0) return;
+    const canvasEl = gl.domElement;
+    const rect = canvasEl.getBoundingClientRect();
+    const mask = buildLassoSelectionMask(
+      meshRef.current,
+      geometry,
+      camera,
+      rect.width,
+      rect.height,
+      paths,
+    );
+    let hasAny = false;
+    for (let i = 0; i < mask.length; i++) {
+      if (mask[i]) {
+        hasAny = true;
+        break;
+      }
+    }
+    if (!hasAny) return;
+    const next = eraseSelectedFaces(geometry, mask);
+    ensureVertexColors(next);
     setGeometry(next);
-  }, [eraseSelectionNonce, geometry, selectedCount]);
-
-  function paintSelectionAtPoint(localPoint: THREE.Vector3) {
-    if (!geometry || !baseColorsRef.current) return;
-    const position = geometry.getAttribute("position") as THREE.BufferAttribute;
-    const selectedMask = selectedMaskRef.current;
-    let changed = false;
-    const radiusSq = EDIT_SELECTION_RADIUS * EDIT_SELECTION_RADIUS;
-    for (let i = 0; i < position.count; i++) {
-      const dx = position.getX(i) - localPoint.x;
-      const dy = position.getY(i) - localPoint.y;
-      const dz = position.getZ(i) - localPoint.z;
-      const distSq = dx * dx + dy * dy + dz * dz;
-      if (distSq > radiusSq || selectedMask[i]) continue;
-      selectedMask[i] = 1;
-      changed = true;
-    }
-    if (!changed) return;
-    applySelectionTint(geometry, selectedMask, baseColorsRef.current);
-    let nextCount = 0;
-    for (let i = 0; i < selectedMask.length; i++) {
-      if (selectedMask[i]) nextCount += 1;
-    }
-    setSelectedCount(nextCount);
-  }
-
-  function handleSelectArea(event: ThreeEvent<PointerEvent>) {
-    if (!editSelectionMode || !geometry || occlusHeatActive) return;
-    event.stopPropagation();
-    const mesh = meshRef.current;
-    if (!mesh) return;
-    const localPoint = mesh.worldToLocal(event.point.clone());
-    selectingGestureRef.current = true;
-    paintSelectionAtPoint(localPoint);
-  }
-
-  function handleSelectAreaMove(event: ThreeEvent<PointerEvent>) {
-    if (!editSelectionMode || !selectingGestureRef.current || !geometry || occlusHeatActive) return;
-    event.stopPropagation();
-    const mesh = meshRef.current;
-    if (!mesh) return;
-    const localPoint = mesh.worldToLocal(event.point.clone());
-    paintSelectionAtPoint(localPoint);
-  }
-
-  function stopSelectionGesture() {
-    selectingGestureRef.current = false;
-  }
+  }, [eraseSelectionNonce, geometry, camera, gl]);
 
   const occlusHeatActive =
     showOcclusgramHeatmap === true &&
@@ -359,22 +362,9 @@ function PlyMesh({
       key={`${viewMode}-${occlusHeatActive ? "heat" : "base"}`}
       geometry={displayGeometry ?? geometry}
       rotation={[-Math.PI / 2, 0, 0]}
-      onPointerDown={handleSelectArea}
-      onPointerMove={handleSelectAreaMove}
-      onPointerUp={stopSelectionGesture}
-      onPointerLeave={stopSelectionGesture}
     >
       {occlusHeatActive ? (
         <primitive object={heatmapMaterial} attach="material" />
-      ) : editSelectionMode || selectedCount > 0 ? (
-        <meshStandardMaterial
-          vertexColors
-          roughness={0.5}
-          metalness={0.0}
-          side={THREE.DoubleSide}
-          transparent={useTransparency}
-          opacity={opacity}
-        />
       ) : isStone ? (
         <meshStandardMaterial
           color={STONE_COLOR}
@@ -530,10 +520,12 @@ interface PlyModelViewerProps {
   showOcclusgramHeatmap?: boolean;
   /** Opacity for the 3D model (0–1). Default 1. */
   opacity?: number;
-  /** Enables click-to-select area editing on the mesh. */
+  /** When true, camera controls are disabled (used while drawing a lasso so the 2D overlay owns input). */
   editSelectionMode?: boolean;
-  /** Increment to erase currently selected area from mesh faces. */
+  /** Increment to apply a lasso-based cut using `lassoPaths`; cuts the visible/front-facing area inside the polygons. */
   eraseSelectionNonce?: number;
+  /** Screen-space lasso polygons (canvas-relative pixels) used by `eraseSelectionNonce` cuts. */
+  lassoPaths?: LassoPoint[][];
 }
 
 export default function PlyModelViewer26A({
@@ -547,6 +539,7 @@ export default function PlyModelViewer26A({
   opacity = 1,
   editSelectionMode = false,
   eraseSelectionNonce = 0,
+  lassoPaths,
 }: PlyModelViewerProps) {
   const upperAsset = url;
   const lowerAsset = lowerUrl ?? url;
@@ -591,8 +584,8 @@ export default function PlyModelViewer26A({
               url={url}
               viewMode={viewMode}
               showOcclusgramHeatmap={showOcclusgramHeatmap}
-              editSelectionMode={editSelectionMode}
               eraseSelectionNonce={eraseSelectionNonce}
+              lassoPaths={lassoPaths}
               opacity={opacity}
             />
           )}
@@ -627,8 +620,8 @@ export default function PlyModelViewer26A({
               occlusogramSurfaceJaw="upper"
               viewMode={viewMode}
               showOcclusgramHeatmap={showOcclusgramHeatmap}
-              editSelectionMode={editSelectionMode}
               eraseSelectionNonce={eraseSelectionNonce}
+              lassoPaths={lassoPaths}
               opacity={opacity}
             />
           )}
@@ -639,8 +632,8 @@ export default function PlyModelViewer26A({
               occlusogramSurfaceJaw="lower"
               viewMode={viewMode}
               showOcclusgramHeatmap={showOcclusgramHeatmap}
-              editSelectionMode={editSelectionMode}
               eraseSelectionNonce={eraseSelectionNonce}
+              lassoPaths={lassoPaths}
               opacity={opacity}
             />
           )}
@@ -651,8 +644,8 @@ export default function PlyModelViewer26A({
                 occlusogramSurfaceJaw="upper"
                 viewMode={viewMode}
                 showOcclusgramHeatmap={showOcclusgramHeatmap}
-                editSelectionMode={editSelectionMode}
                 eraseSelectionNonce={eraseSelectionNonce}
+                lassoPaths={lassoPaths}
                 opacity={opacity}
               />
               <group position={[0, 0.004, 0]}>
@@ -661,8 +654,8 @@ export default function PlyModelViewer26A({
                   occlusogramSurfaceJaw="lower"
                   viewMode={viewMode}
                   showOcclusgramHeatmap={showOcclusgramHeatmap}
-                  editSelectionMode={editSelectionMode}
                   eraseSelectionNonce={eraseSelectionNonce}
+                  lassoPaths={lassoPaths}
                   opacity={opacity}
                 />
               </group>

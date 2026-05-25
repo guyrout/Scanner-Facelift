@@ -14,6 +14,7 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense, type MutableRefObject } from "react";
 import ViewToolbar26A, { type ViewToolId } from "./ViewToolbar26A";
 import ReviewToolPanel26A from "./ReviewToolPanel26A";
+import ReviewLoupe26A from "./ReviewLoupe26A";
 import MultiLayerPanel26A, { type LayerItem, type SelectedLayerId } from "./MultiLayerPanel26A";
 import ToothMap26A from "./ToothMap26A";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
@@ -833,6 +834,17 @@ export default function ViewStepContent26A({
           onDrawMove={handleTrimDrawMove}
           onDrawEnd={handleTrimDrawEnd}
         />
+      )}
+
+      {/* Review-tool loupe — draggable magnifier over the 3D model. The loupe
+          is the only chrome the Review tool shows; the user moves it freely
+          over the gray viewport background. The wrapper is pointer-events:none
+          so camera rotation still works when clicking the area around the
+          loupe; only the loupe itself captures pointer events. */}
+      {!isPostProcessing && activeTools.has("review-tool") && (
+        <div className="pointer-events-none absolute inset-0 z-10">
+          <ReviewLoupe26A />
+        </div>
       )}
 
       {/* Post processing overlay */}

@@ -89,7 +89,12 @@ export default function SendStepContent26A(props: SendStepContentProps) {
           onBiteGuidanceDismissed={onBiteGuidanceDismissed}
         />
       </div>
-      <SignCaseModal26A sendToId={sendToId} onConfirmSend={handleConfirmSend} onRequestClose={onExitSend} />
+      <SignCaseModal26A
+        sendToId={sendToId}
+        treatmentId={treatmentId}
+        onConfirmSend={handleConfirmSend}
+        onRequestClose={onExitSend}
+      />
     </div>
   );
 }

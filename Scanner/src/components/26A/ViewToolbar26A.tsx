@@ -185,10 +185,9 @@ function ChevronIcon({ up }: { up: boolean }) {
 }
 
 const VIEW_TOOLS: { id: ViewToolId; label: string; Icon: () => React.JSX.Element }[] = [
-  { id: "scan-color", label: "Monochrome", Icon: IconScanColor },
+  { id: "scan-color", label: "Scan color", Icon: IconScanColor },
   { id: "review-tool", label: "Review tool", Icon: IconReviewTool },
   { id: "occlusgram", label: "Occlusgram", Icon: IconOcclusgram },
-  { id: "prep-qc", label: "Prep qc", Icon: IconPrepQc },
   { id: "margin-line", label: "Margin line", Icon: IconMarginLine },
   { id: "trim", label: "Trim", Icon: IconTrim },
 ];

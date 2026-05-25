@@ -241,6 +241,8 @@ export interface DropdownFieldProps {
    * - "primary"            — full text-primary (Figma 5322:96732 — Crown additional info).
    */
   placeholderTone?: "tertiary" | "primary";
+  /** When true, append a red asterisk after the label to indicate a required field. */
+  required?: boolean;
 }
 
 /** Portaled listboxes live outside modal refs; ignore outside-click when interacting with them (see CrownModal26A). */
@@ -302,6 +304,7 @@ export function DropdownField({
   disabled = false,
   placeholderOverride,
   placeholderTone = "tertiary",
+  required = false,
 }: DropdownFieldProps) {
   const selected = options.find((o) => o.id === value);
   const displayLabel = placeholderOverride ?? selected?.label ?? value;
@@ -340,7 +343,10 @@ export function DropdownField({
     <div className="relative flex flex-col flex-1 min-w-0 w-full">
       {label && (
         <div style={{ paddingBottom: 8 }}>
-          <span className="tp-body-01 text-text-secondary">{label}</span>
+          <span className="tp-body-01 text-text-secondary">
+            {label}
+            {required && <span className="text-[var(--color-text-error,#d43f58)]"> *</span>}
+          </span>
         </div>
       )}
       <button

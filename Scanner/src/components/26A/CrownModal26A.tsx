@@ -130,8 +130,12 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
               )}
             </div>
 
-            <div className="flex w-full" style={{ gap: 24 }}>
-              <div className="flex-1 min-w-0">
+            {/* Two columns matching the additional-info grid below: col-span-2 [Specification, Material] / col-span-1 [Shade system, Body] */}
+            <div
+              className="grid w-full"
+              style={{ gridTemplateColumns: "1fr 1fr 1fr", columnGap: 24 }}
+            >
+              <div className="col-span-2 flex flex-col min-w-0" style={{ gap: 12 }}>
                 <DropdownField
                   id="crown-spec"
                   label="Specification"
@@ -145,9 +149,25 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
                   onToggle={() => setOpenDropdown(openDropdown === "spec" ? null : "spec")}
                   backgroundVariant="layer-02"
                   listZIndex={10001}
+                  required
+                />
+                <DropdownField
+                  id="crown-material"
+                  label="Material"
+                  value={detail.material}
+                  options={MATERIAL_OPTIONS}
+                  onChange={(id) => {
+                    onDetailChange("material", id);
+                    setOpenDropdown(null);
+                  }}
+                  isOpen={openDropdown === "material"}
+                  onToggle={() => setOpenDropdown(openDropdown === "material" ? null : "material")}
+                  backgroundVariant="layer-02"
+                  listZIndex={10001}
+                  required
                 />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex flex-col min-w-0" style={{ gap: 12 }}>
                 <DropdownField
                   id="crown-shade"
                   label="Shade system"
@@ -161,46 +181,27 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
                   onToggle={() => setOpenDropdown(openDropdown === "shade" ? null : "shade")}
                   backgroundVariant="layer-02"
                   listZIndex={10001}
+                  required
+                />
+                <DropdownField
+                  id="crown-body"
+                  label="Body"
+                  value={detail.body}
+                  options={BODY_OPTIONS}
+                  onChange={(id) => {
+                    onDetailChange("body", id);
+                    setOpenDropdown(null);
+                  }}
+                  isOpen={openDropdown === "body"}
+                  onToggle={() => setOpenDropdown(openDropdown === "body" ? null : "body")}
+                  backgroundVariant="layer-02"
+                  listZIndex={10001}
+                  required
                 />
               </div>
             </div>
 
-            <div className="flex flex-col w-full gap-5">
-              <div className="flex w-full items-start justify-end gap-6 rounded-lg overflow-hidden">
-                <div className="flex-1 min-w-0">
-                  <DropdownField
-                    id="crown-material"
-                    label="Material"
-                    value={detail.material}
-                    options={MATERIAL_OPTIONS}
-                    onChange={(id) => {
-                      onDetailChange("material", id);
-                      setOpenDropdown(null);
-                    }}
-                    isOpen={openDropdown === "material"}
-                    onToggle={() => setOpenDropdown(openDropdown === "material" ? null : "material")}
-                    backgroundVariant="layer-02"
-                    listZIndex={10001}
-                  />
-                </div>
-                <div className="flex-1 min-w-0" style={{ height: 92 }}>
-                  <DropdownField
-                    id="crown-body"
-                    label="Body"
-                    value={detail.body}
-                    options={BODY_OPTIONS}
-                    onChange={(id) => {
-                      onDetailChange("body", id);
-                      setOpenDropdown(null);
-                    }}
-                    isOpen={openDropdown === "body"}
-                    onToggle={() => setOpenDropdown(openDropdown === "body" ? null : "body")}
-                    backgroundVariant="layer-02"
-                    listZIndex={10001}
-                  />
-                </div>
-              </div>
-
+            <div className="flex flex-col w-full">
               <div className="flex flex-col w-full min-w-0">
                 <div
                   className="flex flex-col w-full items-start justify-end rounded-lg border border-solid border-border-subtle bg-[var(--color-page-background)] overflow-hidden"
@@ -239,16 +240,26 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
                         minHeight: 0,
                         overflow: "hidden",
                         padding: additionalOpen ? "0 16px 16px 16px" : "0 16px 0 16px",
-                        gap: 10,
                         opacity: additionalOpen ? 1 : 0,
                         transform: additionalOpen ? "translateY(0)" : "translateY(-4px)",
                         transition:
                           "opacity 220ms cubic-bezier(0.4, 0, 0.2, 1), transform 280ms cubic-bezier(0.4, 0, 0.2, 1), padding 280ms cubic-bezier(0.4, 0, 0.2, 1)",
                       }}
                     >
-                      {/* Row 1: Preparation Design — Buccal / Lingual / Incisal */}
-                      <div className="flex w-full items-start" style={{ gap: 24 }}>
-                        <div className="flex-1 min-w-0">
+                      {/* 3-column grid: cols 1–2 = Prep + Margin (2×2 sub-grid), col 3 = Incisal / Gingival / Stump Shade */}
+                      <div
+                        className="grid w-full items-start"
+                        style={{ gridTemplateColumns: "1fr 1fr 1fr", columnGap: 24 }}
+                      >
+                        {/* Group 3: Prep Design + Margin Design (Buccal / Lingual) — 2×2 sub-grid */}
+                        <div
+                          className="grid col-span-2 min-w-0"
+                          style={{
+                            gridTemplateColumns: "repeat(2, 1fr)",
+                            columnGap: 24,
+                            rowGap: 24,
+                          }}
+                        >
                           <DropdownField
                             id="crown-prep-buccal"
                             label="Preparation Design- Buccal"
@@ -266,8 +277,6 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
                             placeholderTone="primary"
                             hideBorder
                           />
-                        </div>
-                        <div className="flex-1 min-w-0">
                           <DropdownField
                             id="crown-prep-lingual"
                             label="Preparation Design- Lingual"
@@ -285,31 +294,6 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
                             placeholderTone="primary"
                             hideBorder
                           />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <DropdownField
-                            id="crown-incisal"
-                            label="Incisal"
-                            value={detail.incisal}
-                            options={SHADE_VALUE_OPTIONS}
-                            onChange={(id) => {
-                              onDetailChange("incisal", id);
-                              setOpenDropdown(null);
-                            }}
-                            isOpen={openDropdown === "incisal"}
-                            onToggle={() =>
-                              setOpenDropdown(openDropdown === "incisal" ? null : "incisal")
-                            }
-                            listZIndex={10001}
-                            placeholderTone="primary"
-                            hideBorder
-                          />
-                        </div>
-                      </div>
-
-                      {/* Row 2: Margin Design — Buccal / Lingual / Gingival */}
-                      <div className="flex w-full items-start" style={{ gap: 24 }}>
-                        <div className="flex-1 min-w-0">
                           <DropdownField
                             id="crown-margin-buccal"
                             label="Margin Design- Buccal"
@@ -327,8 +311,6 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
                             placeholderTone="primary"
                             hideBorder
                           />
-                        </div>
-                        <div className="flex-1 min-w-0">
                           <DropdownField
                             id="crown-margin-lingual"
                             label="Margin Design- Lingual"
@@ -347,7 +329,26 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
                             hideBorder
                           />
                         </div>
-                        <div className="flex-1 min-w-0">
+
+                        {/* Group 4: Incisal / Gingival / Stump Shade — vertical stack in col 3 */}
+                        <div className="flex flex-col min-w-0" style={{ gap: 24 }}>
+                          <DropdownField
+                            id="crown-incisal"
+                            label="Incisal"
+                            value={detail.incisal}
+                            options={SHADE_VALUE_OPTIONS}
+                            onChange={(id) => {
+                              onDetailChange("incisal", id);
+                              setOpenDropdown(null);
+                            }}
+                            isOpen={openDropdown === "incisal"}
+                            onToggle={() =>
+                              setOpenDropdown(openDropdown === "incisal" ? null : "incisal")
+                            }
+                            listZIndex={10001}
+                            placeholderTone="primary"
+                            hideBorder
+                          />
                           <DropdownField
                             id="crown-gingival"
                             label="Gingival"
@@ -365,14 +366,6 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
                             placeholderTone="primary"
                             hideBorder
                           />
-                        </div>
-                      </div>
-
-                      {/* Row 3: empty / empty / Stump Shade */}
-                      <div className="flex w-full items-start justify-end" style={{ gap: 24 }}>
-                        <div className="flex-1 min-w-0" aria-hidden />
-                        <div className="flex-1 min-w-0" aria-hidden />
-                        <div className="flex-1 min-w-0">
                           <DropdownField
                             id="crown-stump-shade"
                             label="Stump Shade"

@@ -708,9 +708,7 @@ export default function InfoStepContent26A({
                   />
                 </div>
                 <label className="flex min-w-0 flex-1 flex-col self-stretch" style={{ gap: 8 }}>
-                  <span className="tp-body-01 text-text-secondary">
-                    Due Date <span className="text-[var(--color-text-error,#d43f58)]">*</span>
-                  </span>
+                  <span className="tp-body-01 text-text-secondary">Due Date</span>
                   <DatePickerField
                     label=""
                     value={dueDate}
@@ -733,9 +731,7 @@ export default function InfoStepContent26A({
               </div>
               <div className="flex flex-col flex-1 min-w-0" style={{ gap: 18 }}>
                 <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
-                  <span className="tp-body-01 text-text-secondary">
-                    Type <span className="text-[var(--color-text-error,#d43f58)]">*</span>
-                  </span>
+                  <span className="tp-body-01 text-text-disabled">Type</span>
                   <DropdownField
                     id="info-fixed-type"
                     ariaLabel="Select procedure type"
@@ -749,9 +745,7 @@ export default function InfoStepContent26A({
                   />
                 </div>
                 <div className="flex flex-col min-w-0" style={{ gap: 8 }}>
-                  <span className="tp-body-01 text-text-secondary">
-                    Send to <span className="text-[var(--color-text-error,#d43f58)]">*</span>
-                  </span>
+                  <span className="tp-body-01 text-text-secondary">Send to</span>
                   <DropdownField
                     id="info-sendto"
                     ariaLabel="Send to"
