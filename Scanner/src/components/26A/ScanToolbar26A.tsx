@@ -130,7 +130,7 @@ function ChevronIcon({ up }: { up: boolean }) {
 }
 
 const TOOLS: { id: ToolId; label: string; Icon: () => React.JSX.Element }[] = [
-  { id: "scan-color", label: "Scan color", Icon: IconScanColor },
+  { id: "scan-color", label: "Color", Icon: IconScanColor },
   { id: "feedback", label: "Feedback", Icon: IconFeedback },
   { id: "edit", label: "Edit", Icon: IconEdit },
 ];

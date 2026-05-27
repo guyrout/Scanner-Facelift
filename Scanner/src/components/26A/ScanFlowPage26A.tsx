@@ -17,6 +17,16 @@ import SleeveConfirmationModal26A from "./SleeveConfirmationModal26A";
 import { scanUpperJawGuidanceIsPermanentlySkipped } from "./ScanUpperJawGuidanceModal26A";
 import type { CameraState } from "./PlyModelViewer26A";
 import type { JawSelection } from "./JawSelector26A";
+import type { Patient } from "../../data/patients";
+import type { Order } from "../../data/orders";
+import {
+  addRuntimeOrder,
+  addRuntimePatient,
+  findPatientById,
+  generateChartNumber,
+  generateOrderId,
+  generatePatientId,
+} from "../../data/runtimeStore";
 
 export interface ScanFlowPatientSnapshot {
   patientName: string;
@@ -25,6 +35,10 @@ export interface ScanFlowPatientSnapshot {
   gender: string;
   lastScan: string;
   treatedBy: string;
+  /** Internal `Patient.id` when the user picked an existing patient from
+   *  the search modal. Absent when the user is creating a new patient
+   *  from scratch in the Info step. */
+  internalId?: string;
 }
 
 export interface ScanFlowPageProps {
@@ -33,6 +47,10 @@ export interface ScanFlowPageProps {
   onOpenSupport?: () => void;
   /** Patient captured on the pre-wizard “Patient details” screen (Home → Scan). */
   initialPatient?: ScanFlowPatientSnapshot;
+  /** Fired after Confirm & Send. Receives the resolved `Patient` so the
+   *  host can navigate to that patient's orders page. If omitted, the host
+   *  falls back to `onBack`. */
+  onScanComplete?: (patient: Patient) => void;
 }
 
 const DEFAULT_PATIENT: ScanFlowPatientSnapshot = {
@@ -44,7 +62,60 @@ const DEFAULT_PATIENT: ScanFlowPatientSnapshot = {
   treatedBy: "",
 };
 
-export default function ScanFlowPage26A({ onBack, onOpenSettings, onOpenSupport, initialPatient }: ScanFlowPageProps) {
+/** MM/DD/YYYY for the current local date. */
+function todayMDYYYY(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}/${dd}/${d.getFullYear()}`;
+}
+
+/** Map a treatment id to the procedure label used in the Order table. */
+function procedureLabelFor(treatmentId: string): string {
+  switch (treatmentId) {
+    case "fixed-restorative":
+      return "Fixed Restorative";
+    case "denture":
+    case "denture-removable":
+      return "Denture/Removable";
+    case "invisalign":
+      return "Invisalign";
+    case "study-model":
+    default:
+      return "Study Model/iRecord";
+  }
+}
+
+/** Build a `Patient` record from a free-text Info-step snapshot. Used when
+ *  the user typed a brand-new patient (no `internalId` set). */
+function buildPatientFromSnapshot(snapshot: ScanFlowPatientSnapshot): Patient {
+  const trimmedName = snapshot.patientName.trim();
+  const [firstName, ...rest] = trimmedName.length > 0 ? trimmedName.split(/\s+/) : ["New", "Patient"];
+  const lastName = rest.join(" ") || "Patient";
+  const gender: "Male" | "Female" = snapshot.gender === "Female" ? "Female" : "Male";
+  return {
+    id: generatePatientId(),
+    firstName: firstName || "New",
+    lastName,
+    // When the user skipped the Chart Number field, mint one for them so
+    // the patient row + orders table show a real-looking id (matches the
+    // 8-digit seed-data format).
+    patientId: snapshot.patientId.trim() || generateChartNumber(),
+    dateOfBirth: snapshot.dateOfBirth || "",
+    lastScanDate: todayMDYYYY(),
+    doctor: snapshot.treatedBy || "Dr. Mitra Malini",
+    orders: 1,
+    gender,
+  };
+}
+
+export default function ScanFlowPage26A({
+  onBack,
+  onOpenSettings,
+  onOpenSupport,
+  initialPatient,
+  onScanComplete,
+}: ScanFlowPageProps) {
   const [currentStep, setCurrentStep] = useState<ScanWizardStep>("info");
   const [sleeveModalOpen, setSleeveModalOpen] = useState(false);
   /** User acknowledged sleeve this visit to Scan — resets when the scan flow page unmounts (e.g. Home). */
@@ -140,6 +211,38 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, onOpenSupport,
    */
   const scanViewport3dReady = sleeveAcknowledgedThisFlow;
 
+  /**
+   * Confirm & Send: persist the new order (and a new patient row when needed)
+   * into the runtime store, then hand the resolved `Patient` to the host so
+   * it can navigate to that patient's orders page.
+   */
+  const handleConfirmSend = useCallback(() => {
+    let resolvedPatient: Patient | undefined = patient.internalId
+      ? findPatientById(patient.internalId)
+      : undefined;
+
+    if (!resolvedPatient) {
+      resolvedPatient = buildPatientFromSnapshot(patient);
+      addRuntimePatient(resolvedPatient);
+    }
+
+    const newOrder: Order = {
+      orderId: generateOrderId(),
+      procedure: procedureLabelFor(treatmentId),
+      niri: toggles.niri,
+      scanDate: todayMDYYYY(),
+      lastModified: todayMDYYYY(),
+      status: "sent_to_lab",
+    };
+    addRuntimeOrder(resolvedPatient.id, newOrder);
+
+    if (onScanComplete) {
+      onScanComplete(resolvedPatient);
+    } else {
+      onBack();
+    }
+  }, [patient, treatmentId, toggles.niri, onScanComplete, onBack]);
+
   return (
     <div className="scan-flow flex flex-col w-full h-full min-h-0 overflow-hidden bg-[var(--color-background-layer-01)]">
       <ScanFlowHeader26A
@@ -232,7 +335,7 @@ export default function ScanFlowPage26A({ onBack, onOpenSettings, onOpenSupport,
             selectedJaw={selectedJaw}
             onSelectedJawChange={setSelectedJaw}
             onExitSend={() => handleStepChange("view")}
-            onConfirmSend={onBack}
+            onConfirmSend={handleConfirmSend}
             upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
             onUpperJawGuidanceDismissed={() => setUpperJawGuidanceDismissedThisFlow(true)}
             lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}

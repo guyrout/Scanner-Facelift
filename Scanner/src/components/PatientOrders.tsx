@@ -4,8 +4,8 @@ import Avatar from "./Avatar";
 import DoctorSiteLoginModal from "./DoctorSiteLoginModal";
 import { InvisalignLogoIcon } from "./Icons";
 import type { Patient } from "../data/patients";
-import { getOrdersForPatient } from "../data/orders";
 import type { Order, OrderStatus } from "../data/orders";
+import { useRuntimeOrdersForPatient, isRuntimeOrder } from "../data/runtimeStore";
 
 interface PatientOrdersProps {
   patient: Patient;
@@ -123,7 +123,9 @@ const COLUMNS = [
 ] as const;
 
 /** Figma: expanded row actions — all same white/gray button style */
-const EXPANDED_ACTIONS = [
+type RowAction = { id: string; label: string; withLogo?: boolean };
+
+const EXPANDED_ACTIONS: readonly RowAction[] = [
   { id: "view-rx", label: "View RX" },
   { id: "open-viewer", label: "Open Viewer" },
   { id: "align-oral", label: "Align Oral Health Suite" },
@@ -131,7 +133,18 @@ const EXPANDED_ACTIONS = [
   { id: "simulator-pro", label: "Invisalign Outcome Simulator Pro", withLogo: true },
   { id: "simulator", label: "Invisalign Outcome Simulator" },
   { id: "progress", label: "Invisalign Progress Assessment" },
-] as const;
+];
+
+/** Reduced action set shown for orders that were just created by the scan
+ *  flow (status: Sent to lab). The lab pipeline hasn't returned anything
+ *  yet, so iTero report and the Invisalign tools don't apply — only RX
+ *  review, the viewer, Oral Health Suite, and Duplicate make sense. */
+const SENT_TO_LAB_ACTIONS: readonly RowAction[] = [
+  { id: "view-rx", label: "View RX" },
+  { id: "open-viewer", label: "Open Viewer" },
+  { id: "align-oral", label: "Align Oral Health Suite" },
+  { id: "duplicate", label: "Duplicate" },
+];
 
 const ROW_PADDING_X = "pl-4 pr-4";
 const HEADER_LABEL = "tp-body-04 text-text-secondary truncate";
@@ -152,17 +165,20 @@ function formatScanDateYearsAgo(yearsAgo: number): string {
 }
 
 export default function PatientOrders({ patient, onBack, onOpenSettings, onOpenSupport }: PatientOrdersProps) {
-  const orders = getOrdersForPatient(patient.id);
-  /** Table only: first two rows show scan dates relative to today (Orders seed unchanged). */
-  const tableOrders = useMemo(
-    () =>
-      orders.map((o, i) => {
-        if (i === 0) return { ...o, scanDate: formatScanDateYearsAgo(1) };
-        if (i === 1) return { ...o, scanDate: formatScanDateYearsAgo(2) };
-        return o;
-      }),
-    [orders],
-  );
+  const orders = useRuntimeOrdersForPatient(patient.id);
+  /** Table only: first two SEED rows show scan dates relative to today; runtime
+   *  rows (newly created during this session) keep their real scan date so the
+   *  user can see the order they just made. */
+  const tableOrders = useMemo(() => {
+    let seedIndex = 0;
+    return orders.map((o) => {
+      if (isRuntimeOrder(o.orderId)) return o;
+      const i = seedIndex++;
+      if (i === 0) return { ...o, scanDate: formatScanDateYearsAgo(1) };
+      if (i === 1) return { ...o, scanDate: formatScanDateYearsAgo(2) };
+      return o;
+    });
+  }, [orders]);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   /** Table + timeline checkboxes stay in sync by scan date (displayed `tableOrders` dates). */
   const [selectedScanDates, setSelectedScanDates] = useState<Set<string>>(() => new Set());
@@ -505,14 +521,14 @@ function OrderRow({
           style={{ paddingLeft: 0, paddingRight: 0 }}
           onClick={(e) => e.stopPropagation()}
         >
-          {EXPANDED_ACTIONS.map((action) => (
+          {(isRuntimeOrder(order.orderId) ? SENT_TO_LAB_ACTIONS : EXPANDED_ACTIONS).map((action) => (
             <button
               key={action.id}
               type="button"
               onClick={() => onExpandedActionClick?.(action.id)}
               className="tp-body-04 h-[var(--height-row)] rounded-lg bg-surface text-text-primary hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press cursor-pointer whitespace-nowrap border border-border-accent px-4 flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface hover:border-[var(--color-border-accent-hovered)]"
             >
-              {"withLogo" in action && action.withLogo && <InvisalignLogoIcon className="shrink-0 text-text-primary" />}
+              {action.withLogo && <InvisalignLogoIcon className="shrink-0 text-text-primary" />}
               {action.label}
             </button>
           ))}

@@ -4,8 +4,8 @@ import SearchInput from "./SearchInput";
 import type { SearchInputRef } from "./SearchInput";
 import PatientTable from "./PatientTable";
 import VirtualKeyboard from "./VirtualKeyboard";
-import { patients } from "../data/patients";
 import type { Patient } from "../data/patients";
+import { useRuntimePatients } from "../data/runtimeStore";
 
 export interface PatientListProps {
   selectedDoctorName?: string | null;
@@ -23,8 +23,9 @@ export default function PatientList(props: PatientListProps) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchInputRef = useRef<SearchInputRef>(null);
 
+  const allPatients = useRuntimePatients();
   const filteredPatients = useMemo(() => {
-    let list = patients;
+    let list = allPatients;
     if (selectedDoctorName) {
       list = list.filter((p) => p.doctor === selectedDoctorName);
     }
@@ -35,7 +36,7 @@ export default function PatientList(props: PatientListProps) {
         `${p.firstName} ${p.lastName}`.toLowerCase().includes(query) ||
         p.patientId.includes(query)
     );
-  }, [searchQuery, selectedDoctorName]);
+  }, [allPatients, searchQuery, selectedDoctorName]);
 
   const showKeyboard = isSearchFocused;
   const hasSearchValue = searchQuery.length > 0;

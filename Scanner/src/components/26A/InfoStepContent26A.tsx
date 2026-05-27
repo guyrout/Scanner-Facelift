@@ -232,7 +232,16 @@ export default function InfoStepContent26A({
     setGender(p.gender as "" | "Male" | "Female");
     setDobDate(parsePatientDob(p.dateOfBirth));
     setChartNumber(p.patientId);
-    commitPatient(p.firstName, p.lastName, p.gender as "" | "Male" | "Female", parsePatientDob(p.dateOfBirth), p.patientId);
+    // Pass through the internal id so Confirm & Send can route back to this
+    // existing patient's orders page (instead of creating a new patient).
+    onPatientChange({
+      ...patient,
+      patientName: `${p.firstName.trim()} ${p.lastName.trim()}`.trim(),
+      patientId: p.patientId.trim(),
+      dateOfBirth: parsePatientDob(p.dateOfBirth) ? formatDob(parsePatientDob(p.dateOfBirth)!) : patient.dateOfBirth,
+      gender: p.gender || patient.gender,
+      internalId: p.id,
+    });
   }
 
   function clearPatientFields() {
@@ -247,6 +256,9 @@ export default function InfoStepContent26A({
       patientId: "",
       dateOfBirth: "",
       gender: "",
+      // Clearing all fields detaches the snapshot from any existing patient
+      // so Confirm & Send will create a new one.
+      internalId: undefined,
     });
   }
 

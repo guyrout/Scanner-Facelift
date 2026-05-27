@@ -6,8 +6,8 @@ import type { SearchInputRef } from "./SearchInput";
 import NumberKeyboard from "./NumberKeyboard";
 import DoctorSiteLoginModal from "./DoctorSiteLoginModal";
 import { InvisalignLogoIcon } from "./Icons";
-import { getAllOrdersForOrdersPage } from "../data/orders";
 import type { OrderStatus, OrderWithPatient } from "../data/orders";
+import { useRuntimeAllOrdersForOrdersPage } from "../data/runtimeStore";
 
 /** Figma: expanded row actions — full set (In Progress + Past Orders) */
 const EXPANDED_ACTIONS = [
@@ -169,7 +169,7 @@ export default function OrdersPage({
   onOpenSettings,
   onOpenSupport,
 }: OrdersPageProps) {
-  const { inProgress: rawInProgress, past: rawPast } = useMemo(() => getAllOrdersForOrdersPage(), []);
+  const { inProgress: rawInProgress, past: rawPast } = useRuntimeAllOrdersForOrdersPage();
   const { inProgress, past } = useMemo(() => {
     if (!selectedDoctorName) return { inProgress: rawInProgress, past: rawPast };
     return {

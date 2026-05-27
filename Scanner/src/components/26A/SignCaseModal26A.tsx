@@ -244,7 +244,11 @@ export default function SignCaseModal26A({ sendToId: _sendToId, onConfirmSend, o
               <span className="tp-body-02 text-text-primary">
                 By checking this box, I represent that my patient has consented to the collection and processing of their personal health data and the processing of that data by Align Technology for the purposes of providing customized dental care.
                 <br />
-                <button type="button" className="tp-link-01 text-text-secondary bg-transparent border-0 p-0 cursor-pointer underline">
+                <button
+                  type="button"
+                  className="tp-link-01 bg-transparent border-0 p-0 cursor-pointer underline"
+                  style={{ color: "var(--color-text-link)" }}
+                >
                   View more
                 </button>
               </span>

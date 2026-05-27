@@ -226,6 +226,17 @@ function App() {
                   setScanEntryPatient(null);
                   setShowHome(true);
                 }}
+                onScanComplete={(p) => {
+                  // Confirm & Send: jump straight to the patient's orders
+                  // page so the doctor can see the order they just submitted
+                  // (status: Sent to lab) at the top of the list.
+                  setShowScanFlow(false);
+                  setScanEntryPatient(null);
+                  setShowHome(false);
+                  setShowOrdersPage(false);
+                  setShowMessagesPage(false);
+                  setSelectedPatient(p);
+                }}
                 onOpenSettings={() => openSettings()}
                 onOpenSupport={openSupport}
               />

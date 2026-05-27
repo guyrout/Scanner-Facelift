@@ -24,6 +24,9 @@ export interface ScanFlowPatientSnapshot {
   gender: string;
   lastScan: string;
   treatedBy: string;
+  /** Internal `Patient.id` when the user picked an existing patient from
+   *  the search modal. Absent for a brand-new patient typed in the Info step. */
+  internalId?: string;
 }
 
 export interface ScanFlowPageProps {

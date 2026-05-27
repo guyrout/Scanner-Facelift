@@ -8,7 +8,7 @@ import { CheckIcon, CloseIcon, SearchIcon } from "../Icons";
 import Avatar from "../Avatar";
 import VirtualKeyboard from "../VirtualKeyboard";
 import type { Patient } from "../../data/patients";
-import { patients } from "../../data/patients";
+import { useRuntimePatients } from "../../data/runtimeStore";
 
 const KEYBOARD_HEIGHT = 340;
 
@@ -90,6 +90,7 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose, searchFocused]);
 
+  const patients = useRuntimePatients();
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return patients;
@@ -99,7 +100,7 @@ export default function PatientSearchModal26A({ open, onClose, onSelectPatient }
         p.patientId.toLowerCase().includes(q) ||
         p.gender.toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [patients, query]);
 
   const selectedPatient = selectedId ? patients.find((p) => p.id === selectedId) : undefined;
   const canConfirm = Boolean(selectedPatient);

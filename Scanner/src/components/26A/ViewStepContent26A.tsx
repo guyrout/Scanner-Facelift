@@ -633,20 +633,25 @@ export default function ViewStepContent26A({
   const [showPrepQcToast, setShowPrepQcToast] = useState(false);
   const [prepQcStep, setPrepQcStep] = useState(0.1);
   const [activeTools, setActiveTools] = useState<Set<ViewToolId>>(() => {
+    // Color tool is ACTIVE when the model is shown in color, INACTIVE for
+    // monochrome (stone). Fixed restorative starts in monochrome; every
+    // other treatment starts in color.
     const initial = new Set<ViewToolId>();
-    if (treatmentId === "fixed-restorative") initial.add("scan-color");
+    if (treatmentId !== "fixed-restorative") initial.add("scan-color");
     return initial;
   });
-  const viewMode: ViewMode = activeTools.has("scan-color") ? "stone" : "color";
+  const viewMode: ViewMode = activeTools.has("scan-color") ? "color" : "stone";
 
-  // Auto-activate Monochrome when Fixed restorative is selected; deactivate for other treatments
+  // Keep the Color tool in sync with the treatment default: monochrome for
+  // Fixed restorative, color otherwise. User toggles after this still win
+  // because the effect only re-runs on `treatmentId` change.
   useEffect(() => {
     setActiveTools((prev) => {
       const next = new Set(prev);
       if (treatmentId === "fixed-restorative") {
-        next.add("scan-color");
-      } else {
         next.delete("scan-color");
+      } else {
+        next.add("scan-color");
       }
       return next;
     });
