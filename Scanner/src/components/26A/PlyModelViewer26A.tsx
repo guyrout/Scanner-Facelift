@@ -10,6 +10,7 @@ import {
   normalizeScanMeshGeometriesPair,
   loadScanMeshGeometry,
   ensureVertexColors,
+  synthesizeDentalVertexColors,
 } from "./scanMeshUtils26A";
 import { applyInterArchHeatToSurfaceGeometry } from "./occlusogramDistance26A";
 import { BiteOcclusionScene26A } from "./BiteOcclusionScene26A";
@@ -220,6 +221,7 @@ function PairedJawOcclusogramMeshes({
 
 function PlyMesh({
   url,
+  textureUrl,
   viewMode,
   showOcclusgramHeatmap,
   opposingJawUrl,
@@ -229,6 +231,9 @@ function PlyMesh({
   opacity = 1,
 }: {
   url: string;
+  /** Optional JPG texture applied as `map` when `viewMode === "color"` and
+   *  the loaded geometry exposes per-vertex UVs (iTero PLY exports do). */
+  textureUrl?: string;
   viewMode: ViewMode;
   showOcclusgramHeatmap?: boolean;
   /** When set (and different from `url`), upper/lower load together with shared normalize for correct occlusogram distances. */
@@ -244,10 +249,43 @@ function PlyMesh({
   const { camera, gl } = useThree();
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
   const [opposingGeometry, setOpposingGeometry] = useState<THREE.BufferGeometry | null>(null);
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const lastEraseNonceRef = useRef(0);
   const lassoPathsRef = useRef<LassoPoint[][] | undefined>(lassoPaths);
   lassoPathsRef.current = lassoPaths;
+
+  // Load the JPG texture (iTero exports map colour via per-face UV coords).
+  // The texture is sampled in linear UV space; `flipY` defaults to true in
+  // three.js which matches how the PLYLoader writes UVs from the file.
+  useEffect(() => {
+    if (!textureUrl) {
+      setTexture(null);
+      return;
+    }
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      textureUrl,
+      (t) => {
+        if (cancelled) {
+          t.dispose();
+          return;
+        }
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 8;
+        t.needsUpdate = true;
+        setTexture(t);
+      },
+      undefined,
+      (err) => {
+        console.error("[PlyModelViewer26A] Failed to load texture", textureUrl, err);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [textureUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -265,6 +303,10 @@ function PlyMesh({
           return;
         }
         normalizeScanMeshGeometriesPair(gSelf, gOpp);
+        // Try real dental colours first (normals → gum/tooth gradient) for
+        // PLYs without baked-in vertex colour. `ensureVertexColors` is now
+        // a last-resort uniform-stone fill.
+        synthesizeDentalVertexColors(gSelf);
         ensureVertexColors(gSelf);
         setGeometry(gSelf);
         setOpposingGeometry(gOpp);
@@ -285,6 +327,7 @@ function PlyMesh({
           return;
         }
         normalizeScanMeshGeometry(geo);
+        synthesizeDentalVertexColors(geo);
         ensureVertexColors(geo);
         setOpposingGeometry(null);
         setGeometry(geo);
@@ -354,12 +397,16 @@ function PlyMesh({
   if (!geometry) return null;
 
   const hasColors = geometry.getAttribute("color") != null;
+  const hasUVs = geometry.getAttribute("uv") != null;
   const isStone = viewMode === "stone";
+  // Texture only kicks in when the file actually has UV coords (iTero PLY
+  // exports do; STLs and OrthoCAD PLYs don't). Falls back to vertex colour.
+  const useTexture = !isStone && texture != null && hasUVs;
 
   return (
     <mesh
       ref={meshRef}
-      key={`${viewMode}-${occlusHeatActive ? "heat" : "base"}`}
+      key={`${viewMode}-${occlusHeatActive ? "heat" : "base"}-${useTexture ? "tex" : "vc"}`}
       geometry={displayGeometry ?? geometry}
       rotation={[-Math.PI / 2, 0, 0]}
     >
@@ -370,6 +417,15 @@ function PlyMesh({
           color={STONE_COLOR}
           roughness={0.55}
           metalness={0.02}
+          side={THREE.DoubleSide}
+          transparent={useTransparency}
+          opacity={opacity}
+        />
+      ) : useTexture ? (
+        <meshStandardMaterial
+          map={texture!}
+          roughness={0.5}
+          metalness={0.0}
           side={THREE.DoubleSide}
           transparent={useTransparency}
           opacity={opacity}
@@ -513,6 +569,10 @@ interface PlyModelViewerProps {
   jawView?: JawSelection;
   lowerUrl?: string;
   biteUrl?: string;
+  /** Optional JPG texture for the upper jaw mesh (used when the PLY has per-face UVs). */
+  upperTextureUrl?: string;
+  /** Optional JPG texture for the lower jaw mesh. */
+  lowerTextureUrl?: string;
   /** Material appearance: color vs stone (e.g. monochrome tool). Independent of jaw tab and occlusogram. */
   viewMode?: ViewMode;
   cameraStateRef?: MutableRefObject<CameraState>;
@@ -533,6 +593,8 @@ export default function PlyModelViewer26A({
   jawView,
   lowerUrl,
   biteUrl,
+  upperTextureUrl,
+  lowerTextureUrl,
   viewMode = "color",
   cameraStateRef,
   showOcclusgramHeatmap = false,
@@ -544,9 +606,24 @@ export default function PlyModelViewer26A({
   const upperAsset = url;
   const lowerAsset = lowerUrl ?? url;
   const usesJawView = jawView != null;
-  const usesBiteStlScene = usesJawView && jawView === "bite" && Boolean(biteUrl);
-  const bitePairOcclusion = usesJawView && jawView === "bite" && upperAsset !== lowerAsset;
   const pairedArchUrls = upperAsset !== lowerAsset;
+  /**
+   * Bite tab for textured arch pairs (fixed-restorative iTero export): render
+   * both upper and lower PLYs at once with a shared normalize so they stay
+   * in occlusion, each wearing its own JPG texture. We bypass the combined-
+   * mesh bite scene (Bite.ply / split-by-Y-centroid) entirely in this mode
+   * because we can show the real occlusion straight from the source PLYs.
+   */
+  const useBitePairTextured =
+    usesJawView &&
+    jawView === "bite" &&
+    pairedArchUrls &&
+    Boolean(upperTextureUrl) &&
+    Boolean(lowerTextureUrl);
+  const usesBiteStlScene =
+    usesJawView && jawView === "bite" && Boolean(biteUrl) && !useBitePairTextured;
+  const bitePairOcclusion =
+    usesJawView && jawView === "bite" && pairedArchUrls && !useBitePairTextured;
   /**
    * Dual-arch occlusogram mesh: **only** when the jaw tab is **bite** and separate PLYs (no combined bite mesh).
    * Occlusogram must not change jaw selection — never show both arches when `jawView` is upper or lower
@@ -582,6 +659,7 @@ export default function PlyModelViewer26A({
           {!usesJawView && (
             <PlyMesh
               url={url}
+              textureUrl={upperTextureUrl}
               viewMode={viewMode}
               showOcclusgramHeatmap={showOcclusgramHeatmap}
               eraseSelectionNonce={eraseSelectionNonce}
@@ -616,6 +694,7 @@ export default function PlyModelViewer26A({
           {usesJawView && jawView === "upper" && (
             <PlyMesh
               url={upperAsset}
+              textureUrl={upperTextureUrl}
               opposingJawUrl={pairedArchUrls ? lowerAsset : undefined}
               occlusogramSurfaceJaw="upper"
               viewMode={viewMode}
@@ -628,6 +707,7 @@ export default function PlyModelViewer26A({
           {usesJawView && jawView === "lower" && (
             <PlyMesh
               url={lowerAsset}
+              textureUrl={lowerTextureUrl}
               opposingJawUrl={pairedArchUrls ? upperAsset : undefined}
               occlusogramSurfaceJaw="lower"
               viewMode={viewMode}
@@ -641,6 +721,7 @@ export default function PlyModelViewer26A({
             <>
               <PlyMesh
                 url={upperAsset}
+                textureUrl={upperTextureUrl}
                 occlusogramSurfaceJaw="upper"
                 viewMode={viewMode}
                 showOcclusgramHeatmap={showOcclusgramHeatmap}
@@ -651,6 +732,7 @@ export default function PlyModelViewer26A({
               <group position={[0, 0.004, 0]}>
                 <PlyMesh
                   url={lowerAsset}
+                  textureUrl={lowerTextureUrl}
                   occlusogramSurfaceJaw="lower"
                   viewMode={viewMode}
                   showOcclusgramHeatmap={showOcclusgramHeatmap}
@@ -659,6 +741,39 @@ export default function PlyModelViewer26A({
                   opacity={opacity}
                 />
               </group>
+            </>
+          )}
+          {/* Bite tab for textured arch pairs (fixed-restorative iTero PLYs):
+              Render BOTH textured PLYs at once. Each PlyMesh cross-references
+              the other via `opposingJawUrl`, which forces the paired loader to
+              run `normalizeScanMeshGeometriesPair` — the upper and lower stay
+              in their original iTero-export occlusion. The dual-arch occluso-
+              gram already handles the heatmap case above, so we render here
+              only when heat is off. */}
+          {useBitePairTextured && !showDualArchOcclusogram && (
+            <>
+              <PlyMesh
+                url={upperAsset}
+                textureUrl={upperTextureUrl}
+                opposingJawUrl={lowerAsset}
+                occlusogramSurfaceJaw="upper"
+                viewMode={viewMode}
+                showOcclusgramHeatmap={showOcclusgramHeatmap}
+                eraseSelectionNonce={eraseSelectionNonce}
+                lassoPaths={lassoPaths}
+                opacity={opacity}
+              />
+              <PlyMesh
+                url={lowerAsset}
+                textureUrl={lowerTextureUrl}
+                opposingJawUrl={upperAsset}
+                occlusogramSurfaceJaw="lower"
+                viewMode={viewMode}
+                showOcclusgramHeatmap={showOcclusgramHeatmap}
+                eraseSelectionNonce={eraseSelectionNonce}
+                lassoPaths={lassoPaths}
+                opacity={opacity}
+              />
             </>
           )}
         </Suspense>

@@ -71,7 +71,7 @@ export default function ScanStepContent26A({
   onBiteGuidanceDismissed,
   showScanViewport3d = true,
 }: ScanStepContentProps) {
-  const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
+  const { upperUrl, lowerUrl, biteUrl, upperTextureUrl, lowerTextureUrl } = getTreatmentPlyPair(treatmentId);
   const restrictToolbar = treatmentRestrictsScanViewToolbarTools(treatmentId);
   const [scanToolbarActiveTools, setScanToolbarActiveTools] = useState<Set<ScanToolbarToolId>>(
     () => {
@@ -188,6 +188,8 @@ export default function ScanStepContent26A({
                 url={upperUrl}
                 lowerUrl={lowerUrl}
                 biteUrl={biteUrl}
+                upperTextureUrl={upperTextureUrl}
+                lowerTextureUrl={lowerTextureUrl}
                 jawView={selectedJaw}
                 viewMode={viewMode}
                 cameraStateRef={cameraStateRef}

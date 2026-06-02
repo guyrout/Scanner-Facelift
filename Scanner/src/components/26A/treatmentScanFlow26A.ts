@@ -10,22 +10,40 @@
  * (default UI uses `fixed-restorative`).
  */
 
+/**
+ * Per-treatment mesh assets. Texture URLs are optional and only meaningful
+ * for iTero-style PLY exports whose colour data lives in an external JPG
+ * mapped via per-face texcoords. When absent, the viewer falls back to
+ * vertex colours or a synthesised dental gradient.
+ */
+export interface TreatmentMeshAssets {
+  upperUrl: string;
+  lowerUrl: string;
+  biteUrl: string;
+  upperTextureUrl?: string;
+  lowerTextureUrl?: string;
+}
+
 /** Default PLY pair — upper + lower jaws from OrthoCAD export. */
-export const DEFAULT_ORTHOCAD_PLY_PAIR = {
+export const DEFAULT_ORTHOCAD_PLY_PAIR: TreatmentMeshAssets = {
   upperUrl: "/models/301538675_shell_occlusion_u.ply",
   lowerUrl: "/models/301538675_shell_occlusion_l.ply",
   biteUrl: "/models/Bite.ply",
-} as const;
+};
 
 /**
- * Fixed restorative only — STL exports (iTero ditch jaws + bite).
+ * Fixed restorative — iTero ditch jaws with their matching texture JPGs.
+ * Both arches are binary PLYs with per-face UV coords; colour comes from the
+ * texture maps. Bite stays an STL (iTero doesn't export a textured bite).
  * Files live under `public/models/fixed-restorative/`.
  */
-export const FIXED_RESTORATIVE_STL_PAIR = {
-  upperUrl: "/models/fixed-restorative/upper_jaw_with_ditch.stl",
-  lowerUrl: "/models/fixed-restorative/lower_jaw_with_ditch.stl",
-  biteUrl: "/models/fixed-restorative/Bite.stl",
-} as const;
+export const FIXED_RESTORATIVE_STL_PAIR: TreatmentMeshAssets = {
+  upperUrl: "/models/fixed-restorative/upper_jaw_with_ditch_281175878.ply",
+  lowerUrl: "/models/fixed-restorative/lower_jaw_with_ditch_281175878.ply",
+  biteUrl: "/models/fixed-restorative/Bite.ply",
+  upperTextureUrl: "/models/fixed-restorative/upper_jaw_with_ditch_281175878_texture.jpg",
+  lowerTextureUrl: "/models/fixed-restorative/lower_jaw_with_ditch_281175878_texture.jpg",
+};
 
 /** Default when `treatmentId` is unknown — must resolve to existing files under `public/`. */
 export const DEFAULT_TREATMENT_PLY = DEFAULT_ORTHOCAD_PLY_PAIR;
@@ -34,7 +52,7 @@ export const DEFAULT_TREATMENT_PLY = DEFAULT_ORTHOCAD_PLY_PAIR;
  * One row per `TREATMENT_OPTIONS` id in `FixedRestorativeForm26A`.
  * Scan / View use `PlyModelViewer26A`, which loads PLY or STL via the same URLs.
  */
-export const TREATMENT_3D_PLY: Record<string, { upperUrl: string; lowerUrl: string; biteUrl: string }> = {
+export const TREATMENT_3D_PLY: Record<string, TreatmentMeshAssets> = {
   "fixed-restorative": FIXED_RESTORATIVE_STL_PAIR,
   "study-model": DEFAULT_ORTHOCAD_PLY_PAIR,
   invisalign: DEFAULT_ORTHOCAD_PLY_PAIR,
@@ -43,11 +61,7 @@ export const TREATMENT_3D_PLY: Record<string, { upperUrl: string; lowerUrl: stri
   "surgical-guide": DEFAULT_ORTHOCAD_PLY_PAIR,
 };
 
-export function getTreatmentPlyPair(treatmentId: string): {
-  upperUrl: string;
-  lowerUrl: string;
-  biteUrl: string;
-} {
+export function getTreatmentPlyPair(treatmentId: string): TreatmentMeshAssets {
   return TREATMENT_3D_PLY[treatmentId] ?? DEFAULT_TREATMENT_PLY;
 }
 

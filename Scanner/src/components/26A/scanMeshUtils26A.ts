@@ -83,3 +83,74 @@ export function ensureVertexColors(geometry: THREE.BufferGeometry): THREE.Buffer
   geometry.setAttribute("color", colorAttr);
   return colorAttr;
 }
+
+/**
+ * Synthesised "dental tissue" vertex colours for PLY/STL meshes that ship
+ * without baked-in colour (e.g. iTero PLYs whose colour data lives in an
+ * external texture JPG, or Blender bite exports with position-only attrs).
+ *
+ * Heuristic: a dental arch is a horseshoe — its smallest bounding-box
+ * extent runs roughly along the occlusal-gingival axis. Vertex normals
+ * aligned with that axis sit on tooth tips / cusps (cream enamel);
+ * perpendicular normals sit on tooth sides, gum, and buccal/lingual
+ * surfaces (pinker tissue). We lerp between two dental tones based on
+ * |normal · shortAxis|² so cusps read clearly as cream.
+ *
+ * Intentionally *not* anatomically correct — only "vaguely tissue-
+ * coloured" so the Color toggle has something to show when the source
+ * mesh has no real colour data.
+ *
+ * Returns `true` if it actually wrote colours, `false` when the geometry
+ * already had a colour attribute (caller may then skip ensureVertexColors).
+ */
+export function synthesizeDentalVertexColors(geometry: THREE.BufferGeometry): boolean {
+  if (geometry.getAttribute("color")) return false;
+  const position = geometry.getAttribute("position") as THREE.BufferAttribute | undefined;
+  if (!position) return false;
+
+  // Normals are required for the orientation heuristic. Safe to recompute
+  // in case the loader (e.g. PLYLoader on a position-only PLY) didn't.
+  if (!geometry.getAttribute("normal")) {
+    geometry.computeVertexNormals();
+  }
+  const normal = geometry.getAttribute("normal") as THREE.BufferAttribute;
+
+  geometry.computeBoundingBox();
+  const bbox = geometry.boundingBox;
+  if (!bbox) return false;
+  const size = new THREE.Vector3();
+  bbox.getSize(size);
+
+  // Smallest bounding-box axis ≈ occlusal-gingival direction for a horseshoe arch.
+  let axisIdx: 0 | 1 | 2 = 2;
+  let minExtent = size.z;
+  if (size.x < minExtent) {
+    axisIdx = 0;
+    minExtent = size.x;
+  }
+  if (size.y < minExtent) {
+    axisIdx = 1;
+  }
+
+  const tooth = new THREE.Color("#efe1c4");
+  const gum = new THREE.Color("#c98277");
+
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    const nx = normal.getX(i);
+    const ny = normal.getY(i);
+    const nz = normal.getZ(i);
+    const alongAxis = axisIdx === 0 ? Math.abs(nx) : axisIdx === 1 ? Math.abs(ny) : Math.abs(nz);
+    // Ease toward tooth colour so cusps/edges read clearly cream.
+    const t = alongAxis * alongAxis;
+    const r = gum.r * (1 - t) + tooth.r * t;
+    const g = gum.g * (1 - t) + tooth.g * t;
+    const b = gum.b * (1 - t) + tooth.b * t;
+    const base = i * 3;
+    colors[base] = r;
+    colors[base + 1] = g;
+    colors[base + 2] = b;
+  }
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  return true;
+}

@@ -13,7 +13,12 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import type { JawSelection } from "./JawSelector26A";
 import type { ViewMode } from "./PlyModelViewer26A";
 import { createHeatmapMaterial } from "../../shaders/occlusalHeatmap";
-import { ensureVertexColors, normalizeScanMeshGeometry, STONE_COLOR } from "./scanMeshUtils26A";
+import {
+  ensureVertexColors,
+  normalizeScanMeshGeometry,
+  synthesizeDentalVertexColors,
+  STONE_COLOR,
+} from "./scanMeshUtils26A";
 import { applyInterArchHeatToSurfaceGeometry } from "./occlusogramDistance26A";
 
 const MESH_ROT_X = -Math.PI / 2;
@@ -145,12 +150,19 @@ export function BiteOcclusionScene26A({
 
   const prepared = useMemo(() => {
     if (!raw) return null;
-    const hasNativeVertexColors = Boolean(raw.getAttribute("color"));
+    const hadNativeColors = Boolean(raw.getAttribute("color"));
     const biteGeo = raw.clone();
     normalizeScanMeshGeometry(biteGeo);
+    // Synthesise dental-tissue colours from normals when the bite PLY ships
+    // without any colour data (e.g. Blender geometry-only export). Returns
+    // true if it actually wrote colours; native vertex colours always win.
+    const synthesisedColors = synthesizeDentalVertexColors(biteGeo);
+    // `ensureVertexColors` is now a last-resort uniform-stone fill so the
+    // mesh always has a `color` attribute for downstream code.
     ensureVertexColors(biteGeo);
+    const hasMeaningfulColors = hadNativeColors || synthesisedColors;
     const { upperGeo, lowerGeo } = splitBiteGeometry(biteGeo);
-    return { biteGeo, upperGeo, lowerGeo, hasNativeVertexColors };
+    return { biteGeo, upperGeo, lowerGeo, hasNativeVertexColors: hasMeaningfulColors };
   }, [raw]);
 
   const heatActive = showOcclusgramHeatmap === true;

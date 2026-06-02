@@ -626,7 +626,7 @@ export default function ViewStepContent26A({
   occlusgramTrimMutuallyExclusive = false,
 }: ViewStepContentProps) {
   const isScanFlow26A = getScanFlowVersion() === "26A";
-  const { upperUrl, lowerUrl, biteUrl } = getTreatmentPlyPair(treatmentId);
+  const { upperUrl, lowerUrl, biteUrl, upperTextureUrl, lowerTextureUrl } = getTreatmentPlyPair(treatmentId);
   const restrictToolbar = treatmentRestrictsScanViewToolbarTools(treatmentId);
   const [showTrimMenu, setShowTrimMenu] = useState(false);
   const [showPrepQc, setShowPrepQc] = useState(false);
@@ -793,7 +793,7 @@ export default function ViewStepContent26A({
             key={isScanFlow26A ? treatmentId : "view-ply"}
             url={isScanFlow26A ? upperUrl : "/models/301538675_shell_occlusion_u.ply"}
             {...(isScanFlow26A
-              ? { lowerUrl, biteUrl, jawView: selectedJaw }
+              ? { lowerUrl, biteUrl, upperTextureUrl, lowerTextureUrl, jawView: selectedJaw }
               : {})}
             viewMode={viewMode}
             cameraStateRef={cameraStateRef}
