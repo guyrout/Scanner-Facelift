@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import toothSprites from "../../assets/procedures/tooth-sprites.svg";
-import { CaretDownIcon, ChevronLeftIcon } from "../Icons";
+import { CaretDownIcon } from "../Icons";
 import {
   BODY_OPTIONS,
   DropdownField,
@@ -87,16 +87,7 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
       >
         <div className="flex flex-col w-full min-w-0" style={{ gap: 24 }}>
           <div className="flex flex-col w-full">
-            <div className="flex items-center w-full min-h-[60px]" style={{ gap: 4 }}>
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex items-center justify-center shrink-0 cursor-pointer bg-transparent border-0 appearance-none outline-none transition-ui hover:opacity-70 focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-lg"
-                style={{ width: 32, height: 32 }}
-                aria-label="Back"
-              >
-                <ChevronLeftIcon size={32} color="var(--color-icon-primary)" />
-              </button>
+            <div className="flex items-center w-full min-h-[60px]">
               <h2 id="crown-modal-title" className="tp-heading-03 text-text-primary flex-1 min-w-0 truncate">
                 Crown
               </h2>
@@ -393,13 +384,12 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
           </div>
         </div>
 
-        <div className="flex w-full justify-end" style={{ gap: 8 }}>
+        <div className="flex w-full items-center justify-between">
           <button
             type="button"
             onClick={onDelete}
             className="tp-body-02 cursor-pointer appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-lg flex items-center justify-center shrink-0 border border-solid border-border-subtle bg-[var(--color-background-layer-01)]"
             style={{
-              width: 120,
               minWidth: 72,
               height: 60,
               padding: "12px 16px",
@@ -408,6 +398,34 @@ export default function CrownModal26A({ tooth, detail, onDetailChange, onClose, 
           >
             Delete
           </button>
+
+          <div className="flex items-center" style={{ gap: 16 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="tp-body-02 text-text-primary cursor-pointer appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-lg flex items-center justify-center shrink-0 border border-solid border-border-subtle bg-[var(--color-background-layer-01)]"
+              style={{
+                minWidth: 72,
+                height: 60,
+                padding: "12px 16px",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="tp-body-02 cursor-pointer appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded-lg flex items-center justify-center shrink-0 border-0 bg-[var(--color-border-interactive,#009ace)]"
+              style={{
+                minWidth: 72,
+                height: 60,
+                padding: "12px 16px",
+                color: "var(--color-text-on-color-primary)",
+              }}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
       </div>

@@ -15,6 +15,7 @@ import ViewStepContent26A from "./ViewStepContent26A";
 import SendStepContent26A from "./SendStepContent26A";
 import SleeveConfirmationModal26A from "./SleeveConfirmationModal26A";
 import { scanUpperJawGuidanceIsPermanentlySkipped } from "./ScanUpperJawGuidanceModal26A";
+import { scanLowerJawGuidanceIsPermanentlySkipped } from "./ScanLowerJawGuidanceModal26A";
 import type { CameraState } from "./PlyModelViewer26A";
 import type { JawSelection } from "./JawSelector26A";
 import type { Patient } from "../../data/patients";
@@ -68,6 +69,24 @@ function todayMDYYYY(): string {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${mm}/${dd}/${d.getFullYear()}`;
+}
+
+/**
+ * Decide which jaw guidance to surface after the sleeve modal closes (or when
+ * the user re-enters Scan). For Fixed Restorative cases whose only crowns are
+ * on lower-arch teeth, the workflow starts on the lower arch — the lower-jaw
+ * guidance modal opens and the lower jaw becomes the active highlight. Every
+ * other case keeps the historical upper-first behaviour.
+ */
+function computeFirstCrownJaw(
+  toothSelections: Record<number, string>,
+  treatmentId: string,
+): JawSelection {
+  if (treatmentId !== "fixed-restorative") return "upper";
+  const hasUpperCrown = UPPER_TEETH.some((t) => toothSelections[t] === "Crown");
+  const hasLowerCrown = LOWER_TEETH.some((t) => toothSelections[t] === "Crown");
+  if (hasLowerCrown && !hasUpperCrown) return "lower";
+  return "upper";
 }
 
 /** Map a treatment id to the procedure label used in the Order table. */
@@ -127,6 +146,12 @@ export default function ScanFlowPage26A({
   const [biteGuidanceDismissedThisFlow, setBiteGuidanceDismissedThisFlow] = useState(false);
   /** Bumped when the sleeve modal closes (or sleeve skipped) so scan-step can open upper-jaw guidance once. */
   const [postSleeveUpperGuidanceNonce, setPostSleeveUpperGuidanceNonce] = useState(0);
+  /**
+   * Mirror of `postSleeveUpperGuidanceNonce` for the lower-jaw guidance modal.
+   * Fixed-restorative cases whose only crowns are on the lower arch start the
+   * scan workflow on lower; bumping this nonce opens `ScanLowerJawGuidanceModal26A`.
+   */
+  const [postSleeveLowerGuidanceNonce, setPostSleeveLowerGuidanceNonce] = useState(0);
   const previousStepRef = useRef<ScanWizardStep>("info");
   const [toolbarExpanded, setToolbarExpanded] = useState(true);
   const [patient, setPatient] = useState<ScanFlowPatientSnapshot>(() => initialPatient ?? DEFAULT_PATIENT);
@@ -137,6 +162,11 @@ export default function ScanFlowPage26A({
   });
   const [selectedJaw, setSelectedJaw] = useState<JawSelection>("upper");
 
+  // Declared early so the post-sleeve guidance routing can derive
+  // `firstCrownJaw` from them. Other treatment/order state follows.
+  const [treatmentId, setTreatmentId] = useState("study-model");
+  const [toothSelections, setToothSelections] = useState<Record<number, string>>({});
+
   const handleStepChange = useCallback(
     (step: ScanWizardStep) => {
       if (step === "scan" && currentStep !== "scan") {
@@ -144,33 +174,64 @@ export default function ScanFlowPage26A({
         setCurrentStep("scan");
         if (!sleeveAcknowledgedThisFlow) {
           setSleeveModalOpen(true);
-        } else if (!upperJawGuidanceDismissedThisFlow && !scanUpperJawGuidanceIsPermanentlySkipped()) {
-          setPostSleeveUpperGuidanceNonce((n) => n + 1);
+        } else {
+          triggerPostSleeveGuidance();
         }
         return;
       }
       previousStepRef.current = currentStep;
       setCurrentStep(step);
     },
-    [currentStep, sleeveAcknowledgedThisFlow, upperJawGuidanceDismissedThisFlow],
+    // `triggerPostSleeveGuidance` is stable via useCallback below; including it
+    // here keeps exhaustive-deps happy.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentStep, sleeveAcknowledgedThisFlow],
   );
+
+  /**
+   * Route the post-sleeve guidance to the lower jaw when the Fixed Restorative
+   * case has crowns only on lower-arch teeth; otherwise stay with the existing
+   * upper-jaw guidance path.
+   */
+  const triggerPostSleeveGuidance = useCallback(() => {
+    const targetJaw = computeFirstCrownJaw(toothSelections, treatmentId);
+    if (targetJaw === "lower") {
+      setSelectedJaw("lower");
+      if (
+        !lowerJawGuidanceDismissedThisFlow &&
+        !scanLowerJawGuidanceIsPermanentlySkipped()
+      ) {
+        setPostSleeveLowerGuidanceNonce((n) => n + 1);
+      }
+      return;
+    }
+    if (
+      !upperJawGuidanceDismissedThisFlow &&
+      !scanUpperJawGuidanceIsPermanentlySkipped()
+    ) {
+      setPostSleeveUpperGuidanceNonce((n) => n + 1);
+    }
+  }, [
+    toothSelections,
+    treatmentId,
+    upperJawGuidanceDismissedThisFlow,
+    lowerJawGuidanceDismissedThisFlow,
+  ]);
 
   const closeSleeveModal = useCallback(() => {
     setSleeveAcknowledgedThisFlow(true);
     setSleeveModalOpen(false);
-    if (!upperJawGuidanceDismissedThisFlow && !scanUpperJawGuidanceIsPermanentlySkipped()) {
-      setPostSleeveUpperGuidanceNonce((n) => n + 1);
-    }
-  }, [upperJawGuidanceDismissedThisFlow]);
+    triggerPostSleeveGuidance();
+  }, [triggerPostSleeveGuidance]);
 
   useEffect(() => {
     if (currentStep !== "scan") setSleeveModalOpen(false);
   }, [currentStep]);
 
-  const [treatmentId, setTreatmentId] = useState("study-model");
+  // `treatmentId` and `toothSelections` are declared above (before the
+  // post-sleeve callbacks) so the guidance-routing closure can read them.
   const [sendToId, setSendToId] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [toothSelections, setToothSelections] = useState<Record<number, string>>({});
   const [toothDetails, setToothDetails] = useState<Record<number, ToothDetail>>({});
   const [toggles, setToggles] = useState<ToggleState>({
     niri: true,
@@ -286,6 +347,7 @@ export default function ScanFlowPage26A({
             selectedJaw={selectedJaw}
             onSelectedJawChange={setSelectedJaw}
             postSleeveUpperGuidanceNonce={postSleeveUpperGuidanceNonce}
+            postSleeveLowerGuidanceNonce={postSleeveLowerGuidanceNonce}
             upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
             onUpperJawGuidanceDismissed={() => setUpperJawGuidanceDismissedThisFlow(true)}
             lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}

@@ -40,6 +40,8 @@ interface ScanStepContentProps {
   onSelectedJawChange: (jaw: JawSelection) => void;
   /** Increments when the sleeve confirmation modal closes — opens upper-jaw guidance in the tooth map. */
   postSleeveUpperGuidanceNonce?: number;
+  /** Mirror of `postSleeveUpperGuidanceNonce` — opens lower-jaw guidance when the case starts on the lower arch. */
+  postSleeveLowerGuidanceNonce?: number;
   /** While false, upper-jaw guidance may auto-open or open from the upper arch control (once per scan-flow visit). */
   upperJawGuidanceDismissedThisFlow?: boolean;
   onUpperJawGuidanceDismissed?: () => void;
@@ -63,6 +65,7 @@ export default function ScanStepContent26A({
   selectedJaw,
   onSelectedJawChange,
   postSleeveUpperGuidanceNonce = 0,
+  postSleeveLowerGuidanceNonce = 0,
   upperJawGuidanceDismissedThisFlow = false,
   onUpperJawGuidanceDismissed,
   lowerJawGuidanceDismissedThisFlow = false,
@@ -239,6 +242,7 @@ export default function ScanStepContent26A({
             onJawChange={onSelectedJawChange}
             toothSelections={toothSelections}
             postSleeveUpperGuidanceNonce={postSleeveUpperGuidanceNonce}
+            postSleeveLowerGuidanceNonce={postSleeveLowerGuidanceNonce}
             upperJawGuidanceDismissedThisFlow={upperJawGuidanceDismissedThisFlow}
             onUpperJawGuidanceDismissed={onUpperJawGuidanceDismissed}
             lowerJawGuidanceDismissedThisFlow={lowerJawGuidanceDismissedThisFlow}

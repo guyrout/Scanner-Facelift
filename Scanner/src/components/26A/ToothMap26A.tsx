@@ -26,6 +26,8 @@ interface ToothMap26AProps {
   toothSelections?: Record<number, string>;
   /** When this increments (after sleeve confirmation), open upper-jaw guidance if the user has not dismissed it. */
   postSleeveUpperGuidanceNonce?: number;
+  /** Mirror of `postSleeveUpperGuidanceNonce` — when this increments, open lower-jaw guidance instead. */
+  postSleeveLowerGuidanceNonce?: number;
   /** When true, upper-jaw guidance will not auto-open or open from the upper arch (for this scan-flow visit). */
   upperJawGuidanceDismissedThisFlow?: boolean;
   /** Called when upper-jaw guidance is closed so the parent can mark it dismissed for this visit. */
@@ -161,6 +163,7 @@ export default function ToothMap26A({
   onJawChange,
   toothSelections = {},
   postSleeveUpperGuidanceNonce = 0,
+  postSleeveLowerGuidanceNonce = 0,
   upperJawGuidanceDismissedThisFlow = false,
   onUpperJawGuidanceDismissed,
   lowerJawGuidanceDismissedThisFlow = false,
@@ -182,6 +185,18 @@ export default function ToothMap26A({
       setScanUpperGuidanceOpen(true);
     }
   }, [postSleeveUpperGuidanceNonce, upperJawGuidanceDismissedThisFlow]);
+
+  // Mirror of the upper-jaw auto-open effect. Fires when the parent decides
+  // the case should start on the lower arch (e.g. Fixed Restorative with only
+  // lower-jaw crowns).
+  useEffect(() => {
+    if (postSleeveLowerGuidanceNonce === 0) return;
+    if (!lowerJawGuidanceDismissedThisFlow && !scanLowerJawGuidanceIsPermanentlySkipped()) {
+      setScanBiteGuidanceOpen(false);
+      setScanUpperGuidanceOpen(false);
+      setScanLowerGuidanceOpen(true);
+    }
+  }, [postSleeveLowerGuidanceNonce, lowerJawGuidanceDismissedThisFlow]);
   const [upperSlotRectsByFdi, setUpperSlotRectsByFdi] = useState<Record<number, ArchSlotRect>>({});
   const [lowerSlotRectsByFdi, setLowerSlotRectsByFdi] = useState<Record<number, ArchSlotRect>>({});
   /** Arch stacking context: inline SVG + overlays share this box for measured slot alignment. */
