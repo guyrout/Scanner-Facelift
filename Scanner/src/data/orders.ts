@@ -1,7 +1,34 @@
 import type { Patient } from "./patients";
 import { patients } from "./patients";
+import type { ToothDetail, ToggleState } from "../components/26A/FixedRestorativeForm26A";
 
 export type OrderStatus = "completed" | "rx_created" | "sent_to_lab";
+
+/**
+ * Full scan-flow snapshot kept alongside an `Order`. Captured by
+ * `ScanFlowPage26A` on Confirm & Send and read back when the user clicks
+ * "Duplicate scan" so the new order opens with the same procedure type,
+ * tooth selections, toggles, due date, and note pre-filled.
+ *
+ * Optional because seed/demo orders predate this snapshot — when missing,
+ * the host derives a minimal `treatmentId` from `Order.procedure`.
+ */
+export interface OrderDetails {
+  /** Canonical scan-flow treatment id (e.g. "fixed-restorative", "study-model"). */
+  treatmentId: string;
+  /** Identifier of the selected "Send to" recipient (lab/doctor id). */
+  sendToId: string;
+  /** Order due date as an ISO string ("YYYY-MM-DD"). `null` when unset. */
+  dueDate: string | null;
+  /** FDI tooth number → restoration label (e.g. `{ 46: "Crown" }`). */
+  toothSelections: Record<number, string>;
+  /** Per-tooth crown metadata (shade, material, …) for Fixed Restorative cases. */
+  toothDetails: Record<number, ToothDetail>;
+  /** Order-level toggles (NIRI, sleeve, multi-bite, …). */
+  toggles: ToggleState;
+  /** Free-text note attached to the order. */
+  noteText: string;
+}
 
 export interface Order {
   orderId: string;
@@ -10,6 +37,27 @@ export interface Order {
   scanDate: string;
   lastModified: string;
   status: OrderStatus;
+  /** Captured scan-flow state — present on runtime orders, absent on seed. */
+  details?: OrderDetails;
+}
+
+/**
+ * Inverse of `procedureLabelFor` in `ScanFlowPage26A`. Lets the host re-open
+ * the scan flow with the original procedure pre-selected even for seed/demo
+ * orders that have no `details` snapshot.
+ */
+export function treatmentIdFromProcedure(procedure: string): string {
+  switch (procedure) {
+    case "Fixed Restorative":
+      return "fixed-restorative";
+    case "Denture/Removable":
+      return "denture-removable";
+    case "Invisalign":
+      return "invisalign";
+    case "Study Model/iRecord":
+    default:
+      return "study-model";
+  }
 }
 
 export interface OrderWithPatient extends Order {

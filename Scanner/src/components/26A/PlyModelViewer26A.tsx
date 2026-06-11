@@ -394,6 +394,22 @@ function PlyMesh({
     heatmapMaterial.opacity = opacity;
   }, [heatmapMaterial, opacity, useTransparency]);
 
+  /**
+   * When the mesh has both a JPG texture and UV coordinates (iTero PLY
+   * workflow used by Fixed Restorative), bind the texture into the heatmap
+   * shader so the heat overlays the actual photo texture instead of the
+   * synthesized cream/pink dental gradient or stone gray. View-mode "stone"
+   * still falls back to the vertex `baseColor` so the monochrome look is
+   * preserved when the user explicitly chose it.
+   */
+  useEffect(() => {
+    const hasUVs = geometry?.getAttribute("uv") != null;
+    const useMap = !!texture && hasUVs && viewMode !== "stone";
+    heatmapMaterial.uniforms.map.value = useMap ? texture : null;
+    heatmapMaterial.uniforms.useMap.value = useMap;
+    heatmapMaterial.needsUpdate = true;
+  }, [heatmapMaterial, texture, geometry, viewMode]);
+
   if (!geometry) return null;
 
   const hasColors = geometry.getAttribute("color") != null;
@@ -628,6 +644,13 @@ export default function PlyModelViewer26A({
    * Dual-arch occlusogram mesh: **only** when the jaw tab is **bite** and separate PLYs (no combined bite mesh).
    * Occlusogram must not change jaw selection — never show both arches when `jawView` is upper or lower
    * (those use a single `PlyMesh` + opposing geometry for BVH only).
+   *
+   * Excluded when `useBitePairTextured` is true (fixed-restorative iTero pair):
+   * `PairedJawOcclusogramMeshes` reloads geometry without textures, which
+   * would swap out the user-facing iTero PLYs. Instead the dual-textured
+   * `PlyMesh` branch below stays mounted and each mesh renders the heatmap
+   * via its own `occlusHeatActive` path — same pipeline Study Model uses on
+   * upper/lower tabs (`applyInterArchHeatToSurfaceGeometry`).
    */
   const showDualArchOcclusogram =
     Boolean(showOcclusgramHeatmap) &&
@@ -635,6 +658,7 @@ export default function PlyModelViewer26A({
     jawView === "bite" &&
     pairedArchUrls &&
     !usesBiteStlScene &&
+    !useBitePairTextured &&
     upperAsset !== lowerAsset;
 
   return (

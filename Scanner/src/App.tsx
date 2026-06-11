@@ -14,6 +14,8 @@ import SettingsModal from "./components/SettingsModal";
 import SupportModal from "./components/SupportModal";
 import { DENTISTS, SHOW_ALL_DRS_ID } from "./components/OrdersHeader";
 import type { Patient } from "./data/patients";
+import type { Order, OrderDetails } from "./data/orders";
+import { treatmentIdFromProcedure } from "./data/orders";
 import { getScanFlowVersion } from "./utils/scanFlowVersionManager";
 
 const BRIGHTNESS_STORAGE_KEY = "scanner-brightness";
@@ -45,6 +47,51 @@ function getStoredVolume(): number {
   return 100;
 }
 
+/**
+ * Build the `OrderDetails` seed used by "Duplicate scan". When the source
+ * order already carries a snapshot (runtime orders created after the
+ * snapshot feature shipped) it's reused verbatim. Seed/demo orders only
+ * have the `procedure` string — we reconstruct a minimal snapshot with just
+ * the procedure type so the duplicated scan at least starts on the right
+ * treatment, with empty tooth/toggle/note state.
+ */
+function orderDetailsForDuplicate(sourceOrder: Order): OrderDetails {
+  if (sourceOrder.details) return sourceOrder.details;
+  return {
+    treatmentId: treatmentIdFromProcedure(sourceOrder.procedure),
+    sendToId: "",
+    dueDate: null,
+    toothSelections: {},
+    toothDetails: {},
+    toggles: {
+      niri: sourceOrder.niri,
+      sleeve: true,
+      palatalGingivalFeedback: true,
+      multiBite: false,
+      preTreatment: false,
+      orthoModelICast: false,
+    },
+    noteText: "",
+  };
+}
+
+/**
+ * Map a `Patient` row to the snapshot consumed by the scan flow's Info step.
+ * `internalId` is what ties Confirm & Send back to this existing patient —
+ * without it the flow would mint a brand-new patient record.
+ */
+function patientToScanSnapshot(p: Patient): ScanFlowPatientSnapshot {
+  return {
+    patientName: `${p.firstName} ${p.lastName}`.trim(),
+    patientId: p.patientId,
+    dateOfBirth: p.dateOfBirth,
+    gender: p.gender,
+    lastScan: p.lastScanDate,
+    treatedBy: p.doctor,
+    internalId: p.id,
+  };
+}
+
 function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [showLogin, setShowLogin] = useState(true);
@@ -54,6 +101,9 @@ function App() {
   const [showScanPatientDetails, setShowScanPatientDetails] = useState(false);
   const [showScanFlow, setShowScanFlow] = useState(false);
   const [scanEntryPatient, setScanEntryPatient] = useState<ScanFlowPatientSnapshot | null>(null);
+  /** Order snapshot pre-seeded into the scan flow when "Duplicate scan" was
+   *  used to enter. `null` for "New Scan" / Home → Scan flows. */
+  const [scanEntryOrderDetails, setScanEntryOrderDetails] = useState<OrderDetails | null>(null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [supportModalOpen, setSupportModalOpen] = useState(false);
@@ -147,6 +197,7 @@ function App() {
                   // 26A: skip the patient-details pre-screen; go directly to the
                   // consolidated info step inside ScanFlowPage26A.
                   setScanEntryPatient(null);
+                  setScanEntryOrderDetails(null);
                   setShowScanPatientDetails(false);
                   setShowScanFlow(true);
                 } else {
@@ -166,6 +217,7 @@ function App() {
                 setShowScanFlow(false);
                 setSelectedPatient(null);
                 setScanEntryPatient(null);
+                setScanEntryOrderDetails(null);
               }}
             />
           </div>
@@ -221,9 +273,11 @@ function App() {
             {scanFlowVersion === "26A" ? (
               <ScanFlowPage26A
                 initialPatient={scanEntryPatient ?? undefined}
+                initialOrderDetails={scanEntryOrderDetails ?? undefined}
                 onBack={() => {
                   setShowScanFlow(false);
                   setScanEntryPatient(null);
+                  setScanEntryOrderDetails(null);
                   setShowHome(true);
                 }}
                 onScanComplete={(p) => {
@@ -232,6 +286,7 @@ function App() {
                   // (status: Sent to lab) at the top of the list.
                   setShowScanFlow(false);
                   setScanEntryPatient(null);
+                  setScanEntryOrderDetails(null);
                   setShowHome(false);
                   setShowOrdersPage(false);
                   setShowMessagesPage(false);
@@ -272,6 +327,25 @@ function App() {
             <PatientOrders
               patient={selectedPatient}
               onBack={() => setSelectedPatient(null)}
+              onNewScan={(sourceOrder) => {
+                // Keep `selectedPatient` set — `showScanFlow` has render
+                // priority over `selectedPatient`, so when the scan flow
+                // returns we drop straight back into this PatientOrders
+                // page with the new order prepended (runtime store).
+                setScanEntryPatient(patientToScanSnapshot(selectedPatient));
+                // "Duplicate scan" passes a source order — its details
+                // snapshot (or a procedure-only fallback for seed orders)
+                // pre-fills the Info step. "New Scan" passes nothing, so
+                // the scan flow opens with its built-in defaults.
+                setScanEntryOrderDetails(
+                  sourceOrder ? orderDetailsForDuplicate(sourceOrder) : null,
+                );
+                setShowHome(false);
+                setShowOrdersPage(false);
+                setShowMessagesPage(false);
+                setShowScanPatientDetails(false);
+                setShowScanFlow(true);
+              }}
               onOpenSettings={() => openSettings()}
               onOpenSupport={openSupport}
             />

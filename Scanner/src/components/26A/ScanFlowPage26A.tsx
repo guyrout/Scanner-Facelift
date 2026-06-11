@@ -19,7 +19,7 @@ import { scanLowerJawGuidanceIsPermanentlySkipped } from "./ScanLowerJawGuidance
 import type { CameraState } from "./PlyModelViewer26A";
 import type { JawSelection } from "./JawSelector26A";
 import type { Patient } from "../../data/patients";
-import type { Order } from "../../data/orders";
+import type { Order, OrderDetails } from "../../data/orders";
 import {
   addRuntimeOrder,
   addRuntimePatient,
@@ -48,6 +48,10 @@ export interface ScanFlowPageProps {
   onOpenSupport?: () => void;
   /** Patient captured on the pre-wizard “Patient details” screen (Home → Scan). */
   initialPatient?: ScanFlowPatientSnapshot;
+  /** Optional scan-flow snapshot used to pre-fill the Info step when the
+   *  user clicked "Duplicate scan" from a previous order. Covers procedure
+   *  type, tooth selections, toggles, due date, send-to, and note. */
+  initialOrderDetails?: OrderDetails;
   /** Fired after Confirm & Send. Receives the resolved `Patient` so the
    *  host can navigate to that patient's orders page. If omitted, the host
    *  falls back to `onBack`. */
@@ -69,6 +73,28 @@ function todayMDYYYY(): string {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${mm}/${dd}/${d.getFullYear()}`;
+}
+
+/** Parse an ISO date string ("YYYY-MM-DD") into a local `Date`. Returns
+ *  `null` for falsy/invalid input so the date-picker stays unset. */
+function parseIsoDueDate(iso: string | null | undefined): Date | null {
+  if (!iso) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const [, y, mo, da] = m;
+  return new Date(Number(y), Number(mo) - 1, Number(da));
+}
+
+/** Format a `Date` back into the ISO "YYYY-MM-DD" used in `OrderDetails`. */
+function formatIsoDueDate(d: Date | null): string | null {
+  if (!d) return null;
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return `${y}-${mo}-${da}`;
 }
 
 /**
@@ -133,6 +159,7 @@ export default function ScanFlowPage26A({
   onOpenSettings,
   onOpenSupport,
   initialPatient,
+  initialOrderDetails,
   onScanComplete,
 }: ScanFlowPageProps) {
   const [currentStep, setCurrentStep] = useState<ScanWizardStep>("info");
@@ -164,8 +191,14 @@ export default function ScanFlowPage26A({
 
   // Declared early so the post-sleeve guidance routing can derive
   // `firstCrownJaw` from them. Other treatment/order state follows.
-  const [treatmentId, setTreatmentId] = useState("study-model");
-  const [toothSelections, setToothSelections] = useState<Record<number, string>>({});
+  // All of these accept a `initialOrderDetails` seed so "Duplicate scan"
+  // can pre-fill the Info step from a previous order.
+  const [treatmentId, setTreatmentId] = useState(
+    () => initialOrderDetails?.treatmentId ?? "study-model",
+  );
+  const [toothSelections, setToothSelections] = useState<Record<number, string>>(
+    () => initialOrderDetails?.toothSelections ?? {},
+  );
 
   const handleStepChange = useCallback(
     (step: ScanWizardStep) => {
@@ -230,18 +263,25 @@ export default function ScanFlowPage26A({
 
   // `treatmentId` and `toothSelections` are declared above (before the
   // post-sleeve callbacks) so the guidance-routing closure can read them.
-  const [sendToId, setSendToId] = useState("");
-  const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [toothDetails, setToothDetails] = useState<Record<number, ToothDetail>>({});
-  const [toggles, setToggles] = useState<ToggleState>({
-    niri: true,
-    sleeve: true,
-    palatalGingivalFeedback: true,
-    multiBite: false,
-    preTreatment: false,
-    orthoModelICast: false,
-  });
-  const [noteText, setNoteText] = useState("");
+  const [sendToId, setSendToId] = useState(() => initialOrderDetails?.sendToId ?? "");
+  const [dueDate, setDueDate] = useState<Date | null>(
+    () => parseIsoDueDate(initialOrderDetails?.dueDate),
+  );
+  const [toothDetails, setToothDetails] = useState<Record<number, ToothDetail>>(
+    () => initialOrderDetails?.toothDetails ?? {},
+  );
+  const [toggles, setToggles] = useState<ToggleState>(
+    () =>
+      initialOrderDetails?.toggles ?? {
+        niri: true,
+        sleeve: true,
+        palatalGingivalFeedback: true,
+        multiBite: false,
+        preTreatment: false,
+        orthoModelICast: false,
+      },
+  );
+  const [noteText, setNoteText] = useState(() => initialOrderDetails?.noteText ?? "");
 
   const prevToothSelectionsRef = useRef<Record<number, string>>(toothSelections);
   useEffect(() => {
@@ -287,6 +327,16 @@ export default function ScanFlowPage26A({
       addRuntimePatient(resolvedPatient);
     }
 
+    const orderDetails: OrderDetails = {
+      treatmentId,
+      sendToId,
+      dueDate: formatIsoDueDate(dueDate),
+      toothSelections,
+      toothDetails,
+      toggles,
+      noteText,
+    };
+
     const newOrder: Order = {
       orderId: generateOrderId(),
       procedure: procedureLabelFor(treatmentId),
@@ -294,6 +344,7 @@ export default function ScanFlowPage26A({
       scanDate: todayMDYYYY(),
       lastModified: todayMDYYYY(),
       status: "sent_to_lab",
+      details: orderDetails,
     };
     addRuntimeOrder(resolvedPatient.id, newOrder);
 
@@ -302,7 +353,18 @@ export default function ScanFlowPage26A({
     } else {
       onBack();
     }
-  }, [patient, treatmentId, toggles.niri, onScanComplete, onBack]);
+  }, [
+    patient,
+    treatmentId,
+    sendToId,
+    dueDate,
+    toothSelections,
+    toothDetails,
+    toggles,
+    noteText,
+    onScanComplete,
+    onBack,
+  ]);
 
   return (
     <div className="scan-flow flex flex-col w-full h-full min-h-0 overflow-hidden bg-[var(--color-background-layer-01)]">

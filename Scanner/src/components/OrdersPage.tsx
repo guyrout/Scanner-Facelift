@@ -13,7 +13,7 @@ import { useRuntimeAllOrdersForOrdersPage } from "../data/runtimeStore";
 const EXPANDED_ACTIONS = [
   { id: "view-rx", label: "View RX" },
   { id: "open-viewer", label: "Open Viewer" },
-  { id: "align-oral", label: "Align Oral Health Suite" },
+  { id: "align-oral", label: "iTero Design suite" },
   { id: "itero-report", label: "iTero Scan Report" },
   { id: "simulator-pro", label: "Invisalign Outcome Simulator Pro", withLogo: true as const },
   { id: "simulator", label: "Invisalign Outcome Simulator" },

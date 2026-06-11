@@ -349,7 +349,7 @@ function IconCloseEmptyML() {
 }
 
 /* Toast — Figma 4023:73770. Depth 01: 0 2px 12px rgba(0,0,0,0.13). Body/tp-body-02: 18px, 28px, Regular. */
-function MarginLineToast({ toothLabel = "17" }: { toothLabel?: string }) {
+function MarginLineToast({ toothLabel = "47" }: { toothLabel?: string }) {
   return (
     <div
       className="flex items-start overflow-hidden bg-[var(--color-background-elevated)] text-[var(--color-text-primary)]"
@@ -390,7 +390,7 @@ const ITEM_HEIGHT = 60;
 
 function MarginLinePanel({
   onClose,
-  toothLabel = "17",
+  toothLabel = "47",
   onToothPrev,
   onToothNext,
   onDetectMargin,
@@ -597,7 +597,7 @@ export default function ViewStepContent({
   const [showPrepQcToast, setShowPrepQcToast] = useState(false);
   const [prepQcStep, setPrepQcStep] = useState(0.1);
   const [activeTools, setActiveTools] = useState<Set<ViewToolId>>(new Set());
-  const [marginLineTooth, setMarginLineTooth] = useState("17");
+  const [marginLineTooth, setMarginLineTooth] = useState("47");
 
   const [isPostProcessing, setIsPostProcessing] = useState(comingFromScan);
   const [postProcessProgress, setPostProcessProgress] = useState(0);

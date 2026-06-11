@@ -147,12 +147,35 @@ function ChevronIcon({ up }: { up: boolean }) {
     <svg width="60" height="60" viewBox="0 0 61 60" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M0.5 60L0.499997 0L60.5 0L60.5 60L0.5 60Z" fill="white" />
       <path d="M0.5 60L1 60L0.999997 0L0.5 0L0 0L0 60L0.5 60Z" fill="#F0F0F0" />
+      <rect
+        x="18.5"
+        y="18"
+        width="24"
+        height="24"
+        rx="3"
+        stroke="#3E3D40"
+        strokeWidth="2"
+        fill="none"
+      />
+      <line
+        x1="18.5"
+        y1="25"
+        x2="42.5"
+        y2="25"
+        stroke="#3E3D40"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
       <path
-        d="M30.5 36L20.5 26L21.9 24.6L30.5 33.2L39.1 24.6L40.5 26L30.5 36Z"
-        fill="#3E3D40"
+        d="M25.5 35L30.5 30L35.5 35"
+        stroke="#3E3D40"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
         style={{
-          transformOrigin: "30.5px 30px",
-          transform: up ? "scaleY(-1)" : "none",
+          transformOrigin: "30.5px 32px",
+          transform: up ? "none" : "scaleY(-1)",
           transition: "transform 0.2s ease",
         }}
       />

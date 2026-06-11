@@ -10,6 +10,13 @@ import { useRuntimeOrdersForPatient, isRuntimeOrder } from "../data/runtimeStore
 interface PatientOrdersProps {
   patient: Patient;
   onBack: () => void;
+  /** Fired when the user clicks "New Scan" or "Duplicate scan". The host
+   *  opens the scan flow's Info step prefilled with this patient — when
+   *  `sourceOrder` is passed (Duplicate), its `details` snapshot (or its
+   *  `procedure` field as a fallback for seed orders) is also used to
+   *  pre-fill the Info step's order section. After Confirm & Send the new
+   *  order is attached to the same patient (see `App.tsx`). */
+  onNewScan?: (sourceOrder?: Order) => void;
   onOpenSettings?: () => void;
   onOpenSupport?: () => void;
 }
@@ -128,7 +135,7 @@ type RowAction = { id: string; label: string; withLogo?: boolean };
 const EXPANDED_ACTIONS: readonly RowAction[] = [
   { id: "view-rx", label: "View RX" },
   { id: "open-viewer", label: "Open Viewer" },
-  { id: "align-oral", label: "Align Oral Health Suite" },
+  { id: "align-oral", label: "iTero Design suite" },
   { id: "itero-report", label: "iTero Scan Report" },
   { id: "simulator-pro", label: "Invisalign Outcome Simulator Pro", withLogo: true },
   { id: "simulator", label: "Invisalign Outcome Simulator" },
@@ -142,8 +149,8 @@ const EXPANDED_ACTIONS: readonly RowAction[] = [
 const SENT_TO_LAB_ACTIONS: readonly RowAction[] = [
   { id: "view-rx", label: "View RX" },
   { id: "open-viewer", label: "Open Viewer" },
-  { id: "align-oral", label: "Align Oral Health Suite" },
-  { id: "duplicate", label: "Duplicate" },
+  { id: "align-oral", label: "iTero Design suite" },
+  { id: "duplicate", label: "Duplicate scan" },
 ];
 
 const ROW_PADDING_X = "pl-4 pr-4";
@@ -164,7 +171,7 @@ function formatScanDateYearsAgo(yearsAgo: number): string {
   return `${mm}/${dd}/${d.getFullYear()}`;
 }
 
-export default function PatientOrders({ patient, onBack, onOpenSettings, onOpenSupport }: PatientOrdersProps) {
+export default function PatientOrders({ patient, onBack, onNewScan, onOpenSettings, onOpenSupport }: PatientOrdersProps) {
   const orders = useRuntimeOrdersForPatient(patient.id);
   /** Table only: first two SEED rows show scan dates relative to today; runtime
    *  rows (newly created during this session) keep their real scan date so the
@@ -290,6 +297,7 @@ export default function PatientOrders({ patient, onBack, onOpenSettings, onOpenS
               </button>
               <button
                 type="button"
+                onClick={() => onNewScan?.()}
                 className="flex items-center justify-center cursor-pointer border-0 text-on-color hover:opacity-90 transition-ui transition-ui-focus transition-press active-press whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-brand)]"
                 style={{ height: 60, paddingLeft: 24, paddingRight: 24, gap: 8, borderRadius: 8, backgroundColor: "var(--color-background-brand)", fontFamily: "var(--font-roboto)", fontSize: 18, fontWeight: 400, lineHeight: "28px" }}
               >
@@ -371,6 +379,13 @@ export default function PatientOrders({ patient, onBack, onOpenSettings, onOpenS
                     onCheckboxChange={() => toggleScanDate(order.scanDate)}
                     onExpandedActionClick={(actionId) => {
                       if (actionId === "simulator-pro") setShowDoctorSiteLoginModal(true);
+                      // "Duplicate scan" opens the scan flow prefilled with
+                      // this patient AND this order — its `details` snapshot
+                      // carries the original procedure type, tooth selections,
+                      // toggles, due date, and note. Seed orders without a
+                      // snapshot still get the procedure type pre-selected
+                      // via the procedure-string fallback in `App.tsx`.
+                      else if (actionId === "duplicate") onNewScan?.(order);
                     }}
                   />
                 ))
@@ -521,7 +536,7 @@ function OrderRow({
           style={{ paddingLeft: 0, paddingRight: 0 }}
           onClick={(e) => e.stopPropagation()}
         >
-          {(isRuntimeOrder(order.orderId) ? SENT_TO_LAB_ACTIONS : EXPANDED_ACTIONS).map((action) => (
+          {(order.status === "sent_to_lab" ? SENT_TO_LAB_ACTIONS : EXPANDED_ACTIONS).map((action) => (
             <button
               key={action.id}
               type="button"

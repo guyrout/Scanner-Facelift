@@ -129,7 +129,7 @@ export function computeHeatIntensity(
   return intensity;
 }
 
-/** Vertex shader: pass position, normal, heat intensity, base color. */
+/** Vertex shader: pass position, normal, heat intensity, base color, UV. */
 export const vertexShader = `
   attribute float heatIntensity;
   attribute vec3 baseColor;
@@ -137,10 +137,12 @@ export const vertexShader = `
   varying vec3 vBaseColor;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
+  varying vec2 vUv;
 
   void main() {
     vHeatIntensity = heatIntensity;
     vBaseColor = baseColor;
+    vUv = uv;
     vNormal = normalize(normalMatrix * normal);
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     vViewPosition = -mvPosition.xyz;
@@ -148,14 +150,22 @@ export const vertexShader = `
   }
 `;
 
-/** Fragment shader: blend base color with heatmap on occlusal surfaces. */
+/**
+ * Fragment shader: blend base color with heatmap on occlusal surfaces.
+ * When `useMap` is true and a `map` sampler is bound (iTero PLY workflow),
+ * the JPG texture is sampled for `base` instead of the vertex-color
+ * attribute — this keeps the photo texture visible underneath the heat.
+ */
 export const fragmentShader = `
   uniform float heatOpacity;
+  uniform sampler2D map;
+  uniform bool useMap;
 
   varying float vHeatIntensity;
   varying vec3 vBaseColor;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
+  varying vec2 vUv;
 
   vec3 heatMapColor(float t) {
     float r, g, b;
@@ -196,7 +206,7 @@ export const fragmentShader = `
     float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.0);
 
     vec3 heatColor = heatMapColor(clamp(vHeatIntensity, 0.0, 1.0));
-    vec3 base = vBaseColor;
+    vec3 base = useMap ? texture2D(map, vUv).rgb : vBaseColor;
 
     float blend = vHeatIntensity > 0.001 ? 1.0 * heatOpacity : 0.0;
     blend = mix(blend, blend * (1.0 - fresnel * 0.1), 0.2);
@@ -220,6 +230,8 @@ export function createHeatmapMaterial(
     fragmentShader,
     uniforms: {
       heatOpacity: { value: heatOpacity },
+      map: { value: null as THREE.Texture | null },
+      useMap: { value: false },
     },
     side: THREE.DoubleSide,
   });
