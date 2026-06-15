@@ -112,6 +112,10 @@ function IconEdit() {
 }
 
 function ChevronIcon({ up }: { up: boolean }) {
+  const innerTransform = up
+    ? undefined
+    : "translate(30.5 26.5) scale(1 -1) translate(-30.5 -26.5)";
+
   return (
     <svg width="60" height="60" viewBox="0 0 61 60" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M0.5 60L0.499997 0L60.5 0L60.5 60L0.5 60Z" fill="white" />
@@ -128,25 +132,21 @@ function ChevronIcon({ up }: { up: boolean }) {
       />
       <line
         x1="18.5"
-        y1="25"
+        y1="35"
         x2="42.5"
-        y2="25"
+        y2="35"
         stroke="#3E3D40"
         strokeWidth="2"
         strokeLinecap="round"
       />
       <path
-        d="M25.5 35L30.5 30L35.5 35"
+        d="M25.5 24L30.5 29L35.5 24"
         stroke="#3E3D40"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
-        style={{
-          transformOrigin: "30.5px 32px",
-          transform: up ? "none" : "scaleY(-1)",
-          transition: "transform 0.2s ease",
-        }}
+        transform={innerTransform}
       />
     </svg>
   );
