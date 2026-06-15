@@ -21,6 +21,7 @@ import SwapScansModal26A from "./SwapScansModal26A";
 import ToothMap26A from "./ToothMap26A";
 import JawSelector26A, { type JawSelection } from "./JawSelector26A";
 import LassoDrawingOverlay26A, { type LassoPoint } from "./LassoDrawingOverlay26A";
+import ScanLongTapMenuOverlay26A from "./ScanLongTapMenu26A";
 import { getTreatmentPlyPair, treatmentRestrictsScanViewToolbarTools } from "./treatmentScanFlow26A";
 import type { ViewMode, CameraState } from "./PlyModelViewer26A";
 
@@ -113,6 +114,8 @@ export default function ScanStepContent26A({
   // step's Trim tool: closed paths are projected to 3D and cut on Rescan.
   const [prepLassoPaths, setPrepLassoPaths] = useState<LassoPoint[][]>([]);
   const [prepLassoCurrent, setPrepLassoCurrent] = useState<LassoPoint[]>([]);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const isFixedRestorativeScan = treatmentId === "fixed-restorative";
 
   // Clearing the lasso must happen AFTER PlyMesh has performed its cut.
   // Child effects fire before parent effects in the same commit, so by the
@@ -177,7 +180,7 @@ export default function ScanStepContent26A({
     <div className="relative flex flex-col flex-1 min-h-0 min-w-0">
       <div className="relative flex-1 min-h-0 min-w-0" style={{ backgroundColor: "var(--color-page-background)" }}>
         {/* 3D model viewport — fills entire area */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div ref={viewportRef} className="absolute inset-0 overflow-hidden">
           {showScanViewport3d ? (
             <Suspense
               fallback={
@@ -207,6 +210,10 @@ export default function ScanStepContent26A({
                 The 3D scan view appears after you confirm the sleeve step.
               </p>
             </div>
+          )}
+
+          {isFixedRestorativeScan && showScanViewport3d && !prepSelectionMode && (
+            <ScanLongTapMenuOverlay26A enabled containerRef={viewportRef} />
           )}
         </div>
 
