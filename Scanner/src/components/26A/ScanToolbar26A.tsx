@@ -172,7 +172,7 @@ export default function ScanToolbar26A({
 }: ScanToolbarProps) {
   const [internalExpanded, setInternalExpanded] = useState(true);
   const expanded = controlledExpanded ?? internalExpanded;
-  const [internalActiveTools, setInternalActiveTools] = useState<Set<ToolId>>(() => new Set());
+  const [internalActiveTools, setInternalActiveTools] = useState<Set<ToolId>>(() => new Set(["scan-color"]));
   const activeTools = controlledActiveTools ?? internalActiveTools;
 
   const setActiveTools = useCallback(

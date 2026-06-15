@@ -78,31 +78,9 @@ export default function ScanStepContent26A({
   const { upperUrl, lowerUrl, biteUrl, upperTextureUrl, lowerTextureUrl } = getTreatmentPlyPair(treatmentId);
   const restrictToolbar = treatmentRestrictsScanViewToolbarTools(treatmentId);
   const [scanToolbarActiveTools, setScanToolbarActiveTools] = useState<Set<ScanToolbarToolId>>(
-    () => {
-      // Color tool is ACTIVE when the model is shown in color, INACTIVE for
-      // monochrome (stone). Fixed restorative starts in monochrome; every
-      // other treatment starts in color.
-      const initial = new Set<ScanToolbarToolId>(["feedback"]);
-      if (treatmentId !== "fixed-restorative") initial.add("scan-color");
-      return initial;
-    },
+    () => new Set<ScanToolbarToolId>(["feedback", "scan-color"]),
   );
   const viewMode: ViewMode = scanToolbarActiveTools.has("scan-color") ? "color" : "stone";
-
-  // Keep the Color tool in sync with the treatment default: monochrome for
-  // Fixed restorative, color otherwise. User toggles after this still win
-  // because the effect only re-runs on `treatmentId` change.
-  useEffect(() => {
-    setScanToolbarActiveTools((prev) => {
-      const next = new Set(prev);
-      if (treatmentId === "fixed-restorative") {
-        next.delete("scan-color");
-      } else {
-        next.add("scan-color");
-      }
-      return next;
-    });
-  }, [treatmentId]);
   const [prepEditOpen, setPrepEditOpen] = useState(false);
   const [prepSelectionMode, setPrepSelectionMode] = useState(false);
   const [eraseSelectionNonce, setEraseSelectionNonce] = useState(0);
