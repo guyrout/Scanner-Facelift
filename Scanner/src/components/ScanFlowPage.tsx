@@ -15,6 +15,7 @@ import FixedRestorativeForm, { type ToothDetail, type ToggleState } from "./Fixe
 import ScanStepContent from "./ScanStepContent";
 import ViewStepContent from "./ViewStepContent";
 import SendStepContent from "./SendStepContent";
+import type { JawSelection } from "./26A/JawSelector26A";
 import type { CameraState } from "./PlyModelViewer";
 
 export interface ScanFlowPatientSnapshot {
@@ -77,13 +78,12 @@ export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, in
     preTreatment: false,
   });
   const [noteText, setNoteText] = useState("");
+  const [selectedJaw, setSelectedJaw] = useState<JawSelection>("upper");
 
   function handleProcedureSelect(procedure: ProcedureType) {
     setSelectedProcedure(procedure);
     setTreatmentId(procedure);
-    if (procedure === "fixed-restorative") {
-      setShowProcedureForm(true);
-    }
+    setShowProcedureForm(procedure === "fixed-restorative");
   }
 
   return (
@@ -149,6 +149,10 @@ export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, in
             toolbarExpanded={toolbarExpanded}
             onToolbarExpandedChange={setToolbarExpanded}
             cameraStateRef={cameraStateRef}
+            selectedProcedure={selectedProcedure}
+            toothSelections={toothSelections}
+            selectedJaw={selectedJaw}
+            onSelectedJawChange={setSelectedJaw}
           />
         )}
         {currentStep === "view" && (
@@ -157,6 +161,8 @@ export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, in
             onToolbarExpandedChange={setToolbarExpanded}
             cameraStateRef={cameraStateRef}
             comingFromScan={previousStepRef.current === "scan"}
+            selectedProcedure={selectedProcedure}
+            selectedJaw={selectedJaw}
           />
         )}
         {currentStep === "send" && (

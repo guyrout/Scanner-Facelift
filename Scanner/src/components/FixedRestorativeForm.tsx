@@ -933,12 +933,12 @@ export default function FixedRestorativeForm({
 
       {/* Section 2: Interactive tooth chart — Figma 4069-83039 */}
       <div
-        className="bg-[var(--color-background-layer-01)] w-full min-w-0 overflow-hidden"
-        style={{ borderRadius: 8, padding: 24, height: 528 }}
+        className="bg-[var(--color-background-layer-01)] w-full min-w-0"
+        style={{ borderRadius: 8, padding: 24, minHeight: 528 }}
       >
-        <div className="flex flex-col xl:flex-row w-full h-full min-h-0 items-stretch" style={{ gap: 0 }}>
-          {/* Left: jaw + restoration-type buttons */}
-          <div className="flex flex-col items-center justify-center flex-1 min-w-0 min-h-0 overflow-x-auto overflow-y-hidden" style={{ gap: 48, padding: "0 16px" }}>
+        <div className="flex flex-col xl:flex-row w-full xl:min-h-[480px] items-stretch" style={{ gap: 0 }}>
+          {/* Left: jaw + restoration-type buttons — shrink-0 on narrow viewports so chart is never clipped */}
+          <div className="flex flex-col items-center w-full shrink-0 xl:flex-1 xl:min-w-0 xl:min-h-0 overflow-x-auto" style={{ gap: 48, padding: "0 16px" }}>
             <div className="relative w-full shrink-0" style={{ maxWidth: 1171 }}>
               <img src={jawChartSvg} alt="Tooth chart" style={{ width: "100%", height: "auto", display: "block" }} />
               <svg viewBox="0 0 1171 277" className="tooth-chart-svg absolute inset-0 w-full h-full" aria-hidden focusable={false} tabIndex={-1}>
@@ -1079,7 +1079,7 @@ export default function FixedRestorativeForm({
           />
 
           {/* Right: edit form, selected teeth cards, or placeholder — width 429 on xl */}
-          <div className="flex flex-col items-center justify-center w-full xl:pt-0 xl:w-[429px] xl:shrink-0 min-w-0 min-h-0">
+          <div className="flex flex-col items-center justify-center w-full shrink-0 xl:w-[429px] xl:shrink-0 xl:min-h-0 xl:max-h-[480px] xl:overflow-auto min-w-0 pt-6 xl:pt-0 border-t border-border-subtle xl:border-t-0">
             {editingTooth !== null && toothSelections[editingTooth] ? (() => {
               const category = toothSelections[editingTooth];
               const rt = RESTORATION_TYPES.find(r => r.label === category);
@@ -1241,7 +1241,7 @@ export default function FixedRestorativeForm({
                 })}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full" style={{ width: 333, gap: 7 }}>
+              <div className="flex flex-col items-center justify-center py-4 xl:py-0 xl:h-full" style={{ width: 333, gap: 7 }}>
                 <span className="tp-heading-03 text-text-secondary w-full text-center">Select tooth</span>
                 <span className="tp-body-02 text-text-secondary text-center" style={{ width: 315 }}>
                   Select one or more teeth and the type of restoration to define them here.

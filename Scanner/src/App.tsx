@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import SplashScreen from "./components/SplashScreen";
+import FlowVersionPickerPage from "./components/FlowVersionPickerPage";
 import LoginPage from "./components/LoginPage";
 import HomePage from "./components/HomePage";
 import OrdersPage from "./components/OrdersPage";
@@ -93,7 +94,8 @@ function patientToScanSnapshot(p: Patient): ScanFlowPatientSnapshot {
 }
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showVersionPicker, setShowVersionPicker] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
   const [showLogin, setShowLogin] = useState(true);
   const [showHome, setShowHome] = useState(true);
   const [showOrdersPage, setShowOrdersPage] = useState(false);
@@ -150,6 +152,16 @@ function App() {
 
   return (
     <>
+      {showVersionPicker && (
+        <FlowVersionPickerPage
+          onSelect={(version) => {
+            setScanFlowVersionState(version);
+            setShowVersionPicker(false);
+            setShowSplash(true);
+          }}
+        />
+      )}
+
       {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
 
       <div

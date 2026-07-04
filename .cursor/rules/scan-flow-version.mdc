@@ -1,0 +1,40 @@
+---
+description: Ask which scan flow version (26A / 26B / both) before making code changes
+alwaysApply: true
+---
+
+# Scan flow version — ask before every change
+
+Before implementing **any** code change in this project, ask the user which version to target:
+
+- **26A** — previous scanner experience
+- **26B** — Q2 2026 work in progress (default / shared components)
+- **Both** — apply the same change to both versions
+
+Use the **AskQuestion** tool when available. Do not start editing until the user answers.
+
+## Exceptions (no need to ask)
+
+- Purely informational questions (explain, review, debug without editing)
+- Changes explicitly scoped by the user (e.g. "fix this in 26B only")
+- Version-picker / version-manager plumbing only (`FlowVersionPickerPage`, `scanFlowVersionManager`)
+
+## Where each version lives
+
+| Version | Location | Pattern |
+|---------|----------|---------|
+| **26A** | `Scanner/src/components/26A/` | `*26A.tsx`, `*26A.ts` |
+| **26B** | `Scanner/src/components/` (shared root) | No `26A` suffix |
+| **Routing** | `Scanner/src/App.tsx` | Branches on `scanFlowVersion` |
+
+## How to apply changes
+
+- **26A only** → edit files under `components/26A/`; do not change shared 26B components unless needed for compile/routing.
+- **26B only** → edit shared components at `components/` root; do not change `26A/` files.
+- **Both** → mirror the change in the 26A-specific file **and** the equivalent shared (26B) file. If no 26A counterpart exists, say so and confirm with the user.
+
+## Example
+
+User: "Change the scan toolbar button color to blue."
+
+Agent: Ask — **26A**, **26B**, or **both**? Then edit `ScanToolbar26A.tsx`, `ScanToolbar.tsx`, or both accordingly.

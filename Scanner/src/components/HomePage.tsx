@@ -4,11 +4,10 @@
  * Header with iTero logo (left) and icon buttons (right).
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import notificationActiveSvg from "../assets/notification-active.svg";
 import scanIllustration from "../assets/scan-illustration.png";
 import { BatteryIcon, HelpIcon } from "./Icons";
-import { setScanFlowVersion } from "../utils/scanFlowVersionManager";
 import BatteryModal from "./BatteryModal";
 
 export interface HomePageProps {
@@ -130,11 +129,6 @@ export default function HomePage({
   onLockClick,
 }: HomePageProps) {
   const [batteryModalOpen, setBatteryModalOpen] = useState(false);
-
-  useEffect(() => {
-    // Keep scanner flow pinned to 26A while the toggle is hidden.
-    setScanFlowVersion("26A");
-  }, []);
 
   const handleCardClick = (id: string) => {
     if (id === "scan") onScanClick?.();

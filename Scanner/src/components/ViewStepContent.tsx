@@ -15,14 +15,24 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense, type MutableR
 import ViewToolbar, { type ViewToolId } from "./ViewToolbar";
 import ReviewToolPanel from "./ReviewToolPanel";
 import MultiLayerPanel, { type LayerItem, type SelectedLayerId } from "./MultiLayerPanel";
+import PlyModelViewer26A from "./26A/PlyModelViewer26A";
+import { FIXED_RESTORATIVE_STL_PAIR } from "./26A/treatmentScanFlow26A";
+import type { JawSelection as FixedRestorativeJaw } from "./26A/JawSelector26A";
+import type { ProcedureType } from "./ProcedureTypeSelector";
 import type { ViewMode, CameraState } from "./PlyModelViewer";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer"));
 
 const VIEW_LAYER_DEFS: LayerItem[] = [
   { id: "pre-treatment", label: "Pre-treatment", sublabel: "Upper arch" },
-  { id: "treatment-scan", label: "Treatment scan", sublabel: "Upper arch" },
+  { id: "treatment-scan", label: "Treatment scan", sublabel: "Lower arch" },
 ];
+
+/** Fixed restorative: each multilayer thumbnail maps to a single jaw in the 3D viewer. */
+const LAYER_JAW_VIEW: Record<string, FixedRestorativeJaw> = {
+  "pre-treatment": "upper",
+  "treatment-scan": "lower",
+};
 
 function CutIcon() {
   return (
@@ -583,6 +593,10 @@ interface ViewStepContentProps {
   onToolbarExpandedChange?: (expanded: boolean) => void;
   cameraStateRef?: MutableRefObject<CameraState>;
   comingFromScan?: boolean;
+  /** Procedure chosen on the Info step — drives 3D mesh when Fixed restorative is selected. */
+  selectedProcedure?: ProcedureType | null;
+  /** Jaw tab from Scan step — used for fixed restorative 3D mesh. */
+  selectedJaw?: FixedRestorativeJaw;
 }
 
 export default function ViewStepContent({
@@ -590,14 +604,23 @@ export default function ViewStepContent({
   onToolbarExpandedChange,
   cameraStateRef,
   comingFromScan = false,
+  selectedProcedure = null,
+  selectedJaw = "upper",
 }: ViewStepContentProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>("color");
+  const isFixedRestorative = selectedProcedure === "fixed-restorative";
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    selectedProcedure === "fixed-restorative" ? "stone" : "color",
+  );
   const [showTrimMenu, setShowTrimMenu] = useState(false);
   const [showPrepQc, setShowPrepQc] = useState(false);
   const [showPrepQcToast, setShowPrepQcToast] = useState(false);
   const [prepQcStep, setPrepQcStep] = useState(0.1);
   const [activeTools, setActiveTools] = useState<Set<ViewToolId>>(new Set());
   const [marginLineTooth, setMarginLineTooth] = useState("47");
+
+  useEffect(() => {
+    setViewMode(selectedProcedure === "fixed-restorative" ? "stone" : "color");
+  }, [selectedProcedure]);
 
   const [isPostProcessing, setIsPostProcessing] = useState(comingFromScan);
   const [postProcessProgress, setPostProcessProgress] = useState(0);
@@ -631,6 +654,21 @@ export default function ViewStepContent({
     },
     [selectedLayerId, layerVisibility],
   );
+  const handleSelectedLayerChange = useCallback((id: SelectedLayerId) => {
+    setSelectedLayerId(id);
+    if (id && id !== "add") {
+      setLayerVisibility((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+    }
+  }, []);
+
+  const jawViewForViewer: FixedRestorativeJaw =
+    isFixedRestorative &&
+    selectedLayerId &&
+    selectedLayerId !== "add" &&
+    LAYER_JAW_VIEW[selectedLayerId]
+      ? LAYER_JAW_VIEW[selectedLayerId]
+      : selectedJaw;
+
   const opacityForViewer =
     selectedLayerId && selectedLayerId !== "add" && layerVisibility[selectedLayerId] && viewLayers.some((l) => l.id === selectedLayerId)
       ? (layerOpacities[selectedLayerId] ?? 100) / 100
@@ -710,6 +748,21 @@ export default function ViewStepContent({
             </div>
           }
         >
+          {isFixedRestorative ? (
+            <PlyModelViewer26A
+              key="fixed-restorative-view"
+              url={FIXED_RESTORATIVE_STL_PAIR.upperUrl}
+              lowerUrl={FIXED_RESTORATIVE_STL_PAIR.lowerUrl}
+              biteUrl={FIXED_RESTORATIVE_STL_PAIR.biteUrl}
+              upperTextureUrl={FIXED_RESTORATIVE_STL_PAIR.upperTextureUrl}
+              lowerTextureUrl={FIXED_RESTORATIVE_STL_PAIR.lowerTextureUrl}
+              jawView={jawViewForViewer}
+              viewMode={viewMode}
+              cameraStateRef={cameraStateRef}
+              showOcclusgramHeatmap={activeTools.has("occlusgram")}
+              opacity={opacityForViewer}
+            />
+          ) : (
           <PlyModelViewer
             url="/models/301538675_shell_occlusion_u.ply"
             viewMode={viewMode}
@@ -717,6 +770,7 @@ export default function ViewStepContent({
             showOcclusgramHeatmap={activeTools.has("occlusgram")}
             opacity={opacityForViewer}
           />
+        )}
         </Suspense>
       </div>
 
@@ -728,7 +782,7 @@ export default function ViewStepContent({
           onLayerOpacityChange={handleLayerOpacityChange}
           onLayerVisibilityChange={handleLayerVisibilityChange}
           selectedLayerId={selectedLayerId}
-          onSelectedLayerChange={setSelectedLayerId}
+          onSelectedLayerChange={handleSelectedLayerChange}
         />
       </div>
 

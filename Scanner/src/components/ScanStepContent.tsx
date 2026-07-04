@@ -22,13 +22,19 @@ import ScanToolbar from "./ScanToolbar";
 import PrepEditPanel from "./PrepEditPanel";
 import SwapScansModal from "./SwapScansModal";
 import ToothMap from "./ToothMap";
-import JawSelector, { type JawSelection } from "./JawSelector";
+import ToothMap26A from "./26A/ToothMap26A";
+import JawSelector, { type JawSelection as LegacyJawSelection } from "./JawSelector";
+import JawSelector26A, { type JawSelection } from "./26A/JawSelector26A";
+import PlyModelViewer26A from "./26A/PlyModelViewer26A";
+import { FIXED_RESTORATIVE_STL_PAIR } from "./26A/treatmentScanFlow26A";
 import VirtualKeyboard from "./VirtualKeyboard";
+import type { ProcedureType } from "./ProcedureTypeSelector";
 import type { ViewMode, CameraState } from "./PlyModelViewer";
 
 const PlyModelViewer = lazy(() => import("./PlyModelViewer"));
 
-const JAW_ORDER: JawSelection[] = ["upper", "lower", "both"];
+const LEGACY_JAW_ORDER: LegacyJawSelection[] = ["upper", "lower", "both"];
+const JAW_ORDER: JawSelection[] = ["upper", "bite", "lower"];
 
 const DEFAULT_TABS: TabData[] = [
   { id: "pre-treatment", label: "Pre-treatment", hasScanData: false },
@@ -42,12 +48,28 @@ interface ScanStepContentProps {
   toolbarExpanded?: boolean;
   onToolbarExpandedChange?: (expanded: boolean) => void;
   cameraStateRef?: MutableRefObject<CameraState>;
+  /** Procedure chosen on the Info step — drives 3D mesh when Fixed restorative is selected. */
+  selectedProcedure?: ProcedureType | null;
+  /** Tooth selections from the Info step — shown on ToothMap26A for Fixed restorative. */
+  toothSelections?: Record<number, string>;
+  /** Upper / bite / lower — shared with View step (26A scan behaviour). */
+  selectedJaw?: JawSelection;
+  onSelectedJawChange?: (jaw: JawSelection) => void;
 }
 
-export default function ScanStepContent({ toolbarExpanded, onToolbarExpandedChange, cameraStateRef }: ScanStepContentProps) {
+export default function ScanStepContent({
+  toolbarExpanded,
+  onToolbarExpandedChange,
+  cameraStateRef,
+  selectedProcedure = null,
+  toothSelections = {},
+  selectedJaw = "upper",
+  onSelectedJawChange,
+}: ScanStepContentProps) {
+  const isFixedRestorative = selectedProcedure === "fixed-restorative";
   const [tabs, setTabs] = useState<TabData[]>(DEFAULT_TABS);
   const [activeTabId, setActiveTabId] = useState(DEFAULT_TABS[0].id);
-  const [selectedJaw, setSelectedJaw] = useState<JawSelection>("upper");
+  const [legacySelectedJaw, setLegacySelectedJaw] = useState<LegacyJawSelection>("upper");
 
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
@@ -57,10 +79,16 @@ export default function ScanStepContent({ toolbarExpanded, onToolbarExpandedChan
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [deselectSwapNonce, setDeselectSwapNonce] = useState(0);
 
+  function cycleLegacyJaw(dir: 1 | -1) {
+    const idx = LEGACY_JAW_ORDER.indexOf(legacySelectedJaw);
+    const next = (idx + dir + LEGACY_JAW_ORDER.length) % LEGACY_JAW_ORDER.length;
+    setLegacySelectedJaw(LEGACY_JAW_ORDER[next]);
+  }
+
   function cycleJaw(dir: 1 | -1) {
     const idx = JAW_ORDER.indexOf(selectedJaw);
     const next = (idx + dir + JAW_ORDER.length) % JAW_ORDER.length;
-    setSelectedJaw(JAW_ORDER[next]);
+    onSelectedJawChange?.(JAW_ORDER[next]);
   }
 
   const handleAddTab = useCallback((label: string) => {
@@ -149,22 +177,68 @@ export default function ScanStepContent({ toolbarExpanded, onToolbarExpandedChan
               </div>
             }
           >
-            <PlyModelViewer url="/models/301538675_shell_occlusion_u.ply" viewMode={viewMode} cameraStateRef={cameraStateRef} />
+            {isFixedRestorative ? (
+              <PlyModelViewer26A
+                key="fixed-restorative-scan"
+                url={FIXED_RESTORATIVE_STL_PAIR.upperUrl}
+                lowerUrl={FIXED_RESTORATIVE_STL_PAIR.lowerUrl}
+                biteUrl={FIXED_RESTORATIVE_STL_PAIR.biteUrl}
+                upperTextureUrl={FIXED_RESTORATIVE_STL_PAIR.upperTextureUrl}
+                lowerTextureUrl={FIXED_RESTORATIVE_STL_PAIR.lowerTextureUrl}
+                jawView={selectedJaw}
+                viewMode={viewMode}
+                cameraStateRef={cameraStateRef}
+              />
+            ) : (
+              <PlyModelViewer url="/models/301538675_shell_occlusion_u.ply" viewMode={viewMode} cameraStateRef={cameraStateRef} />
+            )}
           </Suspense>
         </div>
 
-        {/* Top-left: tooth map */}
-        <div className="absolute z-10" style={{ top: 12, left: 23 }}>
-          <ToothMap className="shrink-0" />
+        {/* Top-left: tooth map — ToothMap26A for Fixed restorative (syncs with jaw selector like 26A) */}
+        <div
+          className="absolute z-10"
+          style={
+            isFixedRestorative
+              ? {
+                  top: 12,
+                  left: 23,
+                  display: "flex",
+                  flexDirection: "column",
+                  textAlign: "center",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }
+              : { top: 12, left: 23 }
+          }
+        >
+          {isFixedRestorative ? (
+            <ToothMap26A
+              className="shrink-0"
+              selectedJaw={selectedJaw}
+              onJawChange={(jaw) => onSelectedJawChange?.(jaw)}
+              toothSelections={toothSelections}
+            />
+          ) : (
+            <ToothMap className="shrink-0" />
+          )}
         </div>
 
-        {/* Left: jaw selector */}
-        <div className="absolute z-10" style={{ left: 23, top: 418 }}>
-          <JawSelector
-            selected={selectedJaw}
-            onPrev={() => cycleJaw(-1)}
-            onNext={() => cycleJaw(1)}
-          />
+        {/* Left: jaw selector — 26A layout (240px) for Fixed restorative; legacy selector otherwise */}
+        <div className="absolute z-10" style={{ left: 23, top: 418, width: isFixedRestorative ? 240 : undefined }}>
+          {isFixedRestorative ? (
+            <JawSelector26A
+              selected={selectedJaw}
+              onPrev={() => cycleJaw(-1)}
+              onNext={() => cycleJaw(1)}
+            />
+          ) : (
+            <JawSelector
+              selected={legacySelectedJaw}
+              onPrev={() => cycleLegacyJaw(-1)}
+              onNext={() => cycleLegacyJaw(1)}
+            />
+          )}
         </div>
 
         {/* Right: floating toolbar */}
