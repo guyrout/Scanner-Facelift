@@ -1,6 +1,6 @@
 /**
  * Scanning flow header — same layout as OrdersHeader/Header (grid, left/center/right).
- * Left: Home + separator + current step label (Info | Scan | View | Send).
+ * Left: Home + separator + flow title (New scan).
  * Center: Wizard topbar switcher (Figma 6096-19093).
  * Right: Help, Battery, Settings.
  */
@@ -10,12 +10,7 @@ import { HomeIcon, AlarmIcon, CameraIcon, HelpIcon, BatteryIcon, SettingsIcon } 
 import BatteryModal from "./BatteryModal";
 import WizardTopbarSwitcher, { type ScanWizardStep } from "./WizardTopbarSwitcher";
 
-const STEP_LABELS: Record<ScanWizardStep, string> = {
-  info: "Info",
-  scan: "Scan",
-  view: "View",
-  send: "Send",
-};
+const FLOW_TITLE = "New scan";
 
 export type { ScanWizardStep };
 
@@ -28,6 +23,7 @@ export interface ScanFlowHeaderProps {
   onHelpClick?: () => void;
   onBatteryClick?: () => void;
   onSettingsClick?: () => void;
+  onCameraClick?: () => void;
 }
 
 export default function ScanFlowHeader({
@@ -38,9 +34,9 @@ export default function ScanFlowHeader({
   onHelpClick,
   onBatteryClick,
   onSettingsClick,
+  onCameraClick,
 }: ScanFlowHeaderProps) {
   const [batteryModalOpen, setBatteryModalOpen] = useState(false);
-  const stepLabel = STEP_LABELS[currentStep];
   const handleBatteryClick = () => {
     if (onBatteryClick) {
       onBatteryClick();
@@ -71,7 +67,7 @@ export default function ScanFlowHeader({
           aria-hidden
         />
         <span className="tp-heading-03 text-text-primary whitespace-nowrap truncate">
-          {stepLabel}
+          {FLOW_TITLE}
         </span>
       </div>
 
@@ -84,23 +80,24 @@ export default function ScanFlowHeader({
         />
       </div>
 
-      {/* Right: Alarm + Camera (View & Send only), then Help, Battery, Settings */}
+      {/* Right: Camera + Alarm (View & Send only), then Help, Battery, Settings */}
       <div className="flex items-center justify-end gap-1 h-[var(--height-row)] min-w-0">
         {(currentStep === "view" || currentStep === "send") && (
           <>
+            <button
+              type="button"
+              onClick={() => onCameraClick?.()}
+              className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              aria-label="Camera"
+            >
+              <CameraIcon size={32} color="var(--color-icon-primary)" />
+            </button>
             <button
               type="button"
               className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               aria-label="Alarm"
             >
               <AlarmIcon size={32} color="var(--color-icon-primary)" />
-            </button>
-            <button
-              type="button"
-              className="flex items-center justify-center p-3 rounded-lg size-[var(--height-row)] border-0 bg-transparent cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-              aria-label="Camera"
-            >
-              <CameraIcon size={32} color="var(--color-icon-primary)" />
             </button>
           </>
         )}

@@ -315,6 +315,14 @@ function App() {
                   setScanEntryPatient(null);
                   setShowHome(true);
                 }}
+                onScanComplete={(p) => {
+                  setShowScanFlow(false);
+                  setScanEntryPatient(null);
+                  setShowHome(false);
+                  setShowOrdersPage(false);
+                  setShowMessagesPage(false);
+                  setSelectedPatient(p);
+                }}
                 onOpenSettings={() => openSettings()}
                 onOpenSupport={openSupport}
               />

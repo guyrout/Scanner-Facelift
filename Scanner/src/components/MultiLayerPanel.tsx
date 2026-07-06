@@ -1,12 +1,14 @@
 /**
  * Multi layer panel — Figma 4024:77272 (UI Refresh 2025 Q2).
  * Top-left panel on View: expand/collapse, layer thumbnails, sliders for 3D opacity.
- * Icons: /panel/frame-jaw-*.svg, frame-jaw-4.svg, chevron-right.svg, actions-dropdown-1/2.svg.
+ * Icons: FrameJawLayerIcons (inline SVG), chevron-right.svg, actions-dropdown-1/2.svg.
  */
 
 import React, { useState, useCallback } from "react";
-
-const LAYER_ICONS = ["/panel/frame-jaw-active.svg", "/panel/frame-jaw-2.svg", "/panel/frame-jaw-3.svg"];
+import {
+  FRAME_JAW_LAYER_ICONS,
+  FrameJawIconBite,
+} from "./FrameJawLayerIcons";
 
 export interface LayerItem {
   id: string;
@@ -165,14 +167,11 @@ export default function MultiLayerPanel({
                 aria-pressed={i === activeThumbIndex}
                 onClick={() => setActiveThumbIndex(i)}
               >
-                <div className="flex h-[32px] w-[44px] shrink-0 items-center justify-center overflow-hidden">
-                  <img
-                    src={LAYER_ICONS[i] ?? LAYER_ICONS[0]}
-                    alt=""
-                    className="block max-w-none object-contain"
-                    style={{ width: 44, height: 32 }}
-                    aria-hidden
-                  />
+                <div className="flex shrink-0 items-center justify-center overflow-hidden">
+                  {(() => {
+                    const Icon = FRAME_JAW_LAYER_ICONS[i] ?? FRAME_JAW_LAYER_ICONS[0];
+                    return <Icon />;
+                  })()}
                 </div>
               </button>
             ))}
@@ -190,14 +189,8 @@ export default function MultiLayerPanel({
               aria-pressed={activeThumbIndex === 3}
               onClick={() => setActiveThumbIndex(3)}
             >
-              <div className="flex h-[32px] w-[44px] shrink-0 items-center justify-center overflow-hidden">
-                <img
-                  src="/panel/frame-jaw-4.svg"
-                  alt=""
-                  className="block max-w-none object-contain"
-                  style={{ width: 44, height: 32 }}
-                  aria-hidden
-                />
+              <div className="flex shrink-0 items-center justify-center overflow-hidden">
+                <FrameJawIconBite />
               </div>
             </button>
           </div>

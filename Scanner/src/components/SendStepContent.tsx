@@ -97,6 +97,8 @@ export interface SendStepContentProps {
   toggles: ToggleState;
   noteText: string;
   setNoteText: Dispatch<SetStateAction<string>>;
+  /** Persist the order and navigate to the patient's orders page (26A parity). */
+  onSendAndView?: () => void;
 }
 
 const ASSIGNED_DOCTOR_OPTIONS = [
@@ -140,6 +142,7 @@ export default function SendStepContent({
   toothDetails,
   toggles,
   noteText, setNoteText,
+  onSendAndView,
 }: SendStepContentProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -230,6 +233,11 @@ export default function SendStepContent({
     setSendToError(false);
     setShowConfirmModal(true);
   }, [sendToId]);
+
+  const handleSendAndView = useCallback(() => {
+    setShowConfirmModal(false);
+    onSendAndView?.();
+  }, [onSendAndView]);
 
   const selectedTeeth = Object.entries(toothSelections).sort(
     ([a], [b]) => Number(a) - Number(b),
@@ -773,22 +781,29 @@ export default function SendStepContent({
               >
                 <span className="shrink-0 mt-0.5"><CheckboxIcon checked={consentChecked} /></span>
                 <span className="tp-body-02 text-text-primary">
-                  By checking this box, I represent that my patient has consented to the collection and processing of their personal health data and the processing of that data by Align Technology for the purposes of providing customized dental care.
-                  <br />
-                  <span className="text-text-secondary">View more</span>
+                  By checking this box, I represent that my patient has consented to the collection and processing of their personal health data and the processing of that data by Align Technology for the purposes of providing customized dental care.{" "}
+                  <button
+                    type="button"
+                    className="tp-link-01 inline p-0 cursor-pointer underline text-[var(--color-text-link)] bg-transparent border-0 align-baseline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    View more
+                  </button>
                 </span>
               </button>
 
-              {/* Initiate simulation — same checkbox style as Save signature / Consent */}
-              <button
-                type="button"
-                onClick={() => setInitiateSimulation((v) => !v)}
-                className="flex items-center cursor-pointer bg-transparent border-0 appearance-none outline-none shrink-0"
-                style={{ gap: 8, height: 44 }}
-              >
-                <CheckboxIcon checked={initiateSimulation} />
-                <span className="tp-body-02 text-text-primary">Initiate Invisalign Outcome Simulation Pro</span>
-              </button>
+              {/* Initiate simulation — hidden for fixed restorative */}
+              {treatmentId !== "fixed-restorative" && (
+                <button
+                  type="button"
+                  onClick={() => setInitiateSimulation((v) => !v)}
+                  className="flex items-center cursor-pointer bg-transparent border-0 appearance-none outline-none shrink-0"
+                  style={{ gap: 8, height: 44 }}
+                >
+                  <CheckboxIcon checked={initiateSimulation} />
+                  <span className="tp-body-02 text-text-primary">Initiate Invisalign Outcome Simulation Pro</span>
+                </button>
+              )}
             </div>
 
             {/* Section 3: Bottom buttons — Send + Send and view */}
@@ -811,7 +826,7 @@ export default function SendStepContent({
               </button>
               <button
                 type="button"
-                onClick={() => setShowConfirmModal(false)}
+                onClick={handleSendAndView}
                 className="flex items-center justify-center cursor-pointer appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
                 style={{
                   backgroundColor: "var(--color-border-interactive, #009ace)",

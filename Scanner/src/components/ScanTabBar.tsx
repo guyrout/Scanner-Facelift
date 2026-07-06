@@ -1,10 +1,6 @@
 /**
- * Scan tab bar — Figma 4138:125808, 4011:72300, 4138:125186, 4138:125817.
+ * Scan tab bar — Figma UI-Facelift-2026 Q2 (nodes 5605:149798, 5605:148016).
  * Dynamic tabs: default set + user-added tabs via + menu.
- * Features:
- *  - Add tabs via dropdown menu (Additional scan / Additional Bite types)
- *  - Close tabs with X button (only on the active tab, and only when it has no scan data)
- *  - Rename tabs: double-click opens VirtualKeyboard (rendered by parent)
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -56,19 +52,24 @@ const BITE_TYPES: BiteType[] = [
   { id: "retrusive", label: "Retrusive", icon: retrusiveSvg },
 ];
 
+function tabGroupBorderClass(index: number, total: number): string {
+  if (index === 0) return "";
+  if (index === total - 1 && total > 2) {
+    return "border-r border-[var(--color-border-subtle)]";
+  }
+  return "border-x border-[var(--color-border-subtle)]";
+}
+
 /* ------------------------------------------------------------------ */
 /*  Small icons                                                        */
 /* ------------------------------------------------------------------ */
 
-function CloseIcon() {
+function CloseEmptyIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M15 5L5 15M5 5L15 15"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M18 7.05L16.95 6L12 10.95L7.05 6L6 7.05L10.95 12L6 16.95L7.05 18L12 13.05L16.95 18L18 16.95L13.05 12L18 7.05Z"
+        fill="currentColor"
       />
     </svg>
   );
@@ -154,238 +155,167 @@ export default function ScanTabBar({
 
   return (
     <div
-      className="flex flex-col shrink-0 w-full border-b"
-      style={{
-        backgroundColor: "var(--color-background-layer-01)",
-        borderColor: "var(--color-border-subtle)",
-        paddingLeft: 24,
-        paddingRight: 24,
-        paddingTop: 4,
-      }}
+      className="flex w-full shrink-0 items-center gap-3 border-b border-[var(--color-border-subtle)] bg-[var(--color-background-layer-01)] pr-6"
+      data-node-id="5605:149798"
     >
-      <div className="flex items-start w-full">
-        <div className="flex items-start shrink-0">
-          <div className="flex items-center shrink-0" style={{ gap: 16 }}>
-            {tabs.map((tab) => {
-              const isActive = activeTabId === tab.id;
-              const isEditing = editingTabId === tab.id;
-              const showClose = isActive && !tab.hasScanData;
+      <div className="flex min-w-0 flex-wrap items-start gap-3">
+        <div className="flex shrink-0 items-center">
+          {tabs.map((tab, index) => {
+            const isActive = activeTabId === tab.id;
+            const isEditing = editingTabId === tab.id;
+            const showClose = index > 0 && !tab.hasScanData && !isActive;
 
-              return (
+            return (
+              <div
+                key={tab.id}
+                className={`flex shrink-0 items-center ${index === 0 ? "w-[161px]" : ""}`}
+              >
                 <div
-                  key={tab.id}
-                  role="tab"
-                  aria-selected={isActive}
-                  className="tp-heading-01"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    height: 60,
-                    paddingLeft: 8,
-                    paddingRight: 8,
-                    borderBottom: isActive
-                      ? "2px solid var(--color-border-interactive)"
-                      : "2px solid transparent",
-                    color: isActive
-                      ? "var(--color-text-primary)"
-                      : "var(--color-text-secondary)",
-                    fontWeight: isActive ? 500 : 400,
-                    whiteSpace: "nowrap",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => {
-                    if (!isEditing) onTabChange(tab.id);
-                  }}
+                  className={`flex w-full shrink-0 items-center ${tabGroupBorderClass(index, tabs.length)}`}
                 >
-                  {isEditing ? (
-                    <span
-                      style={{
-                        borderBottom: "2px solid var(--color-border-interactive)",
-                        paddingBottom: 2,
-                        minWidth: 40,
-                      }}
-                    >
-                      {editDraft}
+                  <div
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`tp-headling-02 flex h-[60px] shrink-0 cursor-pointer items-center justify-center whitespace-nowrap px-4 ${
+                      index === 0 ? "w-full" : ""
+                    } ${
+                      isActive
+                        ? "border-b-2 border-[var(--color-border-interactive)] text-text-primary"
+                        : "text-text-secondary"
+                    } ${showClose ? "gap-2" : ""}`}
+                    onClick={() => {
+                      if (!isEditing) onTabChange(tab.id);
+                    }}
+                  >
+                    {isEditing ? (
+                      <span className="inline-flex min-w-[40px] items-baseline border-b-2 border-[var(--color-border-interactive)] pb-0.5">
+                        {editDraft}
+                        <span
+                          className="ml-px inline-block h-[1em] w-0.5 animate-[blink_1s_step-end_infinite] bg-text-primary align-text-bottom"
+                          aria-hidden
+                        />
+                      </span>
+                    ) : (
                       <span
-                        style={{
-                          display: "inline-block",
-                          width: 2,
-                          height: "1em",
-                          backgroundColor: "var(--color-text-primary)",
-                          marginLeft: 1,
-                          verticalAlign: "text-bottom",
-                          animation: "blink 1s step-end infinite",
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          onStartEditing(tab.id);
                         }}
-                      />
-                    </span>
-                  ) : (
-                    <span
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        onStartEditing(tab.id);
-                      }}
-                    >
-                      {tab.label}
-                    </span>
-                  )}
+                      >
+                        {tab.label}
+                      </span>
+                    )}
 
-                  {showClose && !isEditing && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteTab(tab.id);
-                      }}
-                      className="flex items-center justify-center cursor-pointer border-0 bg-transparent appearance-none outline-none transition-ui p-0"
-                      style={{
-                        width: 20,
-                        height: 20,
-                        color: "var(--color-text-primary)",
-                        opacity: 0.6,
-                        flexShrink: 0,
-                      }}
-                      aria-label={`Close ${tab.label} tab`}
-                    >
-                      <CloseIcon />
-                    </button>
-                  )}
+                    {showClose && !isEditing && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteTab(tab.id);
+                        }}
+                        className="flex size-6 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-text-primary outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-1"
+                        aria-label={`Close ${tab.label} tab`}
+                      >
+                        <CloseEmptyIcon />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
+        </div>
 
-            {/* + button inside the tabs row */}
+        {/* Add tab — Figma 5605:149718 */}
+        <div ref={menuRef} className="relative flex size-[60px] shrink-0 items-center justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (menuOpen) {
+                setMenuOpen(false);
+                setBiteExpanded(false);
+              } else {
+                setMenuOpen(true);
+              }
+            }}
+            className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-solid border-[var(--color-border-subtle)] bg-[var(--color-background-layer-01)] p-3 outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
+            aria-label="Add scan tab"
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M12 6V18M6 12H18"
+                stroke="var(--color-icon-primary)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+
+          {menuOpen && (
             <div
-              ref={menuRef}
-              className="relative"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 60, height: 60 }}
+              role="menu"
+              className="absolute left-0 top-full z-50 mt-1 w-[280px] rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background-elevated,white)] p-1"
+              style={{ boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.13)" }}
             >
               <button
                 type="button"
-                onClick={() => {
-                  if (menuOpen) {
-                    setMenuOpen(false);
-                    setBiteExpanded(false);
-                  } else {
-                    setMenuOpen(true);
-                  }
-                }}
-                className="flex items-center justify-center cursor-pointer border-2 border-solid rounded-lg bg-[var(--color-background-layer-01)] appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
-                style={{
-                  borderColor: "var(--color-border-subtle)",
-                  padding: 12,
-                }}
-                aria-label="Add scan tab"
-                aria-expanded={menuOpen}
-                aria-haspopup="menu"
+                role="menuitem"
+                onClick={() => handleAddScan("Additional scan")}
+                className="tp-body-02 flex h-[52px] w-full cursor-pointer items-center rounded-lg border-0 bg-transparent px-3 text-left text-text-primary outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)]"
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M12 6V18M6 12H18" stroke="var(--color-icon-primary)" strokeWidth="2" strokeLinecap="round" />
-                </svg>
+                Additional scan
               </button>
 
-              {menuOpen && (
-                <div
-                  role="menu"
-                  style={{
-                    position: "absolute",
-                    top: "100%",
-                    left: 0,
-                    marginTop: 4,
-                    width: 280,
-                    padding: 4,
-                    borderRadius: 8,
-                    backgroundColor: "var(--color-background-elevated, white)",
-                    border: "1px solid var(--color-border-subtle)",
-                    boxShadow: "0px 2px 12px rgba(0, 0, 0, 0.13)",
-                    zIndex: 50,
-                  }}
-                >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => handleAddScan("Additional scan")}
-                    className="tp-body-02 cursor-pointer border-0 bg-transparent appearance-none outline-none w-full text-left transition-ui"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: 12,
-                      borderRadius: 8,
-                      color: "var(--color-text-primary)",
-                      height: 52,
-                    }}
-                  >
-                    Additional scan
-                  </button>
+              <div className="relative h-2 overflow-hidden">
+                <div className="absolute inset-x-0 top-[3px] h-px bg-[var(--color-border-subtle)]" aria-hidden />
+              </div>
 
-                  <div style={{ height: 8, position: "relative", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", left: 0, right: 0, top: 3, height: 1, backgroundColor: "var(--color-border-subtle)" }} />
-                  </div>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => setBiteExpanded((prev) => !prev)}
+                className="tp-body-02 flex h-[52px] w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 text-left text-text-primary outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)]"
+                aria-expanded={biteExpanded}
+              >
+                <span>Additional Bite</span>
+                {biteExpanded ? <ChevronDownSmall /> : <ChevronRightSmall />}
+              </button>
 
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => setBiteExpanded((prev) => !prev)}
-                    className="tp-body-02 cursor-pointer border-0 bg-transparent appearance-none outline-none w-full text-left transition-ui"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: 12,
-                      borderRadius: 8,
-                      color: "var(--color-text-primary)",
-                      height: 52,
-                    }}
-                    aria-expanded={biteExpanded}
-                  >
-                    <span>Additional Bite</span>
-                    {biteExpanded ? <ChevronDownSmall /> : <ChevronRightSmall />}
-                  </button>
-
-                  {biteExpanded && (
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      {BITE_TYPES.map((bite) => {
-                        const checked = selectedBites.has(bite.id);
-                        return (
-                          <button
-                            key={bite.id}
-                            type="button"
-                            role="menuitemcheckbox"
-                            aria-checked={checked}
-                            onClick={() => {
-                              toggleBite(bite.id);
-                              handleAddScan(bite.label);
-                            }}
-                            className="tp-body-02 cursor-pointer border-0 bg-transparent appearance-none outline-none w-full text-left transition-ui"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                              padding: 12,
-                              borderRadius: 8,
-                              color: "var(--color-text-primary)",
-                              height: 52,
-                            }}
-                          >
-                            <CheckboxIcon checked={checked} />
-                            <img
-                              src={bite.icon}
-                              alt=""
-                              aria-hidden
-                              width={40}
-                              height={40}
-                              style={{ borderRadius: 4, objectFit: "contain" }}
-                            />
-                            <span>{bite.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+              {biteExpanded && (
+                <div className="flex flex-col">
+                  {BITE_TYPES.map((bite) => {
+                    const checked = selectedBites.has(bite.id);
+                    return (
+                      <button
+                        key={bite.id}
+                        type="button"
+                        role="menuitemcheckbox"
+                        aria-checked={checked}
+                        onClick={() => {
+                          toggleBite(bite.id);
+                          handleAddScan(bite.label);
+                        }}
+                        className="tp-body-02 flex h-[52px] w-full cursor-pointer items-center gap-2 rounded-lg border-0 bg-transparent px-3 text-left text-text-primary outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)]"
+                      >
+                        <CheckboxIcon checked={checked} />
+                        <img
+                          src={bite.icon}
+                          alt=""
+                          aria-hidden
+                          width={40}
+                          height={40}
+                          className="shrink-0 rounded object-contain"
+                        />
+                        <span>{bite.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

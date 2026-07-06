@@ -16,9 +16,10 @@
  * └───────────┴──────────────────────────┴───────────────┘
  */
 
-import { useState, useCallback, lazy, Suspense, type MutableRefObject } from "react";
+import { useState, useCallback, useRef, lazy, Suspense, type MutableRefObject } from "react";
+import ScanLongTapMenuOverlay26A from "./26A/ScanLongTapMenu26A";
 import ScanTabBar, { type TabData } from "./ScanTabBar";
-import ScanToolbar from "./ScanToolbar";
+import ScanToolbar, { type ScanToolbarToolId } from "./ScanToolbar";
 import PrepEditPanel from "./PrepEditPanel";
 import SwapScansModal from "./SwapScansModal";
 import ToothMap from "./ToothMap";
@@ -38,8 +39,7 @@ const JAW_ORDER: JawSelection[] = ["upper", "bite", "lower"];
 
 const DEFAULT_TABS: TabData[] = [
   { id: "pre-treatment", label: "Pre-treatment", hasScanData: false },
-  { id: "treatment-scan", label: "Treatment Scan", hasScanData: false },
-  { id: "additional-scan", label: "Additional scan", hasScanData: false },
+  { id: "treatment-scan", label: "Treatment scan", hasScanData: false },
 ];
 
 let nextTabId = 1;
@@ -69,15 +69,19 @@ export default function ScanStepContent({
   const isFixedRestorative = selectedProcedure === "fixed-restorative";
   const [tabs, setTabs] = useState<TabData[]>(DEFAULT_TABS);
   const [activeTabId, setActiveTabId] = useState(DEFAULT_TABS[0].id);
-  const [legacySelectedJaw, setLegacySelectedJaw] = useState<LegacyJawSelection>("upper");
+  const [legacySelectedJaw, setLegacySelectedJaw] = useState<LegacyJawSelection>("lower");
 
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("color");
+  const [scanToolbarActiveTools, setScanToolbarActiveTools] = useState<Set<ScanToolbarToolId>>(
+    () => new Set<ScanToolbarToolId>(["scan-color"]),
+  );
+  const viewMode: ViewMode = scanToolbarActiveTools.has("scan-color") ? "color" : "stone";
   const [prepEditOpen, setPrepEditOpen] = useState(false);
   const [deselectEditNonce, setDeselectEditNonce] = useState(0);
   const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [deselectSwapNonce, setDeselectSwapNonce] = useState(0);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   function cycleLegacyJaw(dir: 1 | -1) {
     const idx = LEGACY_JAW_ORDER.indexOf(legacySelectedJaw);
@@ -169,7 +173,7 @@ export default function ScanStepContent({
 
       <div className="relative flex-1 min-h-0 min-w-0" style={{ backgroundColor: "var(--color-page-background)" }}>
         {/* 3D model viewport — fills entire area */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div ref={viewportRef} className="absolute inset-0 overflow-hidden">
           <Suspense
             fallback={
               <div className="absolute inset-0 flex items-center justify-center">
@@ -193,6 +197,10 @@ export default function ScanStepContent({
               <PlyModelViewer url="/models/301538675_shell_occlusion_u.ply" viewMode={viewMode} cameraStateRef={cameraStateRef} />
             )}
           </Suspense>
+
+          {isFixedRestorative && !prepEditOpen && (
+            <ScanLongTapMenuOverlay26A enabled containerRef={viewportRef} />
+          )}
         </div>
 
         {/* Top-left: tooth map — ToothMap26A for Fixed restorative (syncs with jaw selector like 26A) */}
@@ -249,12 +257,11 @@ export default function ScanStepContent({
           <ScanToolbar
             expanded={toolbarExpanded}
             onExpandedChange={onToolbarExpandedChange}
+            activeTools={scanToolbarActiveTools}
+            onActiveToolsChange={setScanToolbarActiveTools}
             deselectEditNonce={deselectEditNonce}
             deselectSwapNonce={deselectSwapNonce}
             onToolClick={(toolId, isActive) => {
-              if (toolId === "scan-color") {
-                setViewMode(isActive ? "stone" : "color");
-              }
               if (toolId === "edit") {
                 setPrepEditOpen(isActive);
               }

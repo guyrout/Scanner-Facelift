@@ -671,7 +671,7 @@ export default function PlyModelViewer26A({
           far: 100,
         }}
         style={{ width: "100%", height: "100%" }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
       >
         <ambientLight intensity={0.6} />
         <directionalLight position={[3, 10, 5]} intensity={1.5} />

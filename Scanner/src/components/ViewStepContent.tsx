@@ -12,8 +12,10 @@
  */
 
 import { useState, useEffect, useRef, useCallback, lazy, Suspense, type MutableRefObject } from "react";
+import ScanLongTapMenuOverlay26A from "./26A/ScanLongTapMenu26A";
 import ViewToolbar, { type ViewToolId } from "./ViewToolbar";
-import ReviewToolPanel from "./ReviewToolPanel";
+import ReviewLoupe26A from "./26A/ReviewLoupe26A";
+import ReviewToolPanel26A from "./26A/ReviewToolPanel26A";
 import MultiLayerPanel, { type LayerItem, type SelectedLayerId } from "./MultiLayerPanel";
 import PlyModelViewer26A from "./26A/PlyModelViewer26A";
 import { FIXED_RESTORATIVE_STL_PAIR } from "./26A/treatmentScanFlow26A";
@@ -625,6 +627,8 @@ export default function ViewStepContent({
   const [isPostProcessing, setIsPostProcessing] = useState(comingFromScan);
   const [postProcessProgress, setPostProcessProgress] = useState(0);
 
+  const viewportRef = useRef<HTMLDivElement>(null);
+
   const [trimPaths, setTrimPaths] = useState<Point[][]>([]);
   const [currentTrimPath, setCurrentTrimPath] = useState<Point[]>([]);
 
@@ -740,7 +744,7 @@ export default function ViewStepContent({
   return (
     <div className="relative flex-1 min-h-0 min-w-0" style={{ backgroundColor: "var(--color-page-background)" }}>
       {/* 3D model viewport — fills entire area */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div ref={viewportRef} className="absolute inset-0 overflow-hidden">
         <Suspense
           fallback={
             <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "var(--color-page-background)" }}>
@@ -772,6 +776,10 @@ export default function ViewStepContent({
           />
         )}
         </Suspense>
+
+        {isFixedRestorative && !showTrimMenu && !isPostProcessing && (
+          <ScanLongTapMenuOverlay26A enabled containerRef={viewportRef} />
+        )}
       </div>
 
       {/* Top-left: multi layer panel — Figma 4024:77272 */}
@@ -795,6 +803,13 @@ export default function ViewStepContent({
           onDrawMove={handleTrimDrawMove}
           onDrawEnd={handleTrimDrawEnd}
         />
+      )}
+
+      {/* Review-tool loupe — draggable magnifier over the 3D model */}
+      {!isPostProcessing && activeTools.has("review-tool") && (
+        <div className="pointer-events-none absolute inset-0 z-10">
+          <ReviewLoupe26A />
+        </div>
       )}
 
       {/* Post processing overlay */}
@@ -897,7 +912,7 @@ export default function ViewStepContent({
           }}
         />
         {!isPostProcessing && activeTools.has("review-tool") && (
-          <ReviewToolPanel
+          <ReviewToolPanel26A
             onClose={() =>
               setActiveTools((prev) => {
                 const next = new Set(prev);

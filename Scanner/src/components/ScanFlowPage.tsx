@@ -6,7 +6,7 @@
  * (animate-step-enter) each time the wizard step changes.
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import ScanFlowHeader, { type ScanWizardStep } from "./ScanFlowHeader";
 import ScanFlowPatientHeader from "./ScanFlowPatientHeader";
 import EditPatientDetailsPanel from "./EditPatientDetailsPanel";
@@ -15,8 +15,20 @@ import FixedRestorativeForm, { type ToothDetail, type ToggleState } from "./Fixe
 import ScanStepContent from "./ScanStepContent";
 import ViewStepContent from "./ViewStepContent";
 import SendStepContent from "./SendStepContent";
+import ScreenshotSnapshotOverlay, { type ScreenshotPhase } from "./ScreenshotSnapshotOverlay";
+import { captureScanFlowScreenshot } from "../utils/captureScanFlowScreenshot";
 import type { JawSelection } from "./26A/JawSelector26A";
 import type { CameraState } from "./PlyModelViewer";
+import type { Patient } from "../data/patients";
+import type { Order, OrderDetails } from "../data/orders";
+import {
+  addRuntimeOrder,
+  addRuntimePatient,
+  findPatientById,
+  generateChartNumber,
+  generateOrderId,
+  generatePatientId,
+} from "../data/runtimeStore";
 
 export interface ScanFlowPatientSnapshot {
   patientName: string;
@@ -36,6 +48,9 @@ export interface ScanFlowPageProps {
   onOpenSupport?: () => void;
   /** Patient captured on the pre-wizard “Patient details” screen (Home → Scan). */
   initialPatient?: ScanFlowPatientSnapshot;
+  /** Fired after Send and view. Receives the resolved `Patient` so the host
+   *  can navigate to that patient's orders page. If omitted, falls back to `onBack`. */
+  onScanComplete?: (patient: Patient) => void;
 }
 
 const DEFAULT_PATIENT: ScanFlowPatientSnapshot = {
@@ -47,21 +62,94 @@ const DEFAULT_PATIENT: ScanFlowPatientSnapshot = {
   treatedBy: "Doctor Name | 12367854",
 };
 
-export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, initialPatient }: ScanFlowPageProps) {
+function todayMDYYYY(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}/${dd}/${d.getFullYear()}`;
+}
+
+function formatIsoDueDate(d: Date | null): string | null {
+  if (!d) return null;
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return `${y}-${mo}-${da}`;
+}
+
+function procedureLabelFor(treatmentId: string): string {
+  switch (treatmentId) {
+    case "fixed-restorative":
+      return "Fixed Restorative";
+    case "denture":
+    case "denture-removable":
+      return "Denture/Removable";
+    case "invisalign":
+      return "Invisalign";
+    case "study-model":
+    default:
+      return "Study Model/iRecord";
+  }
+}
+
+function buildOrderToggles(toggles: ToggleState): OrderDetails["toggles"] {
+  return {
+    niri: toggles.niri,
+    sleeve: toggles.sleeve,
+    multiBite: toggles.multiBite,
+    preTreatment: toggles.preTreatment,
+    palatalGingivalFeedback: false,
+    orthoModelICast: false,
+  };
+}
+
+function buildPatientFromSnapshot(snapshot: ScanFlowPatientSnapshot): Patient {
+  const trimmedName = snapshot.patientName.trim();
+  const [firstName, ...rest] = trimmedName.length > 0 ? trimmedName.split(/\s+/) : ["New", "Patient"];
+  const lastName = rest.join(" ") || "Patient";
+  const gender: "Male" | "Female" = snapshot.gender === "Female" ? "Female" : "Male";
+  return {
+    id: generatePatientId(),
+    firstName: firstName || "New",
+    lastName,
+    patientId: snapshot.patientId.trim() || generateChartNumber(),
+    dateOfBirth: snapshot.dateOfBirth || "",
+    lastScanDate: todayMDYYYY(),
+    doctor: snapshot.treatedBy || "Dr. Mitra Malini",
+    orders: 1,
+    gender,
+  };
+}
+
+export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, initialPatient, onScanComplete }: ScanFlowPageProps) {
+  const scanFlowRef = useRef<HTMLDivElement>(null);
+  const stepContentRef = useRef<HTMLDivElement>(null);
   const [currentStep, setCurrentStep] = useState<ScanWizardStep>("info");
   const previousStepRef = useRef<ScanWizardStep>("info");
+  const hasEnteredScanRef = useRef(false);
   const [selectedProcedure, setSelectedProcedure] = useState<ProcedureType | null>(null);
   const [showProcedureForm, setShowProcedureForm] = useState(false);
   const [toolbarExpanded, setToolbarExpanded] = useState(false);
   const [editPatientOpen, setEditPatientOpen] = useState(false);
   const [patient, setPatient] = useState<ScanFlowPatientSnapshot>(() => initialPatient ?? DEFAULT_PATIENT);
+  const [screenshotCapture, setScreenshotCapture] = useState<{
+    imageUrl: string;
+    phase: ScreenshotPhase;
+  } | null>(null);
+  const screenshotBusyRef = useRef(false);
 
   const cameraStateRef = useRef<CameraState>({
     radius: 4, phi: Math.PI / 2.2, theta: 0,
     targetX: 0, targetY: 0, targetZ: 0,
   });
 
+  const [selectedJaw, setSelectedJaw] = useState<JawSelection>("upper");
+
   const handleStepChange = useCallback((step: ScanWizardStep) => {
+    if (step === "scan" && currentStep !== "scan" && !hasEnteredScanRef.current) {
+      hasEnteredScanRef.current = true;
+      setSelectedJaw("lower");
+    }
     previousStepRef.current = currentStep;
     setCurrentStep(step);
   }, [currentStep]);
@@ -78,7 +166,6 @@ export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, in
     preTreatment: false,
   });
   const [noteText, setNoteText] = useState("");
-  const [selectedJaw, setSelectedJaw] = useState<JawSelection>("upper");
 
   function handleProcedureSelect(procedure: ProcedureType) {
     setSelectedProcedure(procedure);
@@ -86,8 +173,94 @@ export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, in
     setShowProcedureForm(procedure === "fixed-restorative");
   }
 
+  const handleCameraClick = useCallback(async () => {
+    if (screenshotBusyRef.current) return;
+    const root = scanFlowRef.current;
+    if (!root) return;
+
+    screenshotBusyRef.current = true;
+    try {
+      const imageUrl = await captureScanFlowScreenshot(root);
+      setScreenshotCapture({ imageUrl, phase: "flash" });
+    } catch {
+      screenshotBusyRef.current = false;
+    }
+  }, []);
+
+  const handleScreenshotPhaseChange = useCallback((phase: ScreenshotPhase) => {
+    setScreenshotCapture((current) => (current ? { ...current, phase } : current));
+  }, []);
+
+  const handleScreenshotDismiss = useCallback(() => {
+    setScreenshotCapture(null);
+    screenshotBusyRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    if (screenshotCapture?.phase === "thumbnail" || screenshotCapture?.phase === "message") {
+      screenshotBusyRef.current = false;
+    }
+  }, [screenshotCapture?.phase]);
+
+  useEffect(() => {
+    setScreenshotCapture(null);
+    screenshotBusyRef.current = false;
+  }, [currentStep]);
+
+  const handleConfirmSend = useCallback(() => {
+    let resolvedPatient: Patient | undefined = patient.internalId
+      ? findPatientById(patient.internalId)
+      : undefined;
+
+    if (!resolvedPatient) {
+      resolvedPatient = buildPatientFromSnapshot(patient);
+      addRuntimePatient(resolvedPatient);
+    }
+
+    const orderDetails: OrderDetails = {
+      treatmentId,
+      sendToId,
+      dueDate: formatIsoDueDate(dueDate),
+      toothSelections,
+      toothDetails,
+      toggles: buildOrderToggles(toggles),
+      noteText,
+    };
+
+    const newOrder: Order = {
+      orderId: generateOrderId(),
+      procedure: procedureLabelFor(treatmentId),
+      niri: toggles.niri,
+      scanDate: todayMDYYYY(),
+      lastModified: todayMDYYYY(),
+      status: "sent_to_lab",
+      details: orderDetails,
+    };
+    addRuntimeOrder(resolvedPatient.id, newOrder);
+
+    if (onScanComplete) {
+      onScanComplete(resolvedPatient);
+    } else {
+      onBack();
+    }
+  }, [
+    patient,
+    treatmentId,
+    sendToId,
+    dueDate,
+    toothSelections,
+    toothDetails,
+    toggles,
+    noteText,
+    onScanComplete,
+    onBack,
+  ]);
+
   return (
-    <div className="scan-flow flex flex-col w-full h-full min-h-0 overflow-hidden bg-[var(--color-background-layer-01)]">
+    <div
+      ref={scanFlowRef}
+      className="scan-flow flex flex-col w-full h-full min-h-0 overflow-hidden bg-[var(--color-background-layer-01)]"
+    >
       <div className={editPatientOpen ? "relative z-[10000]" : undefined}>
         <ScanFlowHeader
           currentStep={currentStep}
@@ -95,11 +268,12 @@ export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, in
           onInfoClick={onBack}
           onHelpClick={onOpenSupport}
           onSettingsClick={onOpenSettings}
+          onCameraClick={handleCameraClick}
         />
       </div>
 
       {/* Keyed wrapper: React unmounts/remounts on step change → triggers fade-in */}
-      <div key={currentStep} className="animate-step-enter flex flex-col flex-1 min-h-0 min-w-0">
+      <div key={currentStep} ref={stepContentRef} className="animate-step-enter flex flex-col flex-1 min-h-0 min-w-0">
         {currentStep === "info" && (
           <>
             <div className={editPatientOpen ? "relative z-[10000]" : undefined}>
@@ -133,6 +307,8 @@ export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, in
                     setToggles={setToggles}
                     noteText={noteText}
                     setNoteText={setNoteText}
+                    treatedBy={patient.treatedBy}
+                    onTreatmentChange={(id) => handleProcedureSelect(id as ProcedureType)}
                   />
                 ) : (
                   <ProcedureTypeSelector
@@ -193,6 +369,7 @@ export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, in
               toggles={toggles}
               noteText={noteText}
               setNoteText={setNoteText}
+              onSendAndView={handleConfirmSend}
             />
           </>
         )}
@@ -209,6 +386,16 @@ export default function ScanFlowPage({ onBack, onOpenSettings, onOpenSupport, in
         lastScan={patient.lastScan}
         onSave={(data) => setPatient(data)}
       />
+
+      {screenshotCapture && (
+        <ScreenshotSnapshotOverlay
+          imageUrl={screenshotCapture.imageUrl}
+          phase={screenshotCapture.phase}
+          onPhaseChange={handleScreenshotPhaseChange}
+          onDismiss={handleScreenshotDismiss}
+          anchorRef={stepContentRef}
+        />
+      )}
     </div>
   );
 }

@@ -17,7 +17,9 @@ import toothSprites from "../assets/procedures/tooth-sprites.svg";
 import starFillSvg from "../assets/procedures/star-fill.svg";
 import starOutlineSvg from "../assets/procedures/star-outline.svg";
 import implantBasePlaceholder from "../assets/procedures/implant-base-placeholder.png";
-import { CaretDownIcon, CaretUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightSmallIcon, CloseIcon, PencilIcon } from "./Icons";
+import { CaretDownIcon, CaretUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightSmallIcon, CloseIcon, TrashIcon } from "./Icons";
+import ProcedureTypeSelector, { type ProcedureType } from "./ProcedureTypeSelector";
+import AdditionalInfoModal from "./AdditionalInfoModal";
 
 function NoImageIcon() {
   return (
@@ -28,12 +30,31 @@ function NoImageIcon() {
   );
 }
 
-function SendIcon() {
+function SendIcon({ color = "#121212" }: { color?: string }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <path d="M20.5875 11.3321L4.08754 3.08214C3.95821 3.01746 3.81295 2.99155 3.66924 3.00752C3.52554 3.02348 3.38951 3.08065 3.27754 3.17214C3.1706 3.26176 3.09079 3.37943 3.04707 3.51192C3.00334 3.64441 2.99745 3.78648 3.03004 3.92214L5.25004 11.9996L3.00004 20.0546C2.96946 20.1679 2.96589 20.2868 2.98961 20.4017C3.01334 20.5167 3.06371 20.6244 3.13665 20.7163C3.2096 20.8082 3.3031 20.8818 3.40964 20.931C3.51617 20.9802 3.63276 21.0037 3.75004 20.9996C3.86744 20.9989 3.98304 20.9707 4.08754 20.9171L20.5875 12.6671C20.7104 12.6042 20.8135 12.5086 20.8855 12.3908C20.9575 12.273 20.9956 12.1377 20.9956 11.9996C20.9956 11.8616 20.9575 11.7262 20.8855 11.6085C20.8135 11.4907 20.7104 11.3951 20.5875 11.3321ZM4.91254 18.8321L6.57004 12.7496H13.5V11.2496H6.57004L4.91254 5.16714L18.57 11.9996L4.91254 18.8321Z" fill="#121212" />
+      <path d="M20.5875 11.3321L4.08754 3.08214C3.95821 3.01746 3.81295 2.99155 3.66924 3.00752C3.52554 3.02348 3.38951 3.08065 3.27754 3.17214C3.1706 3.26176 3.09079 3.37943 3.04707 3.51192C3.00334 3.64441 2.99745 3.78648 3.03004 3.92214L5.25004 11.9996L3.00004 20.0546C2.96946 20.1679 2.96589 20.2868 2.98961 20.4017C3.01334 20.5167 3.06371 20.6244 3.13665 20.7163C3.2096 20.8082 3.3031 20.8818 3.40964 20.931C3.51617 20.9802 3.63276 21.0037 3.75004 20.9996C3.86744 20.9989 3.98304 20.9707 4.08754 20.9171L20.5875 12.6671C20.7104 12.6042 20.8135 12.5086 20.8855 12.3908C20.9575 12.273 20.9956 12.1377 20.9956 11.9996C20.9956 11.8616 20.9575 11.7262 20.8855 11.6085C20.8135 11.4907 20.7104 11.3951 20.5875 11.3321ZM4.91254 18.8321L6.57004 12.7496H13.5V11.2496H6.57004L4.91254 5.16714L18.57 11.9996L4.91254 18.8321Z" fill={color} />
     </svg>
   );
+}
+
+interface SavedNote {
+  id: string;
+  author: string;
+  text: string;
+  date: string;
+  timeLabel: string;
+}
+
+function formatNoteDate(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}/${mm}/${dd}`;
+}
+
+function treatingDoctorFromTreatedBy(treatedBy: string): string {
+  return treatedBy.split("|")[0]?.trim() || treatedBy.trim() || "Doctor Name";
 }
 
 function NoteIcon() {
@@ -100,6 +121,38 @@ export const SHADE_OPTIONS: { id: string; label: string }[] = [
 
 export const BODY_OPTIONS: { id: string; label: string }[] = [
   { id: "", label: "Body" },
+  { id: "a1", label: "A1" },
+  { id: "a2", label: "A2" },
+  { id: "a3", label: "A3" },
+  { id: "a3.5", label: "A3.5" },
+  { id: "b1", label: "B1" },
+  { id: "b2", label: "B2" },
+  { id: "b3", label: "B3" },
+  { id: "c1", label: "C1" },
+  { id: "c2", label: "C2" },
+  { id: "d2", label: "D2" },
+  { id: "d3", label: "D3" },
+];
+
+/** Additional information modal — Figma 235:21138. */
+export const PREP_DESIGN_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
+  { id: "shoulder", label: "Shoulder" },
+  { id: "chamfer", label: "Chamfer" },
+  { id: "feather-edge", label: "Feather edge" },
+  { id: "knife-edge", label: "Knife edge" },
+  { id: "rounded-shoulder", label: "Rounded shoulder" },
+];
+
+export const MARGIN_DESIGN_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
+  { id: "supragingival", label: "Supragingival" },
+  { id: "equigingival", label: "Equigingival" },
+  { id: "subgingival", label: "Subgingival" },
+];
+
+export const SHADE_VALUE_OPTIONS: { id: string; label: string }[] = [
+  { id: "", label: "Select an option" },
   { id: "a1", label: "A1" },
   { id: "a2", label: "A2" },
   { id: "a3", label: "A3" },
@@ -195,17 +248,6 @@ export const TOOTH_SPRITES: Record<number, Partial<Record<string, SpriteRect>>> 
   38: { Crown: [169, 3779, 58, 102], Missing: [238, 3773, 58, 102], "Implant based": [301, 3781, 58, 102], Select: [100, 3779, 58, 102] },
 };
 
-function DeleteIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <path d="M8.75 7.5H7.5V15H8.75V7.5Z" fill="currentColor" />
-      <path d="M12.5 7.5H11.25V15H12.5V7.5Z" fill="currentColor" />
-      <path d="M2.5 3.75V5H3.75V17.5C3.75 17.8315 3.8817 18.1495 4.11612 18.3839C4.35054 18.6183 4.66848 18.75 5 18.75H15C15.3315 18.75 15.6495 18.6183 15.8839 18.3839C16.1183 18.1495 16.25 17.8315 16.25 17.5V5H17.5V3.75H2.5ZM5 17.5V5H15V17.5H5Z" fill="currentColor" />
-      <path d="M12.5 1.25H7.5V2.5H12.5V1.25Z" fill="currentColor" />
-    </svg>
-  );
-}
-
 export interface DropdownFieldProps {
   id: string;
   label?: string;
@@ -224,11 +266,121 @@ export interface DropdownFieldProps {
   backgroundVariant?: "layer-01" | "layer-02";
   /** When true, no border (stroke) is shown on the trigger button */
   hideBorder?: boolean;
+  /** Override label typography (default matches legacy field labels). */
+  labelClassName?: string;
+  /** Applied to portaled listbox so typography tokens match scan-flow when modal is outside `.scan-flow`. */
+  menuScopeClassName?: string;
+}
+
+export interface TreatmentSplitFieldProps {
+  value: string;
+  options: { id: string; label: string }[];
+  onChange: (id: string) => void;
+  isOpen: boolean;
+  onToggle: () => void;
+  /** Figma 257:31019 — opens full treatment picker when main label is clicked */
+  onMainClick?: () => void;
+  /** Visual pressed state while inline picker is shown */
+  mainActive?: boolean;
+}
+
+/** Figma 235:23542 / 205:53902 — brand split-button treatment selector */
+export function TreatmentSplitField({
+  value,
+  options,
+  onChange,
+  isOpen,
+  onToggle,
+  onMainClick,
+  mainActive = false,
+}: TreatmentSplitFieldProps) {
+  const selected = options.find((o) => o.id === value);
+  const displayLabel = selected?.label ?? value;
+
+  return (
+    <div className="relative flex flex-col shrink-0" style={{ width: 411 }}>
+      <div style={{ paddingBottom: 8 }}>
+        <span className="tp-label-02 text-text-secondary">Treatment</span>
+      </div>
+      <div className="flex items-stretch w-full" style={{ height: 60 }}>
+        <button
+          type="button"
+          onClick={onMainClick}
+          className="flex flex-1 items-center min-w-[72px] cursor-pointer border-0 appearance-none outline-none transition-ui hover:brightness-95 active:brightness-90 focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
+          style={{
+            backgroundColor: mainActive
+              ? "var(--color-background-brand-pressed, #0080b2)"
+              : "var(--color-background-brand)",
+            padding: "var(--spacing-03, 12px) var(--spacing-04, 16px)",
+            borderTopLeftRadius: 8,
+            borderBottomLeftRadius: 8,
+            gap: "var(--spacing-02, 8px)",
+          }}
+          aria-label={`Treatment: ${displayLabel}. Open treatment picker`}
+        >
+          <span className="tp-body-04 text-on-color truncate flex-1 min-w-0 text-left">{displayLabel}</span>
+        </button>
+        <button
+          type="button"
+          id="dropdown-treatment"
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-label="Change treatment"
+          className="flex items-center justify-center shrink-0 cursor-pointer border-0 appearance-none outline-none transition-ui hover:brightness-95 focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
+          style={{
+            backgroundColor: mainActive
+              ? "var(--color-background-brand-pressed, #0080b2)"
+              : "var(--color-background-brand)",
+            padding: "var(--spacing-03, 12px)",
+            borderTopRightRadius: 8,
+            borderBottomRightRadius: 8,
+            height: 60,
+            width: 48,
+          }}
+        >
+          <CaretDownIcon size={24} color="var(--color-text-on-color-primary)" className="shrink-0" />
+        </button>
+      </div>
+      {isOpen && (
+        <ul
+          role="listbox"
+          aria-labelledby="dropdown-treatment"
+          className="absolute left-0 right-0 top-full mt-1 flex max-h-60 flex-col overflow-auto rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table"
+          style={{ boxShadow: "var(--shadow-card)", zIndex: 20 }}
+        >
+          {options.map((opt) => (
+            <li key={opt.id} role="option" aria-selected={opt.id === value}>
+              <button
+                type="button"
+                onClick={() => onChange(opt.id)}
+                className={`flex w-full items-center gap-3 text-left transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-border-focus)] text-text-primary ${
+                  opt.id === value ? "bg-[var(--color-background-layer-02)]" : "hover:bg-[var(--color-background-layer-hovered)]"
+                }`}
+                style={{ padding: "16px 16px", height: 60 }}
+              >
+                {opt.id === value ? (
+                  <CheckIcon size={24} color="var(--color-icon-primary)" className="shrink-0" />
+                ) : (
+                  <span className="w-6 shrink-0" aria-hidden />
+                )}
+                <span className="tp-body-02 truncate">{opt.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 /** Portaled listbox is under `document.body`; click-outside logic must treat it as part of the field (see edit panel mousedown handlers). */
-function isDropdownPortalTarget(target: EventTarget | null): boolean {
+export function isDropdownPortalTarget(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest("[data-dropdown-portal]") !== null;
+}
+
+function isAdditionalInfoModalTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("[data-additional-info-modal]") !== null;
 }
 
 const dropdownListContent = (
@@ -236,13 +388,14 @@ const dropdownListContent = (
   value: string,
   options: { id: string; label: string }[],
   onChange: (id: string) => void,
-  listStyle: CSSProperties
+  listStyle: CSSProperties,
+  menuScopeClassName?: string
 ) => (
   <ul
     role="listbox"
     aria-labelledby={`dropdown-${id}`}
     data-dropdown-portal=""
-    className="flex max-h-60 flex-col overflow-auto rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table"
+    className={`flex max-h-60 flex-col overflow-auto rounded-lg border border-border-subtle bg-[var(--color-background-layer-01)] [&>li+li]:border-t [&>li+li]:border-border-subtle scrollbar-table${menuScopeClassName ? ` ${menuScopeClassName}` : ""}`}
     style={listStyle}
   >
     {options.map((opt) => (
@@ -281,6 +434,8 @@ export function DropdownField({
   listZIndex,
   backgroundVariant = "layer-01",
   hideBorder = false,
+  labelClassName = "tp-body-01 text-text-secondary",
+  menuScopeClassName,
 }: DropdownFieldProps) {
   const selected = options.find((o) => o.id === value);
   const displayLabel = selected?.label ?? value;
@@ -304,7 +459,7 @@ export function DropdownField({
     <div className="relative flex flex-col flex-1 min-w-0 w-full">
       {label && (
         <div style={{ paddingBottom: 8 }}>
-          <span className="tp-body-01 text-text-secondary">{label}</span>
+          <span className={labelClassName}>{label}</span>
         </div>
       )}
       <button
@@ -326,8 +481,8 @@ export function DropdownField({
             : isOpen
               ? "1px solid var(--color-border-interactive)"
               : "1px solid var(--color-border-subtle)")),
-          padding: "16px 16px",
-          gap: 8,
+          padding: "var(--spacing-03, 12px) var(--spacing-04, 16px)",
+          gap: "var(--spacing-02, 8px)",
           minHeight: 60,
           borderColor: !hideBorder && backgroundVariant === "layer-02" ? (error ? "var(--color-border-error, #d43f58)" : isOpen ? "var(--color-border-interactive)" : undefined) : undefined,
         }}
@@ -360,7 +515,7 @@ export function DropdownField({
           width: portalPosition.width,
           zIndex: listZIndex,
           boxShadow: "var(--shadow-card)",
-        }),
+        }, menuScopeClassName),
         document.body
       )}
       {isOpen && !usePortal && (
@@ -428,6 +583,8 @@ export interface DatePickerFieldProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   /** Accessible name for the calendar popover (default: choose due date). */
   calendarAriaLabel?: string;
+  /** Override label typography (default matches legacy field labels). */
+  labelClassName?: string;
 }
 
 export function DatePickerField({
@@ -439,6 +596,7 @@ export function DatePickerField({
   onClose,
   containerRef,
   calendarAriaLabel = "Choose due date",
+  labelClassName = "tp-body-01 text-text-secondary",
 }: DatePickerFieldProps) {
   const [viewDate, setViewDate] = useState(() => value ?? new Date());
 
@@ -476,7 +634,7 @@ export function DatePickerField({
   return (
     <div ref={containerRef} className="relative flex flex-col flex-1 min-w-0">
       <div style={{ paddingBottom: 8 }}>
-        <span className="tp-body-01 text-text-secondary">{label}</span>
+        <span className={labelClassName}>{label}</span>
       </div>
       <button
         type="button"
@@ -487,8 +645,8 @@ export function DatePickerField({
         className="flex items-center justify-between w-full overflow-clip text-left border border-border-subtle bg-[var(--color-background-layer-02)] transition-ui focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 hover:bg-[var(--color-background-layer-hovered)]"
         style={{
           borderRadius: 8,
-          padding: "16px 16px",
-          gap: 8,
+          padding: "var(--spacing-03, 12px) var(--spacing-04, 16px)",
+          gap: "var(--spacing-02, 8px)",
           height: 60,
           borderColor: isOpen ? "var(--color-border-interactive)" : undefined,
         }}
@@ -701,6 +859,51 @@ export interface ToothDetail {
   material: string;
   shadeSystem: string;
   body: string;
+  prepDesignBuccal: string;
+  prepDesignLingual: string;
+  marginDesignBuccal: string;
+  marginDesignLingual: string;
+  incisal: string;
+  gingival: string;
+  stumpShade: string;
+}
+
+const EMPTY_TOOTH_DETAIL: ToothDetail = {
+  specification: "",
+  material: "",
+  shadeSystem: "",
+  body: "",
+  prepDesignBuccal: "",
+  prepDesignLingual: "",
+  marginDesignBuccal: "",
+  marginDesignLingual: "",
+  incisal: "",
+  gingival: "",
+  stumpShade: "",
+};
+
+/** Figma 243:25126 — badge fill for Missing vs colored restoration types. */
+function restorationBadgeBackground(category: string, restorationColor?: string): string {
+  if (category === "Missing") return "var(--color-gray-30, #b6b6b6)";
+  return restorationColor ?? "var(--color-gray-30, #b6b6b6)";
+}
+
+/** Figma 243:25126 — summary line under tooth number on selected-tooth cards. */
+function formatSelectedToothSummary(detail: ToothDetail, implantCaseLabel?: string | null): string {
+  if (implantCaseLabel) return implantCaseLabel;
+
+  const parts: string[] = [];
+  const spec = SPEC_OPTIONS.find((o) => o.id === detail.specification)?.label;
+  const material = MATERIAL_OPTIONS.find((o) => o.id === detail.material)?.label;
+  const shade = SHADE_OPTIONS.find((o) => o.id === detail.shadeSystem)?.label;
+  const body = BODY_OPTIONS.find((o) => o.id === detail.body)?.label;
+
+  if (spec && spec !== "Specification") parts.push(spec);
+  if (material && material !== "Material") parts.push(`Ceramic: ${material}`);
+  if (shade && shade !== "Shade system") parts.push(shade);
+  if (body && body !== "Body") parts.push(body);
+
+  return parts.length > 0 ? parts.join(" · ") : "—";
 }
 
 export interface ToggleState {
@@ -725,6 +928,10 @@ export interface FixedRestorativeFormProps {
   setToggles: Dispatch<SetStateAction<ToggleState>>;
   noteText: string;
   setNoteText: Dispatch<SetStateAction<string>>;
+  /** Patient header "Treated by" line — doctor name is shown on saved notes */
+  treatedBy?: string;
+  /** Notifies parent when user picks a treatment from the full picker modal */
+  onTreatmentChange?: (treatmentId: string) => void;
 }
 
 export default function FixedRestorativeForm({
@@ -734,14 +941,22 @@ export default function FixedRestorativeForm({
   toothSelections, setToothSelections,
   toothDetails, setToothDetails,
   toggles, setToggles,
-  noteText, setNoteText,
+  noteText: _noteText, setNoteText,
+  treatedBy = "Doctor Name | 12367854",
+  onTreatmentChange,
 }: FixedRestorativeFormProps) {
+  const treatingDoctorName = treatingDoctorFromTreatedBy(treatedBy);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [treatmentPickerOpen, setTreatmentPickerOpen] = useState(false);
+  const [savedNotes, setSavedNotes] = useState<SavedNote[]>([]);
+  const [draftNote, setDraftNote] = useState("");
+  const [noteInputFocused, setNoteInputFocused] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [pendingTeeth, setPendingTeeth] = useState<number[]>([]);
   const [editingTooth, setEditingTooth] = useState<number | null>(null);
   const [openEditDropdown, setOpenEditDropdown] = useState<string | null>(null);
+  const [additionalInfoModalOpen, setAdditionalInfoModalOpen] = useState(false);
   const [implantBaseModalOpen, setImplantBaseModalOpen] = useState(false);
   const [implantBaseModalTeeth, setImplantBaseModalTeeth] = useState<number[]>([]);
   const [implantBaseModalCaseId, setImplantBaseModalCaseId] = useState("");
@@ -766,8 +981,36 @@ export default function FixedRestorativeForm({
   const datePickerRef = useRef<HTMLDivElement>(null);
   const editPanelRef = useRef<HTMLDivElement>(null);
 
+  function handleSendNote() {
+    const trimmed = draftNote.trim();
+    if (!trimmed) return;
+    const newNote: SavedNote = {
+      id: `${Date.now()}`,
+      author: treatingDoctorName,
+      text: trimmed,
+      date: formatNoteDate(new Date()),
+      timeLabel: "Just now",
+    };
+    setSavedNotes((prev) => {
+      const next = [newNote, ...prev];
+      setNoteText(next.map((n) => n.text).join("\n"));
+      return next;
+    });
+    setDraftNote("");
+    setNoteInputFocused(false);
+  }
+
+  function handleDeleteNote(noteId: string) {
+    setSavedNotes((prev) => {
+      const next = prev.filter((n) => n.id !== noteId);
+      setNoteText(next.map((n) => n.text).join("\n"));
+      return next;
+    });
+  }
+
   function handleToothClick(toothNum: number) {
     if (activeCategory) {
+      const isDeselect = toothSelections[toothNum] === activeCategory;
       setToothSelections(prev => {
         const next = { ...prev };
         if (next[toothNum] === activeCategory) {
@@ -777,6 +1020,13 @@ export default function FixedRestorativeForm({
         }
         return next;
       });
+      if (isDeselect) {
+        setEditingTooth((current) => (current === toothNum ? null : current));
+        setOpenEditDropdown(null);
+      } else {
+        setEditingTooth(toothNum);
+        setOpenEditDropdown(null);
+      }
       setPendingTeeth(prev => prev.filter((t) => t !== toothNum));
     } else {
       setPendingTeeth(prev =>
@@ -785,8 +1035,28 @@ export default function FixedRestorativeForm({
     }
   }
 
-  function handleRemoveTooth(toothNum: number) {
+  useEffect(() => {
+    if (editingTooth === null) setAdditionalInfoModalOpen(false);
+  }, [editingTooth]);
+
+  function getToothDetail(toothNum: number): ToothDetail {
+    return toothDetails[toothNum] ?? EMPTY_TOOTH_DETAIL;
+  }
+
+  function updateToothDetail(toothNum: number, field: string, value: string) {
+    setToothDetails(prev => ({
+      ...prev,
+      [toothNum]: { ...getToothDetail(toothNum), [field]: value },
+    }));
+  }
+
+  function handleDeleteTooth(toothNum: number) {
     setToothSelections(prev => {
+      const next = { ...prev };
+      delete next[toothNum];
+      return next;
+    });
+    setToothDetails(prev => {
       const next = { ...prev };
       delete next[toothNum];
       return next;
@@ -796,18 +1066,9 @@ export default function FixedRestorativeForm({
       delete next[toothNum];
       return next;
     });
-    if (editingTooth === toothNum) setEditingTooth(null);
-  }
-
-  function getToothDetail(toothNum: number) {
-    return toothDetails[toothNum] ?? { specification: "", material: "", shadeSystem: "", body: "" };
-  }
-
-  function updateToothDetail(toothNum: number, field: string, value: string) {
-    setToothDetails(prev => ({
-      ...prev,
-      [toothNum]: { ...getToothDetail(toothNum), [field]: value },
-    }));
+    setPendingTeeth(prev => prev.filter((t) => t !== toothNum));
+    setEditingTooth(null);
+    setOpenEditDropdown(null);
   }
 
   const selectedTeethEntries = Object.entries(toothSelections).sort(
@@ -829,6 +1090,7 @@ export default function FixedRestorativeForm({
     if (!openEditDropdown) return;
     const handleClick = (e: MouseEvent) => {
       if (isDropdownPortalTarget(e.target)) return;
+      if (isAdditionalInfoModalTarget(e.target)) return;
       if (editPanelRef.current && !editPanelRef.current.contains(e.target as Node)) {
         setOpenEditDropdown(null);
       }
@@ -848,6 +1110,7 @@ export default function FixedRestorativeForm({
     if (editingTooth === null) return;
     const handleClick = (e: MouseEvent) => {
       if (isDropdownPortalTarget(e.target)) return;
+      if (isAdditionalInfoModalTarget(e.target)) return;
       if (editPanelRef.current && !editPanelRef.current.contains(e.target as Node)) {
         setEditingTooth(null);
         setOpenEditDropdown(null);
@@ -868,6 +1131,15 @@ export default function FixedRestorativeForm({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [implantBaseModalOpen]);
+
+  function handleTreatmentPickerSelect(procedure: ProcedureType) {
+    setTreatmentId(procedure);
+    onTreatmentChange?.(procedure);
+    if (procedure === "fixed-restorative") {
+      setTreatmentPickerOpen(false);
+    }
+    setOpenDropdown(null);
+  }
 
   function handleImplantBaseDone() {
     const implantId = selectedImplantId ?? implantBaseModalCaseId.trim();
@@ -892,26 +1164,26 @@ export default function FixedRestorativeForm({
   return (
     <>
     <div className="flex flex-col w-full" style={{ gap: 16 }}>
-      {/* Section 1: Dropdowns row */}
+      {/* Section 1: Treatment type row — Figma 235:23542 */}
       <div
         ref={dropdownRef}
-        className="bg-[var(--color-background-layer-01)]"
-        style={{ borderRadius: 8, padding: "16px 24px" }}
+        className="bg-[var(--color-background-layer-01)] w-full min-w-0"
+        style={{ borderRadius: 8, padding: "8px 24px" }}
       >
-        <div className="flex w-full" style={{ gap: 16 }}>
-          <DropdownField
-            id="treatment"
-            label="Treatment"
+        <div className="flex w-full items-center" style={{ gap: 16 }}>
+          <TreatmentSplitField
             value={treatmentId}
             options={TREATMENT_OPTIONS}
             onChange={(id) => { setTreatmentId(id); setOpenDropdown(null); }}
             isOpen={openDropdown === "treatment"}
             onToggle={() => setOpenDropdown(openDropdown === "treatment" ? null : "treatment")}
-            backgroundVariant="layer-02"
+            onMainClick={() => { setOpenDropdown(null); setTreatmentPickerOpen((open) => !open); }}
+            mainActive={treatmentPickerOpen}
           />
           <DropdownField
             id="sendto"
             label="Send to"
+            labelClassName="tp-label-02 text-text-secondary"
             value={sendToId}
             options={SEND_TO_OPTIONS}
             onChange={(id) => { setSendToId(id); setOpenDropdown(null); }}
@@ -921,6 +1193,7 @@ export default function FixedRestorativeForm({
           />
           <DatePickerField
             label="Due date"
+            labelClassName="tp-label-02 text-text-secondary"
             value={dueDate}
             onChange={setDueDate}
             isOpen={datePickerOpen}
@@ -931,6 +1204,15 @@ export default function FixedRestorativeForm({
         </div>
       </div>
 
+      {treatmentPickerOpen ? (
+        /* Treatment picker — Figma 257:31019 / 257:31023, inline below treatment row */
+        <ProcedureTypeSelector
+          headingId="treatment-picker-title"
+          selected={treatmentId as ProcedureType}
+          onSelect={handleTreatmentPickerSelect}
+        />
+      ) : (
+      <>
       {/* Section 2: Interactive tooth chart — Figma 4069-83039 */}
       <div
         className="bg-[var(--color-background-layer-01)] w-full min-w-0"
@@ -938,8 +1220,8 @@ export default function FixedRestorativeForm({
       >
         <div className="flex flex-col xl:flex-row w-full xl:min-h-[480px] items-stretch" style={{ gap: 0 }}>
           {/* Left: jaw + restoration-type buttons — shrink-0 on narrow viewports so chart is never clipped */}
-          <div className="flex flex-col items-center w-full shrink-0 xl:flex-1 xl:min-w-0 xl:min-h-0 overflow-x-auto" style={{ gap: 48, padding: "0 16px" }}>
-            <div className="relative w-full shrink-0" style={{ maxWidth: 1171 }}>
+          <div className="flex flex-col items-center w-full shrink-0 xl:flex-1 xl:min-w-0 xl:min-h-0 min-w-0" style={{ gap: 48, padding: "0 16px" }}>
+            <div className="relative w-full shrink-0 min-w-0 overflow-x-auto scrollbar-table" style={{ maxWidth: 1171 }}>
               <img src={jawChartSvg} alt="Tooth chart" style={{ width: "100%", height: "auto", display: "block" }} />
               <svg viewBox="0 0 1171 277" className="tooth-chart-svg absolute inset-0 w-full h-full" aria-hidden focusable={false} tabIndex={-1}>
                 <defs>
@@ -1015,56 +1297,53 @@ export default function FixedRestorativeForm({
               </svg>
             </div>
 
-            {/* Restoration type buttons — 60px height, single row, all visible (compact so 9 fit in one line) */}
+            {/* Restoration type buttons — wrap to additional rows on narrow viewports */}
             <div
-              className="flex items-center justify-center flex-nowrap w-full shrink-0 overflow-x-auto overflow-y-hidden scrollbar-table"
+              className="flex items-center justify-center flex-wrap w-full shrink-0 min-w-0"
               style={{ gap: 12 }}
             >
               {RESTORATION_TYPES.map((rt) => {
-                const isActive = activeCategory === rt.label;
                 const isImplantBased = rt.label === "Implant based";
                 return (
                   <button
                     key={rt.label}
                     type="button"
                     onClick={() => {
-                      if (pendingTeeth.length > 0) {
-                        if (isImplantBased) {
-                          setImplantBaseModalTeeth([...pendingTeeth]);
-                          setImplantBaseModalCaseId("");
-                          setImplantBaseModalTab("Recents");
-                          setSelectedImplantId(null);
-                          setImplantBaseModalOpen(true);
-                        } else {
-                          setToothSelections(prev => {
-                            const next = { ...prev };
-                            pendingTeeth.forEach((t) => { next[t] = rt.label; });
-                            return next;
-                          });
-                          setPendingTeeth([]);
-                          setActiveCategory(rt.label);
-                        }
+                      if (pendingTeeth.length === 0) return;
+                      if (isImplantBased) {
+                        setImplantBaseModalTeeth([...pendingTeeth]);
+                        setImplantBaseModalCaseId("");
+                        setImplantBaseModalTab("Recents");
+                        setSelectedImplantId(null);
+                        setImplantBaseModalOpen(true);
                       } else {
-                        setActiveCategory(isActive ? null : rt.label);
+                        const teethToAssign = [...pendingTeeth];
+                        setToothSelections(prev => {
+                          const next = { ...prev };
+                          teethToAssign.forEach((t) => { next[t] = rt.label; });
+                          return next;
+                        });
+                        setPendingTeeth([]);
+                        setActiveCategory(null);
+                        setEditingTooth(
+                          teethToAssign.length === 1
+                            ? teethToAssign[0]
+                            : teethToAssign[teethToAssign.length - 1],
+                        );
+                        setOpenEditDropdown(null);
                       }
                     }}
-                    className="relative flex items-center justify-center cursor-pointer bg-transparent appearance-none outline-none transition-ui overflow-visible shrink-0 focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
+                    className="relative flex items-center justify-center cursor-pointer bg-transparent appearance-none outline-none transition-ui overflow-visible shrink-0 rounded-lg hover:bg-[var(--color-background-layer-hovered)] active:bg-[var(--color-background-layer-02)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
                     style={{
                       height: 60,
                       padding: "10px 12px",
                       gap: 6,
-                      border: isActive ? "2px solid var(--color-border-focus)" : "2px solid var(--color-border-subtle)",
+                      border: "2px solid var(--color-border-subtle)",
                       borderRadius: 8,
                       minWidth: 64,
                     }}
                   >
-                    {isActive ? (
-                      <svg width="20" height="20" viewBox="0 0 17.5 17.5" fill="none" className="shrink-0" aria-hidden>
-                        <path d="M8.75 0C4 0 0 4 0 8.75C0 13.5 4 17.5 8.75 17.5C13.5 17.5 17.5 13.5 17.5 8.75C17.5 4 13.5 0 8.75 0ZM13.75 9.375H9.375V13.75H8.125V9.375H3.75V8.125H8.125V3.75H9.375V8.125H13.75V9.375Z" fill={rt.color} />
-                      </svg>
-                    ) : (
-                      <div className="shrink-0" style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: rt.color }} />
-                    )}
+                    <div className="shrink-0" style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: rt.color }} />
                     <span className="tp-body-02 text-text-primary whitespace-nowrap">{rt.label}</span>
                   </button>
                 );
@@ -1079,14 +1358,14 @@ export default function FixedRestorativeForm({
           />
 
           {/* Right: edit form, selected teeth cards, or placeholder — width 429 on xl */}
-          <div className="flex flex-col items-center justify-center w-full shrink-0 xl:w-[429px] xl:shrink-0 xl:min-h-0 xl:max-h-[480px] xl:overflow-auto min-w-0 pt-6 xl:pt-0 border-t border-border-subtle xl:border-t-0">
+          <div className="flex flex-col items-center justify-center w-full min-w-0 xl:w-[429px] xl:shrink-0 xl:min-h-0 xl:max-h-[480px] xl:overflow-auto pt-6 xl:pt-0 px-4 xl:px-0 border-t border-border-subtle xl:border-t-0">
             {editingTooth !== null && toothSelections[editingTooth] ? (() => {
               const category = toothSelections[editingTooth];
               const rt = RESTORATION_TYPES.find(r => r.label === category);
               const detail = getToothDetail(editingTooth);
               return (
                 <div ref={editPanelRef} className="flex flex-col h-full w-full" style={{ gap: 12 }}>
-                  {/* Header: badge + title + edit icon */}
+                  {/* Header: badge + title + delete */}
                   <div className="flex flex-col" style={{ gap: 12 }}>
                     <div className="flex flex-col" style={{ gap: 8 }}>
                       <span
@@ -1109,12 +1388,12 @@ export default function FixedRestorativeForm({
                         </span>
                         <button
                           type="button"
-                          onClick={() => { setEditingTooth(null); setOpenEditDropdown(null); }}
-                          className="flex items-center justify-center shrink-0 cursor-pointer bg-transparent border-0 appearance-none outline-none text-[var(--color-icon-primary)] hover:bg-[var(--color-background-layer-hovered)] transition-ui"
+                          onClick={() => handleDeleteTooth(editingTooth)}
+                          className="flex items-center justify-center shrink-0 cursor-pointer bg-transparent border-0 appearance-none outline-none text-[var(--color-icon-primary)] hover:bg-[var(--color-background-layer-hovered)] transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
                           style={{ width: 32, height: 32, borderRadius: 8, padding: 4 }}
-                          aria-label="Close edit"
+                          aria-label="Delete tooth"
                         >
-                          <PencilIcon size={24} color="var(--color-icon-primary)" />
+                          <TrashIcon size={24} color="var(--color-icon-primary)" />
                         </button>
                       </div>
                     </div>
@@ -1170,6 +1449,7 @@ export default function FixedRestorativeForm({
                     </svg>
                     <button
                       type="button"
+                      onClick={() => setAdditionalInfoModalOpen(true)}
                       className="tp-body-02 text-[var(--color-text-link,#009ace)] bg-transparent border-0 cursor-pointer appearance-none outline-none hover:underline"
                       style={{ padding: "16px 8px" }}
                     >
@@ -1179,66 +1459,80 @@ export default function FixedRestorativeForm({
                 </div>
               );
             })() : selectedTeethEntries.length > 0 ? (
-              <div className="flex flex-col overflow-auto scrollbar-table w-full" style={{ gap: 8, maxHeight: 450 }}>
+              <div
+                className="flex w-full flex-col items-stretch justify-center overflow-y-auto scrollbar-table"
+                style={{ gap: 8, maxHeight: 417 }}
+              >
                 {selectedTeethEntries.map(([num, category]) => {
-                  const rt = RESTORATION_TYPES.find(r => r.label === category);
-                  const badge = (
-                    <span
-                      className="tp-body-02 shrink-0"
-                      style={{ backgroundColor: rt?.color, color: "#fff", borderRadius: 4, padding: "4px 8px", minWidth: 24, textAlign: "center" }}
-                    >
-                      {category}
-                    </span>
-                  );
-                  const deleteBtn = (
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleRemoveTooth(Number(num)); }}
-                      className="flex items-center justify-center cursor-pointer bg-transparent border-0 appearance-none outline-none text-[var(--color-icon-secondary)] hover:text-[var(--color-icon-primary)] transition-ui shrink-0"
-                      style={{ width: 20, height: 20 }}
-                    >
-                      <DeleteIcon />
-                    </button>
-                  );
-
+                  const toothNum = Number(num);
+                  const rt = RESTORATION_TYPES.find((r) => r.label === category);
+                  const detail = getToothDetail(toothNum);
                   const isImplantBased = category === "Implant based";
-                  const implantCaseId = implantCaseByTooth[Number(num)];
-                  const implantCaseLabel = isImplantBased && implantCaseId
-                    ? IMPLANT_OPTIONS.find((o) => o.id === implantCaseId)?.title ?? IMPLANT_CASE_OPTIONS.find((o) => o.id === implantCaseId)?.label ?? implantCaseId
-                    : null;
+                  const implantCaseId = implantCaseByTooth[toothNum];
+                  const implantCaseLabel =
+                    isImplantBased && implantCaseId
+                      ? IMPLANT_OPTIONS.find((o) => o.id === implantCaseId)?.title ??
+                        IMPLANT_CASE_OPTIONS.find((o) => o.id === implantCaseId)?.label ??
+                        implantCaseId
+                      : null;
+                  const summary = formatSelectedToothSummary(detail, implantCaseLabel);
 
                   return (
-                    <div
+                    <button
                       key={num}
-                      className="flex flex-col shrink-0 cursor-pointer"
-                      style={{ background: "#f4f4f4", border: "1px solid rgba(0,0,0,0.09)", borderRadius: 8, padding: 16, gap: 16 }}
+                      type="button"
+                      className="relative flex w-full shrink-0 cursor-pointer flex-col justify-center rounded-lg border-0 bg-[var(--color-background-layer-02)] p-4 text-left outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+                      style={{ minHeight: 124 }}
                       onClick={() => {
                         if (isImplantBased) {
-                          setImplantBaseModalTeeth([Number(num)]);
-                          setImplantBaseModalCaseId(implantCaseByTooth[Number(num)] ?? "");
+                          setImplantBaseModalTeeth([toothNum]);
+                          setImplantBaseModalCaseId(implantCaseByTooth[toothNum] ?? "");
                           setImplantBaseModalTab("Recents");
-                          setSelectedImplantId(implantCaseByTooth[Number(num)] ?? null);
+                          setSelectedImplantId(implantCaseByTooth[toothNum] ?? null);
                           setImplantBaseModalOpen(true);
                           setEditingTooth(null);
                         } else {
-                          setEditingTooth(Number(num));
+                          setEditingTooth(toothNum);
                           setOpenEditDropdown(null);
                         }
                       }}
                     >
-                      <div className="flex items-center justify-between">
-                        {badge}
-                        {deleteBtn}
+                      <div className="relative flex w-full min-w-0 items-start pr-8">
+                        <div className="flex min-w-0 flex-1 flex-col items-start" style={{ gap: 8 }}>
+                          <span
+                            className="tp-body-02 shrink-0 text-on-color"
+                            style={{
+                              backgroundColor: restorationBadgeBackground(category, rt?.color),
+                              borderRadius: 4,
+                              padding: "4px 8px",
+                              minWidth: 24,
+                              textAlign: "center",
+                            }}
+                          >
+                            {category}
+                          </span>
+                          <span className="tp-body-04 text-text-primary">#{num}</span>
+                          <span className="tp-body-01 text-text-secondary w-full" style={{ wordBreak: "break-word" }}>
+                            {summary}
+                          </span>
+                        </div>
+                        <ChevronRightSmallIcon
+                          size={24}
+                          color="var(--color-icon-primary)"
+                          className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 shrink-0"
+                          aria-hidden
+                        />
                       </div>
-                      <div className="flex flex-col" style={{ gap: 8 }}>
-                        <span className="tp-headling-02 text-text-primary">#{num}</span>
-                        <span className="tp-body-02 text-text-secondary" style={{ wordBreak: "break-word" }}>
-                          {isImplantBased && implantCaseLabel ? implantCaseLabel : "PFM/PFZ · Ceramic: Zirconia · Vita Lumin · A2"}
-                        </span>
-                      </div>
-                    </div>
+                    </button>
                   );
                 })}
+              </div>
+            ) : pendingTeeth.length > 0 ? (
+              <div className="flex flex-col items-center justify-center py-4 xl:py-0 xl:h-full" style={{ width: 333, gap: 7 }}>
+                <span className="tp-heading-03 text-text-secondary w-full text-center">Select restoration</span>
+                <span className="tp-body-02 text-text-secondary text-center" style={{ width: 315 }}>
+                  Choose a restoration type below to define the selected {pendingTeeth.length === 1 ? "tooth" : "teeth"}.
+                </span>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-4 xl:py-0 xl:h-full" style={{ width: 333, gap: 7 }}>
@@ -1312,70 +1606,167 @@ export default function FixedRestorativeForm({
           </div>
         </div>
 
-        {/* Note card */}
+        {/* Note card — Figma 205:56529 */}
         <div
-          className="flex flex-col flex-1 min-w-0 bg-[var(--color-background-layer-01)] overflow-clip"
+          className="flex flex-col flex-1 min-w-0 min-h-0 bg-[var(--color-background-layer-01)] overflow-clip"
           style={{
             borderRadius: 16,
             boxShadow: "0px 4px 12px rgba(0,0,0,0.08)",
-            padding: 12,
           }}
         >
-          <div className="flex flex-col flex-1" style={{ padding: 16, gap: 39 }}>
-            <div className="flex flex-col flex-1" style={{ gap: 12 }}>
-              <span className="tp-heading-04 text-text-primary">Note</span>
+          <div
+            className="flex flex-col flex-1 min-h-0 w-full"
+            style={{ padding: "var(--spacing-06, 24px) var(--spacing-03, 12px)" }}
+          >
+            <div
+              className="flex flex-col flex-1 min-h-0 w-full justify-between"
+              style={{ padding: "var(--spacing-03, 12px) var(--spacing-04, 16px)" }}
+            >
+              <div className="shrink-0 w-full">
+                <span className="tp-heading-04 text-text-primary">Note</span>
+              </div>
 
-              {!noteText && (
-                <div className="flex flex-col flex-1 items-center justify-center" style={{ gap: 31 }}>
-                  <div className="flex flex-col items-center" style={{ gap: 16 }}>
-                    <NoteIcon />
-                    <div className="flex flex-col items-center" style={{ gap: 4 }}>
-                      <span className="tp-body-04 text-text-secondary">
-                        No notes yet
-                      </span>
-                      <span className="tp-body-02 text-text-tertiary">
-                        Type below to add your first note
-                      </span>
+              <div className="flex flex-col items-center justify-center w-full min-h-0 flex-1">
+                {savedNotes.length > 0 ? (
+                  <div
+                    className="flex flex-col w-full overflow-hidden shrink-0"
+                    style={{ height: 212 }}
+                  >
+                    <div
+                      className="flex flex-col w-full overflow-y-auto scrollbar-table"
+                      style={{
+                        gap: "var(--spacing-02, 8px)",
+                        height: 288,
+                        paddingTop: "var(--spacing-01, 4px)",
+                        paddingRight: "var(--spacing-03, 12px)",
+                        paddingBottom: "var(--spacing-01, 4px)",
+                        paddingLeft: 0,
+                        borderRadius: 8,
+                        backgroundColor: "var(--color-background-elevated)",
+                        boxShadow: "0px 2px 6px rgba(0,0,0,0.13)",
+                      }}
+                    >
+                      {savedNotes.map((note) => (
+                        <div
+                          key={note.id}
+                          className="flex w-full shrink-0 flex-col items-start justify-center overflow-clip rounded-lg bg-[var(--color-background-layer-02)]"
+                        >
+                          <div
+                            className="flex w-full items-center rounded-lg"
+                            style={{ gap: "var(--spacing-02, 8px)", padding: "var(--spacing-03, 12px)" }}
+                          >
+                            <div
+                              className="flex flex-1 min-w-0 items-start"
+                              style={{ gap: 0 }}
+                            >
+                              <div
+                                className="flex flex-1 min-w-0 flex-col items-start"
+                                style={{ gap: "var(--spacing-01, 4px)" }}
+                              >
+                                <span className="tp-body-04 text-text-primary w-full truncate">{note.author}</span>
+                                <span className="tp-body-01 text-text-secondary w-full break-words">{note.text}</span>
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 items-center" style={{ gap: "var(--spacing-03, 12px)" }}>
+                              <span className="tp-body-01 text-text-secondary whitespace-nowrap">{note.date}</span>
+                              <span
+                                className="shrink-0"
+                                style={{ width: 1, height: 19.261, backgroundColor: "var(--color-border-subtle)" }}
+                                aria-hidden
+                              />
+                              <span className="tp-body-01 text-text-secondary whitespace-nowrap">{note.timeLabel}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteNote(note.id)}
+                                className="relative flex shrink-0 cursor-pointer items-center justify-center bg-transparent border-0 appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded"
+                                style={{ width: 20, height: 20, padding: 0 }}
+                                aria-label="Delete note"
+                              >
+                                <TrashIcon size={20} color="var(--color-icon-primary)" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                ) : !draftNote && !noteInputFocused ? (
+                  <div className="flex flex-col items-center justify-center w-full" style={{ gap: 31 }}>
+                    <div className="flex flex-col items-center" style={{ gap: 16 }}>
+                      <NoteIcon />
+                      <div className="flex flex-col items-center text-center" style={{ gap: 4 }}>
+                        <span className="tp-body-04 text-text-secondary">No notes yet</span>
+                        <span className="tp-body-02 text-text-tertiary">
+                          Type below to add your first note
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
 
-            <div className="flex items-start shrink-0" style={{ gap: 10 }}>
-              <textarea
-                className="flex-1 resize-none tp-body-04 text-text-primary"
-                placeholder="Progress notes here"
-                maxLength={100}
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                rows={1}
-                style={{
-                  backgroundColor: "var(--color-background-layer-01)",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: 8,
-                  padding: "12px 16px",
-                  outline: "none",
-                  height: 60,
-                }}
-              />
-              <button
-                type="button"
-                className="flex items-center justify-center shrink-0 cursor-pointer bg-transparent appearance-none outline-none transition-ui hover:bg-surface-alt focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
-                style={{
-                  border: "2px solid var(--color-border-subtle)",
-                  borderRadius: 8,
-                  width: 60,
-                  height: 60,
-                }}
-                aria-label="Send note"
-              >
-                <SendIcon />
-              </button>
+              <div className="flex items-start shrink-0 w-full" style={{ gap: "var(--spacing-02, 8px)" }}>
+                <div className="relative flex flex-1 min-w-0">
+                  <textarea
+                    className="w-full resize-none tp-body-04 text-text-primary placeholder:text-text-tertiary"
+                    placeholder="Add your note here..."
+                    maxLength={100}
+                    value={draftNote}
+                    onChange={(e) => setDraftNote(e.target.value)}
+                    onFocus={() => setNoteInputFocused(true)}
+                    onBlur={() => setNoteInputFocused(false)}
+                    rows={1}
+                    style={{
+                      backgroundColor: "var(--color-background-layer-01)",
+                      border: `1px solid ${
+                        noteInputFocused || draftNote
+                          ? "var(--color-border-focus)"
+                          : "var(--color-border-subtle)"
+                      }`,
+                      borderRadius: 8,
+                      padding: "var(--spacing-04, 16px)",
+                      paddingRight: draftNote ? 48 : "var(--spacing-04, 16px)",
+                      outline: "none",
+                      minHeight: 60,
+                    }}
+                  />
+                  {draftNote && (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setDraftNote("")}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer bg-transparent border-0 appearance-none outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] rounded"
+                      style={{ width: 24, height: 24 }}
+                      aria-label="Clear note"
+                    >
+                      <CloseIcon size={24} color="var(--color-icon-primary)" />
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendNote}
+                  disabled={!draftNote.trim()}
+                  className="flex items-center justify-center shrink-0 cursor-pointer border-0 appearance-none outline-none transition-ui focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: draftNote.trim()
+                      ? "var(--color-background-brand)"
+                      : "var(--color-background-brand-disabled)",
+                    borderRadius: 8,
+                    width: 60,
+                    height: 60,
+                  }}
+                  aria-label="Send note"
+                >
+                  <SendIcon color="var(--color-text-on-color-primary)" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
 
     {/* Implant base selection modal — Figma 4209:174869 (UI-Refresh-2025 Q2) */}
@@ -1690,6 +2081,19 @@ export default function FixedRestorativeForm({
         </div>
       </div>,
       document.body
+    )}
+
+    {additionalInfoModalOpen && editingTooth !== null && (
+      <AdditionalInfoModal
+        detail={getToothDetail(editingTooth)}
+        onClose={() => setAdditionalInfoModalOpen(false)}
+        onSave={(fields) => {
+          setToothDetails((prev) => ({
+            ...prev,
+            [editingTooth]: { ...getToothDetail(editingTooth), ...fields },
+          }));
+        }}
+      />
     )}
     </>
   );

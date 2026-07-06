@@ -1,15 +1,16 @@
 /**
- * Patient header for scanning flow — Figma 4115:166709 (UI Refresh 2025).
+ * Patient header for scanning flow — Figma 9:46734.
  * Avatar | Name + ID | DOB | Gender | Last scan | separator | Treated by | Edit button.
  *
- * Typography (all via .scan-flow scope):
+ * Typography (via .patient-header scope):
  *   name   = tp-heading-05 (28px/40px, 500)
  *   labels = tp-body-02 text-secondary (18px/28px, 400)
  *   values = tp-body-02 text-primary   (18px/28px, 400)
  *   id     = tp-body-02 text-secondary
  *
- * Layout (4px grid): px var(--spacing-10), py var(--spacing-03), row 80px,
- * gap var(--spacing-12) between items, var(--spacing-10) before edit button.
+ * Layout: px var(--spacing-10), inner py var(--spacing-03), row 140px,
+ * avatar+name gap var(--spacing-06), column gap var(--spacing-08),
+ * edit gap var(--spacing-10).
  */
 
 import Avatar from "./Avatar";
@@ -71,69 +72,75 @@ export default function ScanFlowPatientHeader({
 
   return (
     <section
-      className="flex items-center justify-center w-full bg-surface shrink-0 border-b border-border-subtle overflow-clip"
-      style={{ padding: "var(--spacing-03) var(--spacing-10)", height: 164 }}
+      className="patient-header flex w-full shrink-0 flex-col items-center overflow-clip border-b border-border-subtle bg-surface"
+      style={{ paddingLeft: "var(--spacing-10)", paddingRight: "var(--spacing-10)" }}
       aria-label="Patient information"
     >
       <div
-        className="flex items-center w-full min-w-0"
-        style={{ height: 80, gap: "var(--spacing-10)" }}
+        className="flex w-full min-w-0 flex-col items-start"
+        style={{ paddingTop: "var(--spacing-03)", paddingBottom: "var(--spacing-03)" }}
       >
         <div
-          className="flex flex-1 items-center min-w-0"
-          style={{ gap: "var(--spacing-12)" }}
+          className="flex w-full min-w-0 items-center"
+          style={{ height: 140, gap: "var(--spacing-10)" }}
         >
-          <Avatar
-            firstName={firstName}
-            lastName={lastName}
-            imageUrl={avatarUrl}
-            size={80}
-            initialsFontSize={28}
-          />
-
           <div
-            className="flex flex-col items-start shrink-0"
-            style={{ gap: "var(--spacing-02)", width: "fit-content", height: 76 }}
+            className="flex min-w-0 flex-1 items-center"
+            style={{ gap: "var(--spacing-08)" }}
           >
-            <span className="tp-heading-05 text-text-primary" style={{ width: "fit-content" }}>
-              {patientName}
-            </span>
-            <span className="inline-grid shrink-0">
-              <span
-                className="tp-body-02 text-text-secondary whitespace-nowrap"
-                style={{ gridColumn: 1, gridRow: 1, marginLeft: 29 }}
-              >
-                {patientId}
-              </span>
-              <span
-                className="shrink-0 text-[var(--color-icon-primary)] overflow-clip"
-                style={{ gridColumn: 1, gridRow: 1, marginTop: 2, width: 20, height: 20 }}
-                aria-hidden
-              >
-                <IdCardIcon />
-              </span>
-            </span>
-          </div>
-
-          <InfoColumn label="Date of birth" value={`${dateOfBirth} (${age} years)`} />
-          <InfoColumn label="Gender" value={gender} />
-          {lastScan && <InfoColumn label="Last scan" value={lastScan} />}
-
-          <div className="flex items-center self-stretch" aria-hidden>
             <div
-              className="shrink-0"
-              style={{
-                width: 0,
-                height: 80,
-                borderLeft: "1px solid var(--color-border-subtle)",
-              }}
-            />
+              className="flex shrink-0 items-center"
+              style={{ gap: "var(--spacing-06)" }}
+            >
+              <Avatar
+                firstName={firstName}
+                lastName={lastName}
+                imageUrl={avatarUrl}
+                size={80}
+                initialsFontSize={28}
+              />
+
+              <div
+                className="flex h-[76px] w-[188px] shrink-0 flex-col items-start"
+                style={{ gap: "var(--spacing-02)" }}
+              >
+                <span className="tp-heading-05 flex w-full min-w-0 items-center whitespace-nowrap text-text-primary">{patientName}</span>
+                <span className="inline-grid shrink-0">
+                  <span
+                    className="tp-body-02 whitespace-nowrap text-text-secondary"
+                    style={{ gridColumn: 1, gridRow: 1, marginLeft: 29 }}
+                  >
+                    {patientId}
+                  </span>
+                  <span
+                    className="shrink-0 overflow-clip text-[var(--color-icon-primary)]"
+                    style={{ gridColumn: 1, gridRow: 1, marginTop: 2, width: 20, height: 20 }}
+                    aria-hidden
+                  >
+                    <IdCardIcon />
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            <InfoColumn label="Date of birth" value={`${dateOfBirth} (${age} years)`} />
+            <InfoColumn label="Gender" value={gender} />
+            {lastScan && <InfoColumn label="Last scan" value={lastScan} />}
+
+            <div className="flex self-stretch items-center" aria-hidden>
+              <div
+                className="shrink-0 self-stretch"
+                style={{
+                  width: 0,
+                  borderLeft: "1px solid var(--color-border-subtle)",
+                }}
+              />
+            </div>
+
+            <InfoColumn label="Treated by:" value={treatedBy} />
           </div>
 
-          <InfoColumn label="Treated by:" value={treatedBy} />
-        </div>
-
-        <button
+          <button
             type="button"
             onClick={isEditOpen ? onCloseEdit : onEditClick}
             className="flex items-center justify-center shrink-0 rounded-lg cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
@@ -152,6 +159,7 @@ export default function ScanFlowPatientHeader({
               <PencilIcon size={24} color="var(--color-icon-primary)" />
             )}
           </button>
+        </div>
       </div>
     </section>
   );

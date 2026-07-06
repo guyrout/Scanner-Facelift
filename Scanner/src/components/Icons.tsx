@@ -49,13 +49,32 @@ export function MonitorIcon({ size = 32, className, color = "currentColor" }: Ic
   );
 }
 
-/** Tag icon — from Tag 01.svg (company selector) */
-export function TagIcon({ size = 24, className, color = "currentColor" }: IconProps) {
+/** Company / practice icon — from Company.svg (header company dropdown) */
+export function TagIcon({ size = 24, className, color = "var(--color-icon-primary)" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" className={className}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <path d="M10 12H14" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M10 8H14" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
       <path
-        d="M16.875 3H3.125C2.79348 3 2.47554 3.1317 2.24112 3.36612C2.0067 3.60054 1.875 3.91848 1.875 4.25V8C1.25 8.3125 1.25 8.9375 1.25 8.9375V14.25C1.25 14.5815 1.3817 14.8995 1.61612 15.1339C1.85054 15.3683 2.16848 15.5 2.5 15.5H10V16.75H7.5V18H12.5V16.75H10V15.5H17.5C17.8315 15.5 18.1495 15.3683 18.3839 15.1339C18.6183 14.8995 18.75 14.5815 18.75 14.25V8.9375C18.75 8.9375 18.75 8.3125 18.125 8V4.25C18.125 3.91848 17.9933 3.60054 17.7589 3.36612C17.5245 3.1317 17.2065 3 16.875 3ZM16.875 13.625H3.125V4.25H16.875V13.625Z"
-        fill={color}
+        d="M14 21V18V16H12H10V18V21"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6 10H4H2V12V19V21H4H20H22V19V9V7H20H18"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6 21V5V3H8H16H18V5V21"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -198,6 +217,18 @@ export function PencilIcon({ size = 24, className, color = "currentColor" }: Ico
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       <path d="M22.5 19.5H1.5V21H22.5V19.5Z" fill={color} />
       <path d="M19.05 6.75C19.65 6.15 19.65 5.25 19.05 4.65L16.35 1.95C15.75 1.35 14.85 1.35 14.25 1.95L3 13.2V18H7.8L19.05 6.75ZM15.3 3L18 5.7L15.75 7.95L13.05 5.25L15.3 3ZM4.5 16.5V13.8L12 6.3L14.7 9L7.2 16.5H4.5Z" fill={color} />
+    </svg>
+  );
+}
+
+/** Trash / bin icon for delete actions — Figma Delete 20×20 */
+export function TrashIcon({ size = 24, className, color = "currentColor" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" className={className} aria-hidden>
+      <path d="M8.75 7.5H7.5V15H8.75V7.5Z" fill={color} />
+      <path d="M12.5 7.5H11.25V15H12.5V7.5Z" fill={color} />
+      <path d="M2.5 3.75V5H3.75V17.5C3.75 17.8315 3.8817 18.1495 4.11612 18.3839C4.35054 18.6183 4.66848 18.75 5 18.75H15C15.3315 18.75 15.6495 18.6183 15.8839 18.3839C16.1183 18.1495 16.25 17.8315 16.25 17.5V5H17.5V3.75H2.5ZM5 17.5V5H15V17.5H5Z" fill={color} />
+      <path d="M12.5 1.25H7.5V2.5H12.5V1.25Z" fill={color} />
     </svg>
   );
 }
@@ -404,6 +435,19 @@ export function AlarmIcon({ size = 32, className, color = "var(--color-icon-prim
       <path
         d="M24.4152 3.99438L22.9995 5.40712L26.5807 8.9959L27.9964 7.58317L24.4152 3.99438Z"
         fill={color}
+      />
+    </svg>
+  );
+}
+
+/** Snapshot thumbnail edit — Figma 5413:179325 (Edit) */
+export function SnapshotEditIcon({ size = 32, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className} aria-hidden xmlns="http://www.w3.org/2000/svg">
+      <path d="M30 26H2V28H30V26Z" fill="var(--color-icon-primary, #121212)" />
+      <path
+        d="M25.4 9C26.2 8.2 26.2 7 25.4 6.2L21.8 2.6C21 1.8 19.8 1.8 19 2.6L4 17.6V24H10.4L25.4 9ZM20.4 4L24 7.6L21 10.6L17.4 7L20.4 4ZM6 22V18.4L16 8.4L19.6 12L9.6 22H6Z"
+        fill="var(--color-icon-primary, #121212)"
       />
     </svg>
   );

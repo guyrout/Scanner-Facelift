@@ -528,6 +528,18 @@
   --tp-label-03-height: 36px;
 }
 
+/* Patient header bar — Figma 9:46734 (shared by scan flow + patient orders). */
+.patient-header {
+  --color-text-primary: #000000ed;
+  --color-icon-primary: #000000ed;
+
+  --tp-heading-05-size: 28px;
+  --tp-heading-05-height: 40px;
+
+  --tp-body-02-size: 18px;
+  --tp-body-02-height: 28px;
+}
+
 /* Tooth chart: remove browser focus dotted outline from rect/g when clicking teeth */
 .tooth-chart-svg,
 .tooth-chart-svg * {

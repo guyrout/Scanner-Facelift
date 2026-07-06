@@ -33,7 +33,7 @@ function calculateAge(dob: string): number {
 
 function IdCardIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 20 20" fill="none" className="shrink-0" aria-hidden xmlns="http://www.w3.org/2000/svg">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0" aria-hidden xmlns="http://www.w3.org/2000/svg">
       <path d="M17.5 3.75V16.25H2.5V3.75H17.5ZM17.5 2.5H2.5C2.16848 2.5 1.85054 2.6317 1.61612 2.86612C1.3817 3.10054 1.25 3.41848 1.25 3.75V16.25C1.25 16.5815 1.3817 16.8995 1.61612 17.1339C1.85054 17.3683 2.16848 17.5 2.5 17.5H17.5C17.8315 17.5 18.1495 17.3683 18.3839 17.1339C18.6183 16.8995 18.75 16.5815 18.75 16.25V3.75C18.75 3.41848 18.6183 3.10054 18.3839 2.86612C18.1495 2.6317 17.8315 2.5 17.5 2.5Z" fill="currentColor" fillOpacity={0.93} />
       <path d="M8.125 6.25H3.75V7.5H8.125V6.25Z" fill="currentColor" fillOpacity={0.93} />
       <path d="M6.25 8.75H3.75V10H6.25V8.75Z" fill="currentColor" fillOpacity={0.93} />
@@ -55,8 +55,8 @@ function SortDescIcon() {
 function PatientInfoColumn({ label, value }: { label: string; value: string }) {
   return (
     <div
-      className="flex flex-col items-start shrink-0 whitespace-nowrap"
-      style={{ gap: 4, fontFamily: "var(--font-roboto)", fontSize: 18, fontWeight: 400, lineHeight: "28px" }}
+      className="flex flex-col items-start shrink-0 whitespace-nowrap tp-body-02"
+      style={{ gap: "var(--spacing-01)" }}
     >
       <span className="text-text-secondary">{label}</span>
       <span className="text-text-primary">{value}</span>
@@ -254,40 +254,58 @@ export default function PatientOrders({ patient, onBack, onNewScan, onOpenSettin
       />
 
       <section
-        className="flex items-center justify-center w-full bg-surface shrink-0 border-b border-border-subtle overflow-clip"
-        style={{ padding: "12px 40px", height: 164 }}
+        className="patient-header flex w-full shrink-0 flex-col items-center overflow-clip border-b border-border-subtle bg-surface"
+        style={{ paddingLeft: "var(--spacing-10)", paddingRight: "var(--spacing-10)" }}
         aria-label="Patient information"
       >
-        <div className="flex items-center w-full" style={{ height: 140, gap: 16 }}>
-          <div className="flex flex-1 items-center justify-between min-w-0">
-            <div className="flex flex-1 items-center min-w-0" style={{ gap: 48 }}>
-              <Avatar
-                firstName={patient.firstName}
-                lastName={patient.lastName}
-                imageUrl={patient.avatarUrl}
-                size={80}
-                initialsFontSize={28}
-              />
+        <div
+          className="flex w-full min-w-0 flex-col items-start"
+          style={{ paddingTop: "var(--spacing-03)", paddingBottom: "var(--spacing-03)" }}
+        >
+          <div
+            className="flex w-full min-w-0 items-center justify-between"
+            style={{ height: 140, gap: "var(--spacing-10)" }}
+          >
+            <div className="flex min-w-0 flex-1 items-center" style={{ gap: "var(--spacing-08)" }}>
+              <div className="flex shrink-0 items-center" style={{ gap: "var(--spacing-06)" }}>
+                <Avatar
+                  firstName={patient.firstName}
+                  lastName={patient.lastName}
+                  imageUrl={patient.avatarUrl}
+                  size={80}
+                  initialsFontSize={28}
+                />
 
-              <div className="flex flex-col items-start shrink-0" style={{ gap: 8 }}>
-                <span className="truncate" style={{ fontFamily: "var(--font-roboto)", fontSize: 28, fontWeight: 500, lineHeight: "40px", color: "rgba(0,0,0,0.93)", maxWidth: 220 }}>
-                  {patient.firstName} {patient.lastName}
-                </span>
-                <span className="flex items-center shrink-0" style={{ gap: 8 }}>
-                  <span className="shrink-0 text-text-secondary" aria-hidden>
-                    <IdCardIcon />
+                <div
+                  className="flex h-[76px] w-[188px] shrink-0 flex-col items-start"
+                  style={{ gap: "var(--spacing-02)" }}
+                >
+                  <span className="tp-heading-05 flex w-full min-w-0 items-center whitespace-nowrap text-text-primary">
+                    {patient.firstName} {patient.lastName}
                   </span>
-                  <span className="text-text-secondary whitespace-nowrap" style={{ fontFamily: "var(--font-roboto)", fontSize: 18, fontWeight: 400, lineHeight: "28px" }}>
-                    {patient.patientId}
+                  <span className="inline-grid shrink-0">
+                    <span
+                      className="tp-body-02 whitespace-nowrap text-text-secondary"
+                      style={{ gridColumn: 1, gridRow: 1, marginLeft: 29 }}
+                    >
+                      {patient.patientId}
+                    </span>
+                    <span
+                      className="shrink-0 overflow-clip text-[var(--color-icon-primary)]"
+                      style={{ gridColumn: 1, gridRow: 1, marginTop: 2, width: 20, height: 20 }}
+                      aria-hidden
+                    >
+                      <IdCardIcon />
+                    </span>
                   </span>
-                </span>
+                </div>
               </div>
 
               <PatientInfoColumn label="Date of birth" value={`${patient.dateOfBirth} (${age} years)`} />
               <PatientInfoColumn label="Gender" value={patient.gender} />
             </div>
 
-            <div className="flex items-center shrink-0" style={{ gap: 16, marginLeft: 40 }}>
+            <div className="flex shrink-0 items-center" style={{ gap: 16 }}>
               <button
                 type="button"
                 className="flex items-center justify-center cursor-pointer hover:bg-surface-alt transition-ui transition-ui-focus transition-press active-press whitespace-nowrap bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"

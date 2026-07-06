@@ -92,7 +92,7 @@ export default function Header({ title = "Patients", onBack, onSettingsClick, on
       <div className="flex items-center justify-center gap-4 min-w-0">
         <HeaderDropdown
           ref={companyRef}
-          icon={<TagIcon size={20} color="var(--color-icon-secondary)" />}
+          icon={<TagIcon size={20} color="var(--color-icon-primary)" />}
           label={selectedCompany.name}
           isOpen={companyOpen}
           onToggle={() => {
