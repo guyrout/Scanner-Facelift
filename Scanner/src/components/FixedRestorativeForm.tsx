@@ -17,7 +17,7 @@ import toothSprites from "../assets/procedures/tooth-sprites.svg";
 import starFillSvg from "../assets/procedures/star-fill.svg";
 import starOutlineSvg from "../assets/procedures/star-outline.svg";
 import implantBasePlaceholder from "../assets/procedures/implant-base-placeholder.png";
-import { CaretDownIcon, CaretUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightSmallIcon, CloseIcon, TrashIcon } from "./Icons";
+import { CaretDownIcon, CaretUpIcon, CheckIcon, ChevronLeftIcon, ChevronRightSmallIcon, CloseIcon, CopyIcon, TrashIcon } from "./Icons";
 import ProcedureTypeSelector, { type ProcedureType } from "./ProcedureTypeSelector";
 import AdditionalInfoModal from "./AdditionalInfoModal";
 
@@ -69,7 +69,7 @@ function NoteIcon() {
 export const RESTORATION_TYPES = [
   { color: "#9F00A7", label: "Crown" },
   { color: "#5FD4C4", label: "Bridge" },
-  { color: "#F5C563", label: "Veneer" },
+  { color: "#F5C563", label: "Veneer", disabled: true },
   { color: "#F9A8D4", label: "Inlay" },
   { color: "#AB8ED9", label: "Onlay" },
   { color: "#6B8BF5", label: "Eggshell" },
@@ -952,8 +952,8 @@ export default function FixedRestorativeForm({
   const [savedNotes, setSavedNotes] = useState<SavedNote[]>([]);
   const [draftNote, setDraftNote] = useState("");
   const [noteInputFocused, setNoteInputFocused] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [pendingTeeth, setPendingTeeth] = useState<number[]>([]);
+  const [pendingTooth, setPendingTooth] = useState<number | null>(null);
+  const [copyFromOpen, setCopyFromOpen] = useState(false);
   const [editingTooth, setEditingTooth] = useState<number | null>(null);
   const [openEditDropdown, setOpenEditDropdown] = useState<string | null>(null);
   const [additionalInfoModalOpen, setAdditionalInfoModalOpen] = useState(false);
@@ -980,6 +980,7 @@ export default function FixedRestorativeForm({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
   const editPanelRef = useRef<HTMLDivElement>(null);
+  const copyFromRef = useRef<HTMLDivElement>(null);
 
   function handleSendNote() {
     const trimmed = draftNote.trim();
@@ -1009,30 +1010,63 @@ export default function FixedRestorativeForm({
   }
 
   function handleToothClick(toothNum: number) {
-    if (activeCategory) {
-      const isDeselect = toothSelections[toothNum] === activeCategory;
-      setToothSelections(prev => {
-        const next = { ...prev };
-        if (next[toothNum] === activeCategory) {
-          delete next[toothNum];
-        } else {
-          next[toothNum] = activeCategory;
-        }
-        return next;
-      });
-      if (isDeselect) {
-        setEditingTooth((current) => (current === toothNum ? null : current));
-        setOpenEditDropdown(null);
-      } else {
-        setEditingTooth(toothNum);
-        setOpenEditDropdown(null);
-      }
-      setPendingTeeth(prev => prev.filter((t) => t !== toothNum));
-    } else {
-      setPendingTeeth(prev =>
-        prev.includes(toothNum) ? prev.filter((t) => t !== toothNum) : [...prev, toothNum]
-      );
+    setCopyFromOpen(false);
+
+    if (editingTooth !== null) return;
+
+    if (toothSelections[toothNum]) {
+      setPendingTooth(null);
+      return;
     }
+
+    setPendingTooth((current) => (current === toothNum ? null : toothNum));
+  }
+
+  function handleAssignRestoration(label: string) {
+    if (pendingTooth === null || editingTooth !== null) return;
+
+    if (label === "Implant based") {
+      setImplantBaseModalTeeth([pendingTooth]);
+      setImplantBaseModalCaseId("");
+      setImplantBaseModalTab("Recents");
+      setSelectedImplantId(null);
+      setImplantBaseModalOpen(true);
+      setCopyFromOpen(false);
+      return;
+    }
+
+    const toothNum = pendingTooth;
+    setToothSelections((prev) => ({ ...prev, [toothNum]: label }));
+    setPendingTooth(null);
+    setCopyFromOpen(false);
+    setEditingTooth(toothNum);
+    setOpenEditDropdown(null);
+  }
+
+  function handleCopyFromSelect(sourceTooth: number) {
+    if (pendingTooth === null) return;
+    const category = toothSelections[sourceTooth];
+    if (!category) return;
+
+    const targetTooth = pendingTooth;
+    const sourceDetail = getToothDetail(sourceTooth);
+
+    setToothSelections((prev) => ({ ...prev, [targetTooth]: category }));
+    setToothDetails((prev) => ({
+      ...prev,
+      [targetTooth]: { ...sourceDetail },
+    }));
+    if (category === "Implant based" && implantCaseByTooth[sourceTooth]) {
+      setImplantCaseByTooth((prev) => ({
+        ...prev,
+        [targetTooth]: implantCaseByTooth[sourceTooth],
+      }));
+    }
+
+    setCopyFromOpen(false);
+    setPendingTooth(null);
+    setEditingTooth(targetTooth);
+    setOpenEditDropdown(null);
   }
 
   useEffect(() => {
@@ -1066,7 +1100,7 @@ export default function FixedRestorativeForm({
       delete next[toothNum];
       return next;
     });
-    setPendingTeeth(prev => prev.filter((t) => t !== toothNum));
+    setPendingTooth(null);
     setEditingTooth(null);
     setOpenEditDropdown(null);
   }
@@ -1074,6 +1108,10 @@ export default function FixedRestorativeForm({
   const selectedTeethEntries = Object.entries(toothSelections).sort(
     ([a], [b]) => Number(a) - Number(b)
   );
+
+  /** Restoration / Copy-from actions are only available while a new tooth is pending and no edit panel is open. */
+  const actionsEnabled = pendingTooth !== null && editingTooth === null;
+  const copyFromEnabled = actionsEnabled && selectedTeethEntries.length > 0;
 
   useEffect(() => {
     if (!openDropdown) return;
@@ -1114,6 +1152,8 @@ export default function FixedRestorativeForm({
       if (editPanelRef.current && !editPanelRef.current.contains(e.target as Node)) {
         setEditingTooth(null);
         setOpenEditDropdown(null);
+        setPendingTooth(null);
+        setCopyFromOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -1131,6 +1171,17 @@ export default function FixedRestorativeForm({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [implantBaseModalOpen]);
+
+  useEffect(() => {
+    if (!copyFromOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (copyFromRef.current && !copyFromRef.current.contains(e.target as Node)) {
+        setCopyFromOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [copyFromOpen]);
 
   function handleTreatmentPickerSelect(procedure: ProcedureType) {
     setTreatmentId(procedure);
@@ -1154,10 +1205,9 @@ export default function FixedRestorativeForm({
       implantBaseModalTeeth.forEach((t) => { next[t] = implantId; });
       return next;
     });
-    setPendingTeeth([]);
-    setActiveCategory("Implant based");
+    setPendingTooth(null);
     setImplantBaseModalOpen(false);
-    setEditingTooth(null);
+    setEditingTooth(implantBaseModalTeeth.length === 1 ? implantBaseModalTeeth[0] : null);
     setSelectedImplantId(null);
   }
 
@@ -1213,15 +1263,89 @@ export default function FixedRestorativeForm({
         />
       ) : (
       <>
-      {/* Section 2: Interactive tooth chart — Figma 4069-83039 */}
+      {/* Section 2: Interactive tooth chart — Figma 229:53130 */}
       <div
         className="bg-[var(--color-background-layer-01)] w-full min-w-0"
         style={{ borderRadius: 8, padding: 24, minHeight: 528 }}
       >
-        <div className="flex flex-col xl:flex-row w-full xl:min-h-[480px] items-stretch" style={{ gap: 0 }}>
-          {/* Left: jaw + restoration-type buttons — shrink-0 on narrow viewports so chart is never clipped */}
-          <div className="flex flex-col items-center w-full shrink-0 xl:flex-1 xl:min-w-0 xl:min-h-0 min-w-0" style={{ gap: 48, padding: "0 16px" }}>
-            <div className="relative w-full shrink-0 min-w-0 overflow-x-auto scrollbar-table" style={{ maxWidth: 1171 }}>
+        <div className="flex flex-col xl:flex-row w-full xl:min-h-[480px] items-stretch">
+          {/* Left: Copy from + jaw chart + restoration-type buttons — Figma 284:57382 */}
+          <div className="flex flex-col w-full min-w-0 flex-1 px-4 pt-4 pb-4 xl:px-16 xl:pt-6">
+            <div className="relative flex w-full justify-end" ref={copyFromRef} style={{ marginBottom: 12 }}>
+              <button
+                type="button"
+                disabled={!copyFromEnabled}
+                onClick={() => copyFromEnabled && setCopyFromOpen((open) => !open)}
+                className={`tp-body-02 relative flex items-center justify-end appearance-none border-2 border-solid outline-none transition-ui shrink-0 rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 ${
+                  copyFromEnabled
+                    ? "text-text-primary cursor-pointer border-[var(--color-border-subtle)] bg-transparent hover:bg-[var(--color-background-layer-hovered)] active:bg-[var(--color-background-layer-02)]"
+                    : "text-text-tertiary cursor-not-allowed border-[var(--color-border-subtle)] bg-transparent opacity-50"
+                } ${copyFromOpen && copyFromEnabled ? "bg-[var(--color-background-layer-hovered)]" : ""}`}
+                style={{ gap: 8, minWidth: 72, padding: 16 }}
+                aria-label="Copy from"
+                aria-expanded={copyFromOpen}
+                aria-haspopup="listbox"
+              >
+                <CopyIcon size={24} color={copyFromEnabled ? "var(--color-icon-primary)" : "var(--color-icon-secondary)"} />
+                <span className="whitespace-nowrap">Copy from</span>
+              </button>
+
+              {copyFromOpen && copyFromEnabled && (
+                <div
+                  className="absolute right-0 top-full z-50 flex flex-col bg-[var(--color-background-layer-01)] shadow-[0px_2px_12px_rgba(0,0,0,0.13)]"
+                  style={{ marginTop: 4, minWidth: 320, borderRadius: 8, padding: 12, gap: 8 }}
+                  role="listbox"
+                  aria-label="Select tooth to copy from"
+                >
+                  <span className="tp-label-02 text-text-secondary px-2">Select tooth to copy from</span>
+                  {selectedTeethEntries.map(([num, category]) => {
+                    const toothNum = Number(num);
+                    const rt = RESTORATION_TYPES.find((r) => r.label === category);
+                    const detail = getToothDetail(toothNum);
+                    const isImplantBased = category === "Implant based";
+                    const implantCaseId = implantCaseByTooth[toothNum];
+                    const implantCaseLabel =
+                      isImplantBased && implantCaseId
+                        ? IMPLANT_OPTIONS.find((o) => o.id === implantCaseId)?.title ??
+                          IMPLANT_CASE_OPTIONS.find((o) => o.id === implantCaseId)?.label ??
+                          implantCaseId
+                        : null;
+                    const summary = formatSelectedToothSummary(detail, implantCaseLabel);
+
+                    return (
+                      <button
+                        key={num}
+                        type="button"
+                        role="option"
+                        className="flex w-full cursor-pointer flex-col items-start rounded-lg border-0 bg-[var(--color-background-layer-02)] p-3 text-left outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
+                        style={{ gap: 8 }}
+                        onClick={() => handleCopyFromSelect(toothNum)}
+                      >
+                        <span
+                          className="tp-body-02 shrink-0 text-on-color"
+                          style={{
+                            backgroundColor: restorationBadgeBackground(category, rt?.color),
+                            borderRadius: 4,
+                            padding: "4px 8px",
+                            minWidth: 24,
+                            textAlign: "center",
+                          }}
+                        >
+                          {category}
+                        </span>
+                        <span className="tp-body-04 text-text-primary">#{num}</span>
+                        <span className="tp-body-01 text-text-secondary w-full" style={{ wordBreak: "break-word" }}>
+                          {summary}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col items-center w-full" style={{ gap: 48 }}>
+            <div className="relative w-full shrink-0 min-w-0 overflow-x-auto scrollbar-table mx-auto" style={{ maxWidth: 1171 }}>
               <img src={jawChartSvg} alt="Tooth chart" style={{ width: "100%", height: "auto", display: "block" }} />
               <svg viewBox="0 0 1171 277" className="tooth-chart-svg absolute inset-0 w-full h-full" aria-hidden focusable={false} tabIndex={-1}>
                 <defs>
@@ -1233,7 +1357,7 @@ export default function FixedRestorativeForm({
                 {UPPER_TEETH.map((tooth, i) => {
                   const x = TOOTH_X[i];
                   const sel = toothSelections[tooth];
-                  const pending = pendingTeeth.includes(tooth);
+                  const pending = pendingTooth === tooth;
                   const sprite = pending && !sel ? TOOTH_SPRITES[tooth]?.Select : sel ? TOOTH_SPRITES[tooth]?.[sel] : undefined;
                   const showSelect = pending && !sel && sprite;
                   const color = sel ? RESTORATION_TYPES.find(r => r.label === sel)?.color : undefined;
@@ -1265,7 +1389,7 @@ export default function FixedRestorativeForm({
                 {LOWER_TEETH.map((tooth, i) => {
                   const x = TOOTH_X[i];
                   const sel = toothSelections[tooth];
-                  const pending = pendingTeeth.includes(tooth);
+                  const pending = pendingTooth === tooth;
                   const sprite = pending && !sel ? TOOTH_SPRITES[tooth]?.Select : sel ? TOOTH_SPRITES[tooth]?.[sel] : undefined;
                   const showSelect = pending && !sel && sprite;
                   const color = sel ? RESTORATION_TYPES.find(r => r.label === sel)?.color : undefined;
@@ -1297,68 +1421,44 @@ export default function FixedRestorativeForm({
               </svg>
             </div>
 
-            {/* Restoration type buttons — wrap to additional rows on narrow viewports */}
+            {/* Restoration type buttons — Figma 229:53142; wrap on narrow viewports */}
             <div
-              className="flex items-center justify-center flex-wrap w-full shrink-0 min-w-0"
-              style={{ gap: 12 }}
+              className="flex items-start justify-center flex-wrap w-full shrink-0 min-w-0"
+              style={{ gap: 16 }}
             >
               {RESTORATION_TYPES.map((rt) => {
-                const isImplantBased = rt.label === "Implant based";
+                const isTypeDisabled = "disabled" in rt && rt.disabled === true;
+                const buttonDisabled = !actionsEnabled || isTypeDisabled;
                 return (
                   <button
                     key={rt.label}
                     type="button"
-                    onClick={() => {
-                      if (pendingTeeth.length === 0) return;
-                      if (isImplantBased) {
-                        setImplantBaseModalTeeth([...pendingTeeth]);
-                        setImplantBaseModalCaseId("");
-                        setImplantBaseModalTab("Recents");
-                        setSelectedImplantId(null);
-                        setImplantBaseModalOpen(true);
-                      } else {
-                        const teethToAssign = [...pendingTeeth];
-                        setToothSelections(prev => {
-                          const next = { ...prev };
-                          teethToAssign.forEach((t) => { next[t] = rt.label; });
-                          return next;
-                        });
-                        setPendingTeeth([]);
-                        setActiveCategory(null);
-                        setEditingTooth(
-                          teethToAssign.length === 1
-                            ? teethToAssign[0]
-                            : teethToAssign[teethToAssign.length - 1],
-                        );
-                        setOpenEditDropdown(null);
-                      }
-                    }}
-                    className="relative flex items-center justify-center cursor-pointer bg-transparent appearance-none outline-none transition-ui overflow-visible shrink-0 rounded-lg hover:bg-[var(--color-background-layer-hovered)] active:bg-[var(--color-background-layer-02)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2"
-                    style={{
-                      height: 60,
-                      padding: "10px 12px",
-                      gap: 6,
-                      border: "2px solid var(--color-border-subtle)",
-                      borderRadius: 8,
-                      minWidth: 64,
-                    }}
+                    disabled={buttonDisabled}
+                    onClick={() => !buttonDisabled && handleAssignRestoration(rt.label)}
+                    className={`relative flex items-center justify-center appearance-none outline-none transition-ui overflow-visible shrink-0 rounded-lg border-2 border-solid focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)] focus-visible:ring-offset-2 ${
+                      buttonDisabled
+                        ? "cursor-not-allowed border-[var(--color-border-subtle)] bg-transparent opacity-50"
+                        : "cursor-pointer border-[var(--color-border-subtle)] bg-transparent hover:bg-[var(--color-background-layer-hovered)] active:bg-[var(--color-background-layer-02)]"
+                    }`}
+                    style={{ gap: 8, minWidth: 72, padding: 16 }}
                   >
-                    <div className="shrink-0" style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: rt.color }} />
-                    <span className="tp-body-02 text-text-primary whitespace-nowrap">{rt.label}</span>
+                    <div className="shrink-0" style={{ width: 24, height: 24, borderRadius: "50%", backgroundColor: rt.color, opacity: buttonDisabled ? 0.5 : 1 }} />
+                    <span className={`tp-body-02 whitespace-nowrap ${buttonDisabled ? "text-text-tertiary" : "text-text-primary"}`}>{rt.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
+          </div>
 
-          {/* Vertical separator */}
+          {/* Vertical separator — Figma 284:57436 */}
           <div
             className="hidden xl:block shrink-0"
-            style={{ width: 1, marginLeft: 24, marginRight: 24, backgroundColor: "var(--color-border-subtle)", alignSelf: "stretch" }}
+            style={{ width: 1, marginLeft: 30, marginRight: 30, backgroundColor: "var(--color-border-subtle)", alignSelf: "stretch" }}
           />
 
-          {/* Right: edit form, selected teeth cards, or placeholder — width 429 on xl */}
-          <div className="flex flex-col items-center justify-center w-full min-w-0 xl:w-[429px] xl:shrink-0 xl:min-h-0 xl:max-h-[480px] xl:overflow-auto pt-6 xl:pt-0 px-4 xl:px-0 border-t border-border-subtle xl:border-t-0">
+          {/* Right: edit form, selected teeth cards, or placeholder — Figma 284:57437 */}
+          <div className="flex flex-col items-center justify-center w-full min-w-0 xl:w-[429px] xl:shrink-0 xl:min-h-0 xl:max-h-[480px] xl:overflow-auto pt-6 xl:pt-0 px-4 xl:px-12 border-t border-border-subtle xl:border-t-0">
             {editingTooth !== null && toothSelections[editingTooth] ? (() => {
               const category = toothSelections[editingTooth];
               const rt = RESTORATION_TYPES.find(r => r.label === category);
@@ -1484,6 +1584,8 @@ export default function FixedRestorativeForm({
                       className="relative flex w-full shrink-0 cursor-pointer flex-col justify-center rounded-lg border-0 bg-[var(--color-background-layer-02)] p-4 text-left outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
                       style={{ minHeight: 124 }}
                       onClick={() => {
+                        setPendingTooth(null);
+                        setCopyFromOpen(false);
                         if (isImplantBased) {
                           setImplantBaseModalTeeth([toothNum]);
                           setImplantBaseModalCaseId(implantCaseByTooth[toothNum] ?? "");
@@ -1527,18 +1629,18 @@ export default function FixedRestorativeForm({
                   );
                 })}
               </div>
-            ) : pendingTeeth.length > 0 ? (
-              <div className="flex flex-col items-center justify-center py-4 xl:py-0 xl:h-full" style={{ width: 333, gap: 7 }}>
+            ) : pendingTooth !== null && selectedTeethEntries.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-4 xl:py-0 xl:h-full" style={{ width: 333, gap: 8 }}>
                 <span className="tp-heading-03 text-text-secondary w-full text-center">Select restoration</span>
                 <span className="tp-body-02 text-text-secondary text-center" style={{ width: 315 }}>
-                  Choose a restoration type below to define the selected {pendingTeeth.length === 1 ? "tooth" : "teeth"}.
+                  Choose a restoration type below to define the selected tooth.
                 </span>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-4 xl:py-0 xl:h-full" style={{ width: 333, gap: 7 }}>
+              <div className="flex flex-col items-center justify-center py-4 xl:py-0 xl:h-full" style={{ width: 333, gap: 8 }}>
                 <span className="tp-heading-03 text-text-secondary w-full text-center">Select tooth</span>
                 <span className="tp-body-02 text-text-secondary text-center" style={{ width: 315 }}>
-                  Select one or more teeth and the type of restoration to define them here.
+                  Select one or more teeth, then choose a treatment and restoration details.
                 </span>
               </div>
             )}
@@ -1548,7 +1650,7 @@ export default function FixedRestorativeForm({
 
       {/* Section 3: Toggles */}
       <div
-        className="bg-[var(--color-background-layer-01)]"
+        className="bg-[var(--color-background-layer-01)] w-full min-w-0"
         style={{ borderRadius: 8, padding: "16px 24px" }}
       >
         <div className="flex items-center" style={{ gap: 64 }}>
@@ -1576,7 +1678,7 @@ export default function FixedRestorativeForm({
       </div>
 
       {/* Section 4: Attachments + Note */}
-      <div className="flex" style={{ gap: 16, height: 460 }}>
+      <div className="flex w-full min-w-0" style={{ gap: 16, height: 460 }}>
         {/* Attachments card */}
         <div
           className="flex flex-col flex-1 min-w-0 bg-[var(--color-background-layer-01)] overflow-clip"

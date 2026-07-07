@@ -81,6 +81,22 @@ export function TagIcon({ size = 24, className, color = "var(--color-icon-primar
 }
 
 /** Folder/document icon for header (Figma: document icon between help and settings) */
+/** Copy / duplicate — Figma 229:53139 (Fixed restorative "Copy from" button). */
+export function CopyIcon({ size = 24, className, color = "var(--color-icon-primary)" }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" className={className} aria-hidden>
+      <path
+        d="M17.5 6.25V17.5H6.25V6.25H17.5ZM17.5 5H6.25C5.91848 5 5.60054 5.1317 5.36612 5.36612C5.1317 5.60054 5 5.91848 5 6.25V17.5C5 17.8315 5.1317 18.1495 5.36612 18.3839C5.60054 18.6183 5.91848 18.75 6.25 18.75H17.5C17.8315 18.75 18.1495 18.6183 18.3839 18.3839C18.6183 18.1495 18.75 17.8315 18.75 17.5V6.25C18.75 5.91848 18.6183 5.60054 18.3839 5.36612C18.1495 5.1317 17.8315 5 17.5 5Z"
+        fill={color}
+      />
+      <path
+        d="M2.5 11.25H1.25V2.5C1.25 2.16848 1.3817 1.85054 1.61612 1.61612C1.85054 1.3817 2.16848 1.25 2.5 1.25H11.25V2.5H2.5V11.25Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
 export function DocumentIcon({ size = 32, className, color = "currentColor" }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
