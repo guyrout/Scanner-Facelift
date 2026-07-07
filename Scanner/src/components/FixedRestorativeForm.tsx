@@ -906,6 +906,12 @@ function formatSelectedToothSummary(detail: ToothDetail, implantCaseLabel?: stri
   return parts.length > 0 ? parts.join(" · ") : "—";
 }
 
+/** Figma 296:72661 — copy-from menu summary uses bullet separators. */
+function formatCopyFromMenuSummary(detail: ToothDetail, implantCaseLabel?: string | null): string {
+  const summary = formatSelectedToothSummary(detail, implantCaseLabel);
+  return summary === "—" ? summary : summary.replace(/ · /g, " • ");
+}
+
 export interface ToggleState {
   niri: boolean;
   sleeve: boolean;
@@ -1292,12 +1298,26 @@ export default function FixedRestorativeForm({
 
               {copyFromOpen && copyFromEnabled && (
                 <div
-                  className="absolute right-0 top-full z-50 flex flex-col bg-[var(--color-background-layer-01)] shadow-[0px_2px_12px_rgba(0,0,0,0.13)]"
-                  style={{ marginTop: 4, minWidth: 320, borderRadius: 8, padding: 12, gap: 8 }}
+                  className="absolute right-0 top-full z-50 flex w-[428px] flex-col items-start rounded-lg border border-solid border-[var(--color-border-subtle)] bg-[var(--color-background-elevated)] p-1 shadow-[0px_2px_6px_rgba(0,0,0,0.13)]"
+                  style={{ marginTop: 4 }}
                   role="listbox"
                   aria-label="Select tooth to copy from"
                 >
-                  <span className="tp-label-02 text-text-secondary px-2">Select tooth to copy from</span>
+                  {/* Header — Figma 296:72661 Item 01 */}
+                  <div className="flex w-full shrink-0 flex-col justify-center overflow-hidden" style={{ minHeight: 60 }}>
+                    <div className="flex w-full flex-1 items-center p-3">
+                      <span className="tp-headling-02 text-text-primary w-full truncate">
+                        Select tooth to copy from
+                      </span>
+                    </div>
+                    <div className="relative h-2 w-full shrink-0 overflow-hidden">
+                      <div
+                        className="absolute left-0 right-0 top-[3px] h-px bg-[var(--color-border-subtle)]"
+                        aria-hidden
+                      />
+                    </div>
+                  </div>
+
                   {selectedTeethEntries.map(([num, category]) => {
                     const toothNum = Number(num);
                     const rt = RESTORATION_TYPES.find((r) => r.label === category);
@@ -1310,17 +1330,20 @@ export default function FixedRestorativeForm({
                           IMPLANT_CASE_OPTIONS.find((o) => o.id === implantCaseId)?.label ??
                           implantCaseId
                         : null;
-                    const summary = formatSelectedToothSummary(detail, implantCaseLabel);
+                    const summary = formatCopyFromMenuSummary(detail, implantCaseLabel);
 
                     return (
                       <button
                         key={num}
                         type="button"
                         role="option"
-                        className="flex w-full cursor-pointer flex-col items-start rounded-lg border-0 bg-[var(--color-background-layer-02)] p-3 text-left outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
-                        style={{ gap: 8 }}
+                        className="flex w-full min-h-[60px] cursor-pointer items-center gap-2 rounded-lg border-0 bg-transparent p-3 text-left outline-none transition-ui hover:bg-[var(--color-background-layer-hovered)] focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]"
                         onClick={() => handleCopyFromSelect(toothNum)}
                       >
+                        <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+                          <span className="tp-body-02 text-text-primary w-full truncate">#{num}</span>
+                          <span className="tp-body-01 text-text-secondary w-full truncate">{summary}</span>
+                        </div>
                         <span
                           className="tp-body-02 shrink-0 text-on-color"
                           style={{
@@ -1329,13 +1352,10 @@ export default function FixedRestorativeForm({
                             padding: "4px 8px",
                             minWidth: 24,
                             textAlign: "center",
+                            border: "1px solid rgba(0,0,0,0.04)",
                           }}
                         >
                           {category}
-                        </span>
-                        <span className="tp-body-04 text-text-primary">#{num}</span>
-                        <span className="tp-body-01 text-text-secondary w-full" style={{ wordBreak: "break-word" }}>
-                          {summary}
                         </span>
                       </button>
                     );
